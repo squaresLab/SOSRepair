@@ -12,7 +12,7 @@ def comment_remover(text):
             str = ""
             for i in range(multiline-1):
                 str += "\n"
-            return str.strip() + '\n'
+            return str.strip()
         else:
             try:
                 rest = match.group(1)
@@ -20,8 +20,8 @@ def comment_remover(text):
                 for i in range(multiline-1):
                     s += "\n"
             except:
-                return s.strip() + '\n'
-            return s.strip() + '\n'
+                return s.strip()
+            return s.strip()
     pattern = re.compile(
         r'//.*?$|/\*.*?\*/|\'(?:\\.|[^\\\'])*\'|"(?:\\.|[^\\"])*"',
         re.DOTALL | re.MULTILINE
@@ -34,6 +34,7 @@ class ProcessProgram():
         self.filename = filename
         self.original_text = ''
         self.processed_text = ''
+        self.total_lines = 0
         self.read_file()
 
 
@@ -41,6 +42,7 @@ class ProcessProgram():
         #TODO check the file
         with open(self.filename) as f:
             for line in f:
+                self.total_lines += 1
                 self.original_text += line
                 if '#include' in line:
                     self.processed_text += '\n'
