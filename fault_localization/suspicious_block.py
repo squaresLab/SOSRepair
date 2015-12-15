@@ -2,10 +2,21 @@ __author__ = 'Afsoon Afzal'
 
 from clang.cindex import *
 
+#TODO Add this to settings
+Config.set_library_file('/Applications/Xcode.app/Contents/Developer/Toolchains/XcodeDefault.xctoolchain/usr/lib/libclang.dylib')
+
+
+class SuspiciousBlock():
+    def __init__(self, line_number, block, node, function):
+        self.line_number = line_number
+        self.block = block
+        self.node = node
+        self.function = function
+
+
 
 class FaultLocalization():
     def __init__(self, filename):
-        Config.set_library_file('/Applications/Xcode.app/Contents/Developer/Toolchains/XcodeDefault.xctoolchain/usr/lib/libclang.dylib')
         self.filename = filename
         self.root = None
 
@@ -19,16 +30,17 @@ class FaultLocalization():
         block = (1, 10000000)
         current = ast
         children = ast.get_children()
+        function = None
         cond = True
         while(cond):
             cond = False
             for child in children:
                 cond = True
-                print block
-                #print str(child.spelling) + " " + str(child.location.file)
                 if str(child.location.file) != self.filename:
                     continue
-                #print child.location.line
+                print block
+                print str(child.spelling) + " " + str(child.location.file)
+                print child.location.line
                 if child.location.line > line_number:
                     temp_block = (current.location.line, child.location.line)
                     if current.kind == CursorKind.IF_STMT:
@@ -41,13 +53,16 @@ class FaultLocalization():
                     block = temp_block
                     break
                 current = child
+                if child.kind == CursorKind.FUNCTION_DECL:
+                    function = child
             children = current.get_children()
 
 
 
-        return block
+        return SuspiciousBlock(line_number, block, current, function)
 
 
 if __name__ == "__main__":
-    fl = FaultLocalization('src/joblist.c')
-    print fl.line_to_block(54)
+    fl = FaultLocalization('src/fdevent_freebsd_kqueue.c')
+    sb = fl.line_to_block(57)
+    print str(sb.block) + " " + str(sb.node.kind) + " " + str(sb.node.type.kind) + " " + str(sb.function.spelling)
