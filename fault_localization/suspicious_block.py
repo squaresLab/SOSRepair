@@ -1,9 +1,9 @@
 __author__ = 'Afsoon Afzal'
 
 from clang.cindex import *
+from settings import *
 
-#TODO Add this to settings
-Config.set_library_file('/Applications/Xcode.app/Contents/Developer/Toolchains/XcodeDefault.xctoolchain/usr/lib/libclang.dylib')
+Config.set_library_file(LIBCLANG_PATH)
 
 
 class SuspiciousBlock():

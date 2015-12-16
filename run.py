@@ -1,0 +1,17 @@
+__author__ = 'afsoona'
+
+from fault_localization.suspicious_block import *
+from fault_localization.profile import *
+
+# if __name__ == "__main__":
+#     fl = FaultLocalization('src/fdevent_freebsd_kqueue.c')
+#     sb = fl.line_to_block(57)
+#     print str(sb.block) + " " + str(sb.node.kind) + " " + str(sb.node.type.kind) + " " + str(sb.function.spelling)
+
+
+if __name__ == "__main__":
+    fl = FaultLocalization('median.c')
+    sb = fl.line_to_block(20)
+    profile = Profile('median.c', sb)
+    profile.find_variables()
+    profile.generate_file()
