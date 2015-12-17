@@ -1,7 +1,7 @@
 __author__ = 'afsoona'
 
-from fault_localization.suspicious_block import *
-from fault_localization.profile import *
+from profile.profile import *
+from profile.tests import *
 
 # if __name__ == "__main__":
 #     fl = FaultLocalization('src/fdevent_freebsd_kqueue.c')
@@ -15,3 +15,7 @@ if __name__ == "__main__":
     profile = Profile('median.c', sb)
     profile.find_variables()
     profile.generate_file()
+
+    tests = Tests('', 'median')
+    tests.initialize_testing()
+    print tests

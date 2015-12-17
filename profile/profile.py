@@ -1,7 +1,7 @@
 __author__ = 'Afsoon Afzal'
 
 from clang.cindex import *
-from suspicious_block import FaultLocalization
+from fault_localization.suspicious_block import FaultLocalization
 
 
 class Profile():
