@@ -18,4 +18,6 @@ if __name__ == "__main__":
 
     tests = Tests('', 'median.c')
     tests.initialize_testing()
+
+    profile.generate_profile(tests.positives)
     print tests
