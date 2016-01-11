@@ -4,6 +4,7 @@ import os
 
 from settings import TESTS_DIRECTORY
 from utils.file_process import compare_files
+from utils.c_run import compile_c, run_c_with_input
 
 class Tests():
 
@@ -18,8 +19,8 @@ class Tests():
 
     def initialize_testing(self):
         program = os.path.join(self.program_directory, self.program_name)
-        res = os.system('gcc -o ' + self.plain_name + ' ' + program)
-        if res != 0:
+        res = compile_c(program, self.plain_name)
+        if not res:
             raise Exception
         temp_output = os.path.join(self.program_directory, self.plain_name + '_temp.out')
         test_files = os.listdir(TESTS_DIRECTORY)
@@ -27,8 +28,8 @@ class Tests():
             if not file.endswith('.in'):
                 continue
             test = os.path.join(TESTS_DIRECTORY, file)
-            res = os.system('./' + self.plain_name + ' < ' + test + ' > ' + temp_output)
-            if res != 0:
+            res = run_c_with_input(self.plain_name, test, temp_output)
+            if not res:
                 raise Exception
             out_file = file[0:-3]+'.out'
             if compare_files(os.path.join(TESTS_DIRECTORY, out_file), temp_output):
