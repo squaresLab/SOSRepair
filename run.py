@@ -11,11 +11,11 @@ from profile.tests import *
 
 if __name__ == "__main__":
     fl = FaultLocalization('median.c')
-    sb = fl.line_to_block(20)
+    sb = fl.line_to_block(19)
     profile = Profile('median.c', sb)
     profile.find_variables()
     profile.generate_file()
 
-    tests = Tests('', 'median')
+    tests = Tests('', 'median.c')
     tests.initialize_testing()
     print tests

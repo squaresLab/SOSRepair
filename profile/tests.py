@@ -10,22 +10,24 @@ class Tests():
     def __init__(self, program_directory, program_name):
         self.program_directory = program_directory
         self.program_name = program_name
+        parts = program_name.split('.')
+        self.plain_name = program_name[0:-1*(len(parts[-1]))]
         self.positives = []
         self.negatives = []
 
 
     def initialize_testing(self):
-        program = os.path.join(self.program_directory, self.program_name + '.c')
-        res = os.system('gcc -o ' + self.program_name + ' ' + program)
+        program = os.path.join(self.program_directory, self.program_name)
+        res = os.system('gcc -o ' + self.plain_name + ' ' + program)
         if res != 0:
             raise Exception
-        temp_output = os.path.join(self.program_directory, self.program_name + '_temp.out')
+        temp_output = os.path.join(self.program_directory, self.plain_name + '_temp.out')
         test_files = os.listdir(TESTS_DIRECTORY)
         for file in test_files:
             if not file.endswith('.in'):
                 continue
             test = os.path.join(TESTS_DIRECTORY, file)
-            res = os.system('./' + self.program_name + ' < ' + test + ' > ' + temp_output)
+            res = os.system('./' + self.plain_name + ' < ' + test + ' > ' + temp_output)
             if res != 0:
                 raise Exception
             out_file = file[0:-3]+'.out'
@@ -33,7 +35,7 @@ class Tests():
                 self.positives.append(file)
             else:
                 self.negatives.append(file)
-        os.system('rm ' + temp_output + ' ' + self.program_name)
+        os.system('rm ' + temp_output + ' ' + self.plain_name)
         return True
 
     def __str__(self):
