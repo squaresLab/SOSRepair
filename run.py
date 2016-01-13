@@ -2,6 +2,7 @@ __author__ = 'afsoona'
 
 from profile.profile import *
 from profile.tests import *
+from fault_localization.suspicious_lines import *
 
 # if __name__ == "__main__":
 #     fl = FaultLocalization('src/fdevent_freebsd_kqueue.c')
@@ -18,6 +19,10 @@ if __name__ == "__main__":
 
     tests = Tests('', 'median.c')
     tests.initialize_testing()
+
+    sl = SuspiciousLines('median.c', '', tests)
+    sl.compute_suspiciousness()
+
 
     profile.generate_profile(tests.positives)
     print tests

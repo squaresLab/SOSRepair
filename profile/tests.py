@@ -4,15 +4,14 @@ import os
 
 from settings import TESTS_DIRECTORY
 from utils.file_process import compare_files
-from utils.c_run import compile_c, run_c_with_input
+from utils.c_run import compile_c, run_c_with_input, get_plain_name
 
 class Tests():
 
     def __init__(self, program_directory, program_name):
         self.program_directory = program_directory
         self.program_name = program_name
-        parts = program_name.split('.')
-        self.plain_name = program_name[0:-1*(len(parts[-1]))]
+        self.plain_name = get_plain_name(program_name)
         self.positives = []
         self.negatives = []
 
