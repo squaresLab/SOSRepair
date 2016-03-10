@@ -32,8 +32,7 @@ class FaultLocalization():
         children = ast.get_children()
         function = None
         cond = True
-        while(cond):
-            cond = False
+        while cond:
             for child in children:
                 cond = True
                 if str(child.location.file) != self.filename:
@@ -56,8 +55,6 @@ class FaultLocalization():
                 if child.kind == CursorKind.FUNCTION_DECL:
                     function = child
             children = current.get_children()
-
-
 
         return SuspiciousBlock(line_number, block, current, function)
 
