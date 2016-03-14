@@ -14,7 +14,6 @@ class SuspiciousBlock():
         self.function = function
 
 
-
 class FaultLocalization():
     def __init__(self, filename):
         self.filename = filename
