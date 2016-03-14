@@ -62,10 +62,18 @@ class CodeSnippet:
                 from_line = blocks[0].location.line
 
 
-
     @staticmethod
     def find_vars(blocks):
-        return []
+        variables = set({})
+        for block in blocks:
+            for i in block.walk_preorder():
+                if (i.kind == CursorKind.UNEXPOSED_EXPR or i.kind == CursorKind.DECL_REF_EXPR) and\
+                                i.displayname != '':
+                    if i.type.kind == TypeKind.FUNCTIONPROTO or\
+                            (i.type.kind == TypeKind.POINTER and i.type.get_pointee().kind == TypeKind.FUNCTIONPROTO):
+                        continue
+                    variables.add((i.displayname, i.type.spelling))
+        return variables
 
     @staticmethod
     def write_file(blocks, vars):

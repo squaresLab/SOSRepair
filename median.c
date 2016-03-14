@@ -4,11 +4,10 @@
 #include <math.h>
 
 int main() {
-
 	int a, b, c, median;
-
-	//sdafjkdsafkljhdf
-
+	char *d = "salam";
+	int e[10];
+	*d = "hi";
 	printf("Please enter 3 numbers separated by spaces > ");
 	scanf("%d%d%d", &a, &b, &c);
 	if ((a<=b && a>=c) || (a>=b && a<=c))
@@ -18,11 +17,6 @@ int main() {
 	else if ((c<=b && a>=c) || (c>=b && a<=c))
 		median = c;
 	printf("%d is the median\n", median);
-
-	/*
-	*afasf
-	* fdsaklfdsla
-	*/
 	return 0;
 	
 }
