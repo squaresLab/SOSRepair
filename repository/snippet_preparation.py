@@ -28,7 +28,7 @@ class CodeSnippet:
             cursor = False
             if isinstance(child, Cursor):
                 cursor = True
-            if cursor and str(child.location.file) != self.filename:
+            if cursor and (str(child.location.file) != self.filename or child.kind == CursorKind.DECL_STMT):
                 continue
             line = child.location.line if cursor else child
             print line
