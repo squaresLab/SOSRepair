@@ -3,6 +3,7 @@ __author__ = 'afsoona'
 from profile.profile import *
 from profile.tests import *
 from fault_localization.suspicious_lines import *
+from repository.snippet_preparation import *
 
 # if __name__ == "__main__":
 #     fl = FaultLocalization('src/fdevent_freebsd_kqueue.c')
@@ -10,7 +11,7 @@ from fault_localization.suspicious_lines import *
 #     print str(sb.block) + " " + str(sb.node.kind) + " " + str(sb.node.type.kind) + " " + str(sb.function.spelling)
 
 
-if __name__ == "__main__":
+if __name__ == "__main2__":
     fl = FaultLocalization('median.c')
     sb = fl.line_to_block(19)
     profile = Profile('median.c', sb)
@@ -26,3 +27,7 @@ if __name__ == "__main__":
 
     profile.generate_profile(tests.positives)
     print tests
+
+if __name__ == "__main__":
+    fl = CodeSnippet('median.c')
+    fl.detach_snippets()
