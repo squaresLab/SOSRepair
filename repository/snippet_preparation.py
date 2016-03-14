@@ -51,7 +51,7 @@ class CodeSnippet:
                             break
             while 7 >= (line - from_line) >= 3:
                 vars = self.find_vars(blocks)
-                self.write_file(blocks, vars)
+                self.write_file(from_line, line, vars)
                 blocks.pop(0)
                 if len(blocks) > 0:
                     from_line = blocks[0].location.line
@@ -75,10 +75,66 @@ class CodeSnippet:
                     variables.add((i.displayname, i.type.spelling))
         return variables
 
-    @staticmethod
-    def write_file(blocks, vars):
-        return True
+    def write_file(self, from_line, to_line, variables):
+        s = '''#include <klee/klee.h>
+#include <stdio.h>
+#include <string.h>
 
+
+struct s{
+'''
+        for name, type in variables:
+            s += type + " " + name + ";\n"
+        s += '''
+        };
+
+struct s foo('''
+        i = 0
+        for name, type in variables:
+            s += type + " " + name
+            if i < len(variables) -1:
+                s += ', '
+            i += 1
+        s += '){\n'
+        with open(self.filename, 'r') as f:
+            i = 1
+            for line in f:
+                if from_line <= i < to_line:
+                    s += line
+                elif i >= to_line:
+                    break
+                i += 1
+        s += 'struct s afs_ret;\n'
+        for name, type in variables:
+            s += 'afs_ret.' + name + " = " + name + ";\n"
+        s += '''
+        return afs_ret;
+        }
+        int main(){
+	    struct s ret;
+	    '''
+        for name, type in variables:
+            s += type + " " + name + ";\n"
+            s += type + " " + name + "_afs;\n"
+        for name, type in variables:
+            s += 'klee_make_symbolic(&' + name + ', sizeof(' + name + '), "' + name + '");\n'
+            s += 'klee_make_symbolic(&' + name + '_afs, sizeof(' + name + '_afs), "' + name + '_afs");\n'
+        s += 'ret = foo('
+        i = 0
+        for name, type in variables:
+            s += name
+            if i < len(variables) -1:
+                s += ', '
+            i += 1
+        s += ');\n'
+        for name, type in variables:
+            s += 'klee_assume(' + name +'_afs == ret.'+ name+');\n'
+        s += '''
+        return 0;
+        }
+        '''
+        print s
+        return s
 
 if __name__ == "__main__":
     fl = CodeSnippet('../median.c')
