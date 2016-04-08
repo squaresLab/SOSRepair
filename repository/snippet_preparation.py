@@ -2,6 +2,7 @@ __author__ = 'Afsoon Afzal'
 
 from os import path
 from clang.cindex import *
+from clang.cindex import BinaryOperator
 from settings import *
 from utils.file_process import number_of_lines
 from utils.klee import *
@@ -39,8 +40,8 @@ class CodeSnippet:
                 blocks.append(child)
                 continue
             dist = line - from_line
-            if dist > 7:
-                while (line - from_line) > 7:
+            if dist > LARGEST_SNIPPET:
+                while (line - from_line) > LARGEST_SNIPPET:
                     if len(blocks) == 1:  # means it's a large block
                         self.traverse_tree(blocks[0], line)
                         blocks.pop(0)
@@ -51,9 +52,12 @@ class CodeSnippet:
                             from_line = blocks[0].location.line
                         else:
                             break
-            while 7 >= (line - from_line) >= 3:
+            while LARGEST_SNIPPET >= (line - from_line) >= SMALLEST_SNIPPET:
                 vars = self.find_vars(blocks)
-                code_snippet = self.write_file(from_line, line, vars)
+                outputs = self.find_outputs(blocks)
+                code_snippet = self.write_file(from_line, line, vars, outputs)
+                print outputs
+#                self.symbolic_execution()
                 blocks.pop(0)
                 if len(blocks) > 0:
                     from_line = blocks[0].location.line
@@ -62,6 +66,27 @@ class CodeSnippet:
             if cursor:
                 blocks.append(child)
                 from_line = blocks[0].location.line
+
+
+    @staticmethod
+    def find_outputs(snippet_blocks):
+        outputs = {}
+        for block in snippet_blocks:
+            for node in block.walk_preorder():
+                if node.kind == CursorKind.RETURN_STMT:
+                    for i in node.get_children():
+                        return i.type.spelling
+                if node.kind ==  CursorKind.BINARY_OPERATOR and node.binary_operator == BinaryOperator.Assign:
+                    #Find the first child as the left-hand side
+                    for i in node.walk_preorder():
+                        if i.kind == CursorKind.DECL_REF_EXPR or i.kind == CursorKind.UNEXPOSED_EXPR:
+                            outputs[i.displayname] = {'line': i.location.line, 'type': i.type.spelling}
+                            break
+                elif node.kind == CursorKind.DECL_REF_EXPR or node.kind == CursorKind.UNEXPOSED_EXPR:
+                    if node.displayname in outputs and node.location.line > outputs[node.displayname]['line']:
+                        outputs.pop(node.displayname)
+        return outputs
+
 
 
     @staticmethod
@@ -77,20 +102,28 @@ class CodeSnippet:
                     variables.add((i.displayname, i.type.spelling))
         return variables
 
-    def write_file(self, from_line, to_line, variables):
+    def write_file(self, from_line, to_line, variables, outputs):
         s = '''#include <klee/klee.h>
 #include <stdio.h>
 #include <string.h>
 
-
+'''
+        if isinstance(outputs, str):
+            s += outputs + ' foo('
+        elif len(outputs) == 1:
+            s += outputs[outputs.keys()[0]]['type'] + ' foo('
+        else:
+            s += '''
 struct s{
 '''
-        for name, type in variables:
-            s += type + " " + name + ";\n"
-        s += '''
-        };
+            for name in outputs.keys():
+                s += outputs[name]['type'] + " " + name + ";\n"
+            s += '''
+            };
 
 struct s foo('''
+
+
         i = 0
         for name, type in variables:
             s += type + " " + name
@@ -108,38 +141,63 @@ struct s foo('''
                     break
                 i += 1
         s += code_snippet
-        s += 'struct s afs_ret;\n'
-        for name, type in variables:
-            s += 'afs_ret.' + name + " = " + name + ";\n"
-        s += '''
+
+        if isinstance(outputs, str):
+            s += '''
+            }
+            int main(){
+            '''
+            s += outputs + ' ret;\n'
+            s += 'klee_make_symbolic(&ret, sizeof(ret), "return_value");\n'
+        elif len(outputs) == 1:
+            s += 'return ' + outputs.keys()[0] + ';\n'
+            s += '''
+            int main(){
+            '''
+            s += outputs[outputs.keys()[0]]['type'] + ' ret;\n'
+            s += 'klee_make_symbolic(&ret, sizeof(ret), "'+ outputs.keys()[0] +'");\n'
+        else:
+            s += 'struct s afs_ret;\n'
+            for name in outputs.keys():
+                s += 'afs_ret.' + name + " = " + name + ";\n"
+            s += '''
         return afs_ret;
         }
         int main(){
 	    struct s ret;
 	    '''
+            for name in outputs.keys():
+                s += outputs[name]['type'] + " " + name + "_afs;\n"
+                s += 'klee_make_symbolic(&' + name + '_afs, sizeof(' + name + '_afs), "' + name + '_afs");\n'
+
+
         for name, type in variables:
             s += type + " " + name + ";\n"
-            s += type + " " + name + "_afs;\n"
-        for name, type in variables:
             s += 'klee_make_symbolic(&' + name + ', sizeof(' + name + '), "' + name + '");\n'
-            s += 'klee_make_symbolic(&' + name + '_afs, sizeof(' + name + '_afs), "' + name + '_afs");\n'
-        s += 'ret = foo('
+
+
+        foo = 'foo('
         i = 0
         for name, type in variables:
-            s += name
+            foo += name
             if i < len(variables) -1:
-                s += ', '
+                foo += ', '
             i += 1
-        s += ');\n'
-        for name, type in variables:
-            s += 'klee_assume(' + name +'_afs == ret.'+ name+');\n'
+        foo += ')'
+        if isinstance(outputs, str) or len(outputs) == 1:
+            s += 'klee_assume(ret == ' + foo + ');\n'
+        else:
+            s += 'ret = ' + foo + ';\n'
+            for name in outputs.keys():
+                s += 'klee_assume(' + name +'_afs == ret.'+ name+');\n'
+
         s += '''
         return 0;
         }
         '''
         print s
-        with open('snippet.c', 'w') as f:
-            f.write(s)
+        # with open('snippet.c', 'w') as f:
+        #     f.write(s)
         return code_snippet
 
     def symbolic_execution(self, filename='snippet.c'):
@@ -152,6 +210,7 @@ struct s foo('''
             return False
         print "Number of paths generated by KLEE: " + str(number_of_paths)
         return True
+
 
 
 if __name__ == "__main__":
