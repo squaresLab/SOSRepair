@@ -55,7 +55,8 @@ class CodeSnippet:
             while LARGEST_SNIPPET >= (line - from_line) >= SMALLEST_SNIPPET:
                 vars = self.find_vars(blocks)
                 outputs = self.find_outputs(blocks)
-                code_snippet = self.write_file(from_line, line, vars, outputs)
+                func_calls = self.find_function_calls(blocks)
+                code_snippet = self.write_file(from_line, line, vars, outputs, func_calls)
                 print outputs
 #                self.symbolic_execution()
                 blocks.pop(0)
@@ -87,6 +88,14 @@ class CodeSnippet:
                         outputs.pop(node.displayname)
         return outputs
 
+    @staticmethod
+    def find_function_calls(snippet_blocks):
+        function_calls = set([])
+        for block in snippet_blocks:
+            for node in block.walk_preorder():
+                if node.kind == CursorKind.CALL_EXPR:
+                    function_calls.add((node.displayname, node.referenced.location.file.name))
+        return function_calls
 
 
     @staticmethod
@@ -102,12 +111,13 @@ class CodeSnippet:
                     variables.add((i.displayname, i.type.spelling))
         return variables
 
-    def write_file(self, from_line, to_line, variables, outputs):
+    def write_file(self, from_line, to_line, variables, outputs, function_calls):
         s = '''#include <klee/klee.h>
 #include <stdio.h>
 #include <string.h>
-
 '''
+        for temp, func in function_calls:
+            s += "#include '" + func +"'\n"
         if isinstance(outputs, str):
             s += outputs + ' foo('
         elif len(outputs) == 1:
