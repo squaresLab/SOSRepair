@@ -19,7 +19,7 @@ def run_klee(filename, output_dir='klee-out'):
     except:
         return False
     proc = subprocess.Popen(["klee", "-use-query-log=all:smt2", "-write-smt2s", "-libc=uclibc", "-use-constant-arrays",
-                             "-const-array-opt", "-output-dir=", output_dir, filename], stdout=subprocess.PIPE)
+                             "-const-array-opt", "-output-dir="+output_dir, filename], stdout=subprocess.PIPE)
     (out, err) = proc.communicate()
     if err:
         return 0

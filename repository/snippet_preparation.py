@@ -58,7 +58,7 @@ class CodeSnippet:
                 func_calls = self.find_function_calls(blocks)
                 code_snippet = self.write_file(from_line, line, vars, outputs, func_calls)
                 print outputs
-#                self.symbolic_execution()
+                self.symbolic_execution()
                 blocks.pop(0)
                 if len(blocks) > 0:
                     from_line = blocks[0].location.line
@@ -116,8 +116,12 @@ class CodeSnippet:
 #include <stdio.h>
 #include <string.h>
 '''
+        includes = []
         for temp, func in function_calls:
-            s += "#include '" + func +"'\n"
+            if func in includes:
+                continue
+            s += '#include "' + func +'"\n'
+            includes.append(func)
         if isinstance(outputs, str):
             s += outputs + ' foo('
         elif len(outputs) == 1:
@@ -162,6 +166,8 @@ struct s foo('''
         elif len(outputs) == 1:
             s += 'return ' + outputs.keys()[0] + ';\n'
             s += '''
+            }
+
             int main(){
             '''
             s += outputs[outputs.keys()[0]]['type'] + ' ret;\n'
@@ -206,8 +212,8 @@ struct s foo('''
         }
         '''
         print s
-        # with open('snippet.c', 'w') as f:
-        #     f.write(s)
+        with open('snippet.c', 'w') as f:
+            f.write(s)
         return code_snippet
 
     def symbolic_execution(self, filename='snippet.c'):
