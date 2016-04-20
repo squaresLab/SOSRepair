@@ -4,6 +4,7 @@ from profile.profile import *
 from profile.tests import *
 from fault_localization.suspicious_lines import *
 from repository.snippet_preparation import *
+from repository.db_manager import DatabaseManager
 
 # if __name__ == "__main__":
 #     fl = FaultLocalization('src/fdevent_freebsd_kqueue.c')
@@ -29,5 +30,7 @@ if __name__ == "__main2__":
     print tests
 
 if __name__ == "__main__":
-    fl = CodeSnippet('median.c')
-    fl.detach_snippets()
+    # fl = CodeSnippetManager('median.c')
+    # fl.detach_snippets()
+    db_manager = DatabaseManager()
+    db_manager.initialize_tables()

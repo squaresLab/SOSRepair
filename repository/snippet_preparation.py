@@ -10,7 +10,7 @@ from utils.klee import *
 Config.set_library_file(LIBCLANG_PATH)
 
 
-class CodeSnippet:
+class CodeSnippetManager:
     def __init__(self, filename):
         self.filename = filename
         self.root = None
@@ -224,6 +224,17 @@ struct s foo('''
         return True
 
 
+class CodeSnippet():
+
+    def __init__(self, source, variables, outputs, function_calls=[]):
+        self.source = source
+        self.variables = variables
+        self.outputs = outputs
+        self.function_calls = function_calls
+        self.constraints = None
+
+
+
 if __name__ == "__main__":
-    fl = CodeSnippet('../median.c')
+    fl = CodeSnippetManager('../median.c')
     fl.detach_snippets()
