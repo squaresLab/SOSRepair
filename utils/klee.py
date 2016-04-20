@@ -30,4 +30,9 @@ def run_klee(filename, output_dir='klee-out'):
             return test_nums
     return 0
 
+def read_smt_files(path_number, klee_dir='klee-out'):
+    file_name = klee_dir + '/test' + ('0'*(6-len(str(path_number)))) + str(path_number) + '.smt2'
+    with open(file_name, 'r') as file:
+        return file.readall()
+    return None
 

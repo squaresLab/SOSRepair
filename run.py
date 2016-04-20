@@ -39,3 +39,4 @@ if __name__ == "__main__":
     snippet.add_constraint("PALAKI")
     snippet.add_constraint("DUMMY")
     db_manager.insert_snippet(snippet)
+    db_manager.close()
