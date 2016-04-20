@@ -11,3 +11,9 @@ TESTS_DIRECTORY = '/Users/afsoona/Documents/workspace/SCS/IntroClass/median/test
 
 LARGEST_SNIPPET = 7
 SMALLEST_SNIPPET = 3
+
+DATABASE = {
+    'db_name': 'testdb',
+    'user': 'afsoona',
+    'password': None
+}
