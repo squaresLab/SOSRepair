@@ -3,6 +3,7 @@ __author__ = 'afsoona'
 
 import psycopg2
 from settings import DATABASE
+from repository.snippet_preparation import CodeSnippet
 
 
 class DatabaseManager():
@@ -49,8 +50,37 @@ class DatabaseManager():
             print ver
         except psycopg2.DatabaseError, e:
             print 'Error %s' % e
-
-        finally:
             self.close()
 
+    def insert_snippet(self, snippet):
+        assert isinstance(snippet, CodeSnippet)
+        try:
+            cursor = self.connect().cursor()
+            sql = """
+    INSERT INTO snippets (SOURCE, VARIABLES, OUTPUTS, FUNCTIONS)
+    VALUES (%s, %s, %s, %s)
+    RETURNING ID
+            """
+            cursor.execute(sql, (str(snippet.source), str(snippet.variables), \
+                   str(snippet.outputs), str(snippet.function_calls)))
+            self.connect().commit()
+            id = cursor.fetchone()[0]
+            print id
+            self.insert_constraint(snippet, id)
+        except psycopg2.DatabaseError, e:
+            print 'Error %s' % e
+            self.close()
 
+    def insert_constraint(self, snippet, snippet_id):
+        try:
+            cursor = self.connect().cursor()
+            for constraint in snippet.constraints:
+                sql = """
+        INSERT INTO constraints (SMT, SNIPPET_ID)
+        VALUES (%s, %s)
+                """
+                cursor.execute(sql, (constraint, snippet_id))
+                self.connect().commit()
+        except psycopg2.DatabaseError, e:
+            print 'Error %s' % e
+            self.close()

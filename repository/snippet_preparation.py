@@ -231,7 +231,10 @@ class CodeSnippet():
         self.variables = variables
         self.outputs = outputs
         self.function_calls = function_calls
-        self.constraints = None
+        self.constraints = []
+
+    def add_constraint(self, constraint):
+        self.constraints.append(constraint)
 
 
 

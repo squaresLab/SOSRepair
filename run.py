@@ -34,3 +34,8 @@ if __name__ == "__main__":
     # fl.detach_snippets()
     db_manager = DatabaseManager()
     db_manager.initialize_tables()
+    snippet = CodeSnippet('asf', [('a', 'int')], {'a': {'line': 1, 'type': 'int'}}, [('printf', 'stdio')])
+    snippet.add_constraint("ALAKI")
+    snippet.add_constraint("PALAKI")
+    snippet.add_constraint("DUMMY")
+    db_manager.insert_snippet(snippet)
