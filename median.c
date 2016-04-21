@@ -9,7 +9,7 @@ int main() {
 	int e[10];
 	*d = "hi";
 	printf("Please enter 3 numbers separated by spaces > ");
-	scanf("%d%d%d", &a, &b, &c);
+//	scanf("%d%d%d", &a, &b, &c);
 	if ((a<=b && a>=c) || (a>=b && a<=c))
 		median = a;
 	else if ((b<=a && b>=c) || (b>=a && b<=c))

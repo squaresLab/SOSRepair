@@ -30,13 +30,13 @@ if __name__ == "__main2__":
     print tests
 
 if __name__ == "__main__":
-    # fl = CodeSnippetManager('median.c')
-    # fl.detach_snippets()
-    db_manager = DatabaseManager()
-    db_manager.initialize_tables()
-    snippet = CodeSnippet('asf', [('a', 'int')], {'a': {'line': 1, 'type': 'int'}}, [('printf', 'stdio')])
-    snippet.add_constraint("ALAKI")
-    snippet.add_constraint("PALAKI")
-    snippet.add_constraint("DUMMY")
-    db_manager.insert_snippet(snippet)
-    db_manager.close()
+    fl = CodeSnippetManager('median.c')
+    fl.detach_snippets()
+    # db_manager = DatabaseManager()
+    # db_manager.initialize_tables()
+    # snippet = CodeSnippet('asf', [('a', 'int')], {'a': {'line': 1, 'type': 'int'}}, [('printf', 'stdio')])
+    # snippet.add_constraint("ALAKI")
+    # snippet.add_constraint("PALAKI")
+    # snippet.add_constraint("DUMMY")
+    # db_manager.insert_snippet(snippet)
+    # db_manager.close()
