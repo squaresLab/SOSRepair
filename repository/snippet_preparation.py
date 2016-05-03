@@ -6,6 +6,7 @@ from clang.cindex import BinaryOperator
 from settings import *
 from utils.file_process import number_of_lines
 from utils.klee import *
+from repository.db_manager import DatabaseManager
 
 Config.set_library_file(LIBCLANG_PATH)
 
@@ -15,6 +16,7 @@ class CodeSnippetManager:
         self.filename = filename
         self.root = None
         self.number_of_lines = number_of_lines(filename)
+        self.db_manager = DatabaseManager()
 
     def detach_snippets(self):
         index = Index.create()
@@ -60,6 +62,8 @@ class CodeSnippetManager:
                 print outputs
                 code_snippet = CodeSnippet(source, vars, outputs, func_calls)
                 self.symbolic_execution(code_snippet)
+                self.db_manager.insert_snippet(code_snippet)
+                del code_snippet
                 blocks.pop(0)
                 if len(blocks) > 0:
                     from_line = blocks[0].location.line
@@ -224,8 +228,6 @@ struct s foo('''
             return False
         for i in range(1, number_of_paths+1):
             smt = read_smt_files(i)
-            print "**********"
-            print smt
             code_snippet.add_constraint(smt)
         return True
 

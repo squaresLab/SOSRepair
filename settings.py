@@ -14,6 +14,6 @@ SMALLEST_SNIPPET = 3
 
 DATABASE = {
     'db_name': 'testdb',
-    'user': 'afsoona',
+    'user': 'afsoon',
     'password': None
 }
