@@ -12,24 +12,28 @@ from repository.db_manager import DatabaseManager
 #     print str(sb.block) + " " + str(sb.node.kind) + " " + str(sb.node.type.kind) + " " + str(sb.function.spelling)
 
 
-if __name__ == "__main2__":
+if __name__ == "__main__":
     fl = FaultLocalization('median.c')
-    sb = fl.line_to_block(19)
+    sb = fl.line_to_block(18)
+    print sb.line_range
+    print sb.vars
+    print sb.outputs
     profile = Profile('median.c', sb)
-    profile.find_variables()
+    # profile.find_variables()
     profile.generate_file()
 
     tests = Tests('', 'median.c')
     tests.initialize_testing()
 
+    profile.generate_profile(tests.positives)
+
     sl = SuspiciousLines('median.c', '', tests)
     sl.compute_suspiciousness()
-
 
     profile.generate_profile(tests.positives)
     print tests
 
-if __name__ == "__main__":
+if __name__ == "__main1__":
     fl = CodeSnippetManager('median.c')
     fl.detach_snippets()
     # db_manager = DatabaseManager()

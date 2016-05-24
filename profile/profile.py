@@ -17,40 +17,35 @@ class Profile():
         self.input_list = []
         self.marked_file = self.filename + "_marked.c"
 
-    def find_variables(self):
-        self.variables = []
-        for i in self.suspicious_block.function.walk_preorder():
-            if i.kind == CursorKind.PARM_DECL or i.kind == CursorKind.VAR_DECL:
-                self.variables.append(i)
-                print str(i.displayname) + " " + str(i.location.line) + " " + str(i.kind) + " " + str(i.type.kind) + " " + str(i.location.file)
-        return self.variables
-
+    # def find_variables(self):
+    #     self.variables = []
+    #     for i in self.suspicious_block.function.walk_preorder():
+    #         if i.kind == CursorKind.PARM_DECL or i.kind == CursorKind.VAR_DECL:
+    #             self.variables.append(i)
+    #             print str(i.displayname) + " " + str(i.location.line) + " " + str(i.kind) + " " + str(i.type.kind) + " " + str(i.location.file)
+    #     return self.variables
 
     def generate_file(self):
         state = 'printf("input start:'
         state_vars = ''
-        for v in self.variables:
-            name = v.displayname
-            if v.type.kind == TypeKind.INT:
-                state += name + ':%d:int_'
-            elif v.type.kind == TypeKind.FLOAT or v.type.kind == TypeKind.DOUBLE:
-                state += name + ':%f:float_'
-            elif v.type.kind == TypeKind.CHAR_S:
-                state += name + ':%d:char_'
-            elif v.type.kind == TypeKind.POINTER:
-                if v.type.get_pointee().kind == TypeKind.CHAR_S:
-                    state += name + ':%s:char*_'
-                else:
-                    #TODO Pointers
-                    continue
-            state_vars += ', ' + name
+        for v, t in self.suspicious_block.vars:
+            state += v
+            if t == 'int' or t == 'char':
+                state += ':%d'
+            elif t == 'float' or t == 'double':
+                state += ':%f'
+            elif t == 'char*' or t == '*char':
+                state += ':%s'
+            #TODO Pointers
+            state += ':' + t + '_'
+            state_vars += ', ' + v
         state += '\\n"' + state_vars + ");\n"
         i = 0
         with open(self.filename) as f:
             out = open(self.marked_file , "w")
             for line in f:
                 i += 1
-                if i == self.suspicious_block.block[0] or i == self.suspicious_block.block[1]:
+                if i == self.suspicious_block.line_range[0] or i == self.suspicious_block.line_range[1]:
                     out.write(state)
                 out.write(line)
             out.flush()

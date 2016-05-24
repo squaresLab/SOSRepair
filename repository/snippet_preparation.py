@@ -244,6 +244,19 @@ class CodeSnippet():
     def add_constraint(self, constraint):
         self.constraints.append(constraint)
 
+    def seperate_declarations(self, constraint):
+        declarations = ''
+        SMT = ''
+        for l in constraint.splitlines():
+            if l.startswith('(declare'):
+                if declarations:
+                    declarations += '\n' + l
+                else:
+                    declarations += l
+            elif l.startswith('(assert'):
+                SMT += l[8:-1] #removing (assert ) from the SMT
+        return declarations, SMT
+
 
 
 if __name__ == "__main__":

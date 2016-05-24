@@ -42,6 +42,7 @@ class DatabaseManager():
     );
     CREATE TABLE IF NOT EXISTS constraints (
       ID SERIAL PRIMARY KEY   NOT NULL ,
+      DECL            TEXT    NOT NULL ,
       SMT             TEXT    NOT NULL ,
       SNIPPET_ID      INT     REFERENCES snippets(ID)
     );
@@ -75,11 +76,12 @@ class DatabaseManager():
         try:
             cursor = self.connect().cursor()
             for constraint in snippet.constraints:
+                decl, smt = snippet.seperate_declarations(constraint)
                 sql = """
-        INSERT INTO constraints (SMT, SNIPPET_ID)
-        VALUES (%s, %s)
+        INSERT INTO constraints (DECL, SMT, SNIPPET_ID)
+        VALUES (%s, %s, %s)
                 """
-                cursor.execute(sql, (constraint, snippet_id))
+                cursor.execute(sql, (decl, smt, snippet_id))
                 self.connect().commit()
         except psycopg2.DatabaseError, e:
             print 'Error %s' % e
@@ -91,8 +93,8 @@ class DatabaseManager():
         try:
             cursor = self.connect().cursor()
             sql = """
-    INSERT INTO constraints (SMT, SNIPPET_ID)
-    VALUES (%s, %s)
+    INSERT INTO constraints (DECL, SMT, SNIPPET_ID)
+    VALUES (%s, %s, %s)
             """
             cursor.executemany(sql, values)
             self.connect().commit()
@@ -101,5 +103,6 @@ class DatabaseManager():
             if self.connect():
                 self.connect().rollback()
             self.close()
+
     def __exit__(self, exc_type, exc_val, exc_tb):
         self.close()
