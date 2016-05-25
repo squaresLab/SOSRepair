@@ -83,7 +83,7 @@ if __name__ == "__main__":
     fl = FaultLocalization('median.c')
     sb = fl.line_to_block(20)
     profile = Profile('median.c', sb)
-    profile.find_variables()
+    # profile.find_variables()
     profile.generate_file()
 
 

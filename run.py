@@ -5,6 +5,7 @@ from profile.tests import *
 from fault_localization.suspicious_lines import *
 from repository.snippet_preparation import *
 from repository.db_manager import DatabaseManager
+from repository.smt_solver import Z3
 
 # if __name__ == "__main__":
 #     fl = FaultLocalization('src/fdevent_freebsd_kqueue.c')
@@ -12,9 +13,9 @@ from repository.db_manager import DatabaseManager
 #     print str(sb.block) + " " + str(sb.node.kind) + " " + str(sb.node.type.kind) + " " + str(sb.function.spelling)
 
 
-if __name__ == "__main__":
+if __name__ == "__main2__":
     fl = FaultLocalization('median.c')
-    sb = fl.line_to_block(18)
+    sb = fl.line_to_block(19)
     print sb.line_range
     print sb.vars
     print sb.outputs
@@ -44,3 +45,13 @@ if __name__ == "__main1__":
     # snippet.add_constraint("DUMMY")
     # db_manager.insert_snippet(snippet)
     # db_manager.close()
+
+if __name__ == "__main__":
+    fl = FaultLocalization('median.c')
+    sb = fl.line_to_block(18)
+
+    db_manager = DatabaseManager()
+    z3 = Z3(sb, None, db_manager)
+    i = z3.fetch_valid_snippets()
+    print "****"
+    print i

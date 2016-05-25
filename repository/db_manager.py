@@ -1,6 +1,7 @@
 __author__ = 'afsoona'
 
 
+import collections
 import psycopg2
 from settings import DATABASE
 
@@ -106,3 +107,34 @@ class DatabaseManager():
 
     def __exit__(self, exc_type, exc_val, exc_tb):
         self.close()
+
+    def fetch_next_valid_snippet(self, vars, outputs, index=0):
+        try:
+            cursor = self.connect().cursor()
+            sql = """
+            SELECT ID,VARIABLES,OUTPUTS FROM snippets WHERE ID>%d
+            """ % index
+            cursor.execute(sql)
+            rows = cursor.fetchall()  # TODO are you sure?
+            if len(rows) == 0:
+                return 0
+            var_types = [i[1] for i in vars]
+            if isinstance(outputs, dict):
+                output_types = [outputs[i]['type'] for i in outputs.keys()]
+            else:
+                output_types = [outputs]
+            compare = lambda x, y: collections.Counter(x) == collections.Counter(y)
+            for id, v, o in rows:
+                v_types = [i[1] for i in eval(v)]
+                out = eval(o)
+                if isinstance(out, dict):
+                    o_types = [out[i]['type'] for i in out.keys()]
+                else:
+                    o_types = [out]
+                if compare(var_types, v_types) and compare(output_types, o_types):
+                    return id
+        except psycopg2.DatabaseError, e:
+            print 'Error %s' % e
+            if self.connect():
+                self.connect().rollback()
+            self.close()
