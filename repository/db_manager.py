@@ -138,3 +138,33 @@ class DatabaseManager():
             if self.connect():
                 self.connect().rollback()
             self.close()
+
+    def fetch_snippet(self, index):
+        try:
+            cursor = self.connect().cursor()
+            sql = """
+            SELECT * FROM snippets WHERE ID=%d
+            """ % index
+            cursor.execute(sql)
+            row = cursor.fetchone()
+            return row
+        except psycopg2.DatabaseError, e:
+            print 'Error %s' % e
+            if self.connect():
+                self.connect().rollback()
+            self.close()
+
+    def fetch_constraints(self, index):
+        try:
+            cursor = self.connect().cursor()
+            sql = """
+            SELECT * FROM constraints WHERE SNIPPET_ID=%d
+            """ % index
+            cursor.execute(sql)
+            rows = cursor.fetchall()
+            return rows
+        except psycopg2.DatabaseError, e:
+            print 'Error %s' % e
+            if self.connect():
+                self.connect().rollback()
+            self.close()

@@ -173,7 +173,7 @@ struct s foo('''
             int main(){
             '''
             s += outputs[outputs.keys()[0]]['type'] + ' ret;\n'
-            s += 'klee_make_symbolic(&ret, sizeof(ret), "' + outputs.keys()[0] + '");\n'
+            s += 'klee_make_symbolic(&ret, sizeof(ret), "' + outputs.keys()[0] + '_ret");\n'
         else:
             s += 'struct s afs_ret;\n'
             for name in outputs.keys():
@@ -186,8 +186,8 @@ struct s foo('''
         '''
 
             for name in outputs.keys():
-                s += outputs[name]['type'] + " " + name + "_afs;\n"
-                s += 'klee_make_symbolic(&' + name + '_afs, sizeof(' + name + '_afs), "' + name + '_afs");\n'
+                s += outputs[name]['type'] + " " + name + "_ret;\n"
+                s += 'klee_make_symbolic(&' + name + '_ret, sizeof(' + name + '_ret), "' + name + '_ret");\n'
 
         for name, type in variables:
             s += type + " " + name + ";\n"
@@ -206,7 +206,7 @@ struct s foo('''
         else:
             s += 'ret = ' + foo + ';\n'
             for name in outputs.keys():
-                s += 'klee_assume(' + name + '_afs == ret.' + name + ');\n'
+                s += 'klee_assume(' + name + '_ret == ret.' + name + ');\n'
 
         s += '''
         return 0;

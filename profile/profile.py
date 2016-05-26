@@ -34,11 +34,12 @@ class Profile():
                 state += ':%d'
             elif t == 'float' or t == 'double':
                 state += ':%f'
-            elif t == 'char*' or t == '*char':
+            elif t == 'char*' or t == '*char' or t == 'char *' or t == '* char':
                 state += ':%s'
             #TODO Pointers
             state += ':' + t + '_'
             state_vars += ', ' + v
+            self.variables.append(v)
         state += '\\n"' + state_vars + ");\n"
         i = 0
         with open(self.filename) as f:
@@ -69,12 +70,17 @@ class Profile():
             if len(lines) != 2 or len(lines[0]) != len(lines[1]):
                 print "Error in generating profile " + str(len(lines))
                 raise Exception
-            profile_list = []
+            profile_dict = {}
             for i in range(len(lines[0])):
                 if lines[0][i] == '\n':
                     continue
-                profile_list.append((lines[0][i], lines[1][i]))
-            self.input_list.append(profile_list)
+                parts1 = lines[0][i].split(':')
+                parts2 = lines[1][i].split(':')
+                if len(parts1) < 3 or len(parts2) < 3 or parts1[0] != parts2[0]:
+                    print "ERROR: something is wrong in profile generation"
+                    return
+                profile_dict[parts1[0]] = (''.join(parts1[1:-1]), ''.join(parts2[1:-1]))
+            self.input_list.append(profile_dict)
         os.system('rm ' + self.filename + '.o ' + self.filename + '_temp.out')
         print self.input_list
         return True

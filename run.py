@@ -49,9 +49,16 @@ if __name__ == "__main1__":
 if __name__ == "__main__":
     fl = FaultLocalization('median.c')
     sb = fl.line_to_block(18)
+    profile = Profile('median.c', sb)
+    profile.generate_file()
+
+    tests = Tests('', 'median.c')
+    tests.initialize_testing()
+    profile.generate_profile(tests.positives)
 
     db_manager = DatabaseManager()
-    z3 = Z3(sb, None, db_manager)
+    z3 = Z3(sb, profile, db_manager)
     i = z3.fetch_valid_snippets()
+    z3.prepare_smt_query(i)
     print "****"
     print i
