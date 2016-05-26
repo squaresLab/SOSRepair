@@ -17,6 +17,15 @@ class SuspiciousBlock():
         self.outputs = outputs
         self.functions = functions
 
+    def get_output_names(self):
+        if isinstance(self.outputs, dict):
+            return [i for i in self.outputs.keys()]
+        else:
+            return []
+
+    def get_var_names(self):
+        return [i[0] for i in self.vars]
+
 
 class FaultLocalization():
     def __init__(self, filename):

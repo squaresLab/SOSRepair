@@ -1,5 +1,6 @@
 __author__ = 'Afsoon Afzal'
 
+from itertools import permutations, product
 
 class Z3:
     def __init__(self, suspicious_block, profile, db_manager):
@@ -22,6 +23,13 @@ class Z3:
         if len(constraints) < 1 or not snippet:
             print "ERROR no constraints or snippet for this id %d" % index
         decls = self.prepare_declarations(constraints)
+        consts = self.prepare_constraints(constraints)
+        snippet_variables = [i[0] for i in eval(snippet[2])]
+        snippet_outputs = eval(snippet[3])
+        if isinstance(snippet_outputs, dict):
+            snippet_outputs = [i for i in snippet_outputs.keys()]
+        else:
+            snippet_outputs = []
         for profile in self.profile.input_list:
             query = decls + '\n'
             for v, t in self.suspicious_block.vars:
@@ -31,7 +39,27 @@ class Z3:
                 for v in self.suspicious_block.outputs.keys():
                     query += '(assert (let ' + self.get_let_statement(v + '_out') + '(= ?A1 (_ bv' + profile[v][1] + \
                              ' 32) ) ) ) \n'
-            print query
+            query += consts
+            output_permutations = [list(zip(self.suspicious_block.get_output_names(), p)) for p in permutations(snippet_outputs)]
+            if len(output_permutations) == 0:
+                output_permutations = [None]
+            snippet_variables = list(set(snippet_variables) - set(snippet_outputs))
+            code_variables = list(set(self.suspicious_block.get_var_names()) - set(self.suspicious_block.get_output_names()))
+            variable_permutations = [list(zip(code_variables, p)) for p in permutations(snippet_variables)]
+            if len(variable_permutations) == 0:
+                variable_permutations = [None]
+            for r in product(variable_permutations, output_permutations):
+                mappings = query + '\n'
+                if r[1]:
+                    for a, b in r[1]:
+                        mappings += '(assert (let ' + self.get_let_statement(a+'_out', 'A1') + '(let ' +\
+                            self.get_let_statement(b+'_ret', 'A2') + '(= ?A1 ?A2) ) ) ) \n'
+                if r[0]:
+                    for a, b in r[1]:
+                        mappings += '(assert (let ' + self.get_let_statement(a+'_in', 'A1') + '(let ' +\
+                            self.get_let_statement(b+'_ret', 'A2') + '(= ?A1 ?A2) ) ) ) \n'
+                print mappings
+            # print query
 
     def prepare_declarations(self, constraints):
         code_declarations = set([])
@@ -55,7 +83,21 @@ class Z3:
         return decls
 
     @staticmethod
+    def prepare_constraints(constraints):
+        s = '(assert '
+        s += '(or ' * (len(constraints) - 1)
+        first = True
+        for c in constraints:
+            s += c[2]
+            if first:
+                first = False
+            else:
+                s += ') '
+        s += ')'
+        return s
+
+    @staticmethod
     def get_let_statement(var_name, abbreviation='A1'):
         s = '( (?' + abbreviation + ' (concat  (select  ' + var_name + ' (_ bv3 32) ) (concat  (select  ' + var_name + \
-            ' (_ bv2 32) ) (concat  (select  ' + var_name + ' (_ bv1 32) ) (select  ' + var_name + ' (_ bv0 32) ) ) ) )) )'
+            ' (_ bv2 32) ) (concat  (select  ' + var_name + ' (_ bv1 32) ) (select  ' + var_name + ' (_ bv0 32) ) ) ) ) ) )'
         return s
