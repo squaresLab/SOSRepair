@@ -30,6 +30,20 @@ class DatabaseManager():
             self.connection.close()
         self.connection = None
 
+    def drop_tables(self):
+        try:
+            cursor = self.connect().cursor()
+            sql = """
+    DROP TABLE constraints;
+    DROP TABLE snippets;
+    """
+            cursor.execute(sql)
+            ver = self.connect().commit()
+            print ver
+        except psycopg2.DatabaseError, e:
+            print 'Error %s' % e
+            self.close()
+
     def initialize_tables(self):
         try:
             cursor = self.connect().cursor()

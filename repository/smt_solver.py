@@ -1,8 +1,11 @@
 __author__ = 'Afsoon Afzal'
 
 from itertools import permutations, product
+from utils.z3 import run_z3
+
 
 class Z3:
+
     def __init__(self, suspicious_block, profile, db_manager):
         self.suspicious_block = suspicious_block
         self.profile = profile
@@ -14,10 +17,11 @@ class Z3:
                                                          self.last_checked)
         if not index:
             return None
-
+        self.last_checked = index
         return index
 
     def prepare_smt_query(self, index):
+        result = []
         snippet = self.db_manager.fetch_snippet(index)
         constraints = self.db_manager.fetch_constraints(index)
         if len(constraints) < 1 or not snippet:
@@ -30,7 +34,8 @@ class Z3:
             snippet_outputs = [i for i in snippet_outputs.keys()]
         else:
             snippet_outputs = []
-        for profile in self.profile.input_list:
+        for i in range(len(self.profile.input_list)):
+            profile = self.profile.input_list[i]
             query = decls + '\n'
             for v, t in self.suspicious_block.vars:
                 query += '(assert (let ' + self.get_let_statement(v + '_in') + '(= ?A1 (_ bv' + profile[v][0] + \
@@ -48,6 +53,7 @@ class Z3:
             variable_permutations = [list(zip(code_variables, p)) for p in permutations(snippet_variables)]
             if len(variable_permutations) == 0:
                 variable_permutations = [None]
+            satisfied = False
             for r in product(variable_permutations, output_permutations):
                 mappings = query + '\n'
                 if r[1]:
@@ -59,7 +65,11 @@ class Z3:
                         mappings += '(assert (let ' + self.get_let_statement(a+'_in', 'A1') + '(let ' +\
                             self.get_let_statement(b+'_ret', 'A2') + '(= ?A1 ?A2) ) ) ) \n'
                 print mappings
-            # print query
+                satisfied = run_z3(mappings + '(check-sat)\n')
+                if satisfied:
+                    break
+            result.append((i, satisfied))
+        return result
 
     def prepare_declarations(self, constraints):
         code_declarations = set([])

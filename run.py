@@ -57,8 +57,13 @@ if __name__ == "__main__":
     profile.generate_profile(tests.positives)
 
     db_manager = DatabaseManager()
+    # db_manager.drop_tables()
+    # db_manager.initialize_tables()
+    # fl = CodeSnippetManager('median.c')
+    # fl.detach_snippets()
+
     z3 = Z3(sb, profile, db_manager)
     i = z3.fetch_valid_snippets()
-    z3.prepare_smt_query(i)
-    print "****"
-    print i
+    res = z3.prepare_smt_query(i)
+    print res
+

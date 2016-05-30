@@ -8,6 +8,7 @@ LIBCLANG_PATH = '/home/afsoon/llvm/build/lib/libclang.so'
 
 TESTS_DIRECTORY = '/home/afsoon/Documents/workspace/SCS/IntroClass/median/tests/blackbox'
 
+Z3_COMMAND = '/home/afsoon/Documents/z3/build/z3'
 
 LARGEST_SNIPPET = 7
 SMALLEST_SNIPPET = 3

@@ -22,7 +22,7 @@ def run_klee(filename, output_dir='klee-out'):
         os.system('rm -r ' + output_dir)
 
     proc = subprocess.Popen(["klee", "-use-query-log=all:smt2", "-write-smt2s", "-libc=uclibc", "-use-constant-arrays",
-                             "-const-array-opt", "-allow-external-sym-calls",
+                             "-const-array-opt", "-allow-external-sym-calls", "-watchdog", "-max-time=10",
                              "-output-dir="+output_dir, filename], stdout=subprocess.PIPE)
     (out, err) = proc.communicate()
     if err:
@@ -34,6 +34,7 @@ def run_klee(filename, output_dir='klee-out'):
                 test_nums = int(l[k+1:])
                 return test_nums
     return 0
+
 
 def read_smt_files(path_number, klee_dir='klee-out'):
     file_name = klee_dir + '/test' + ('0'*(6-len(str(path_number)))) + str(path_number) + '.smt2'
