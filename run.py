@@ -64,7 +64,7 @@ if __name__ == "__main__":
 
     z3 = Z3(sb, profile, db_manager)
     i = z3.fetch_valid_snippets()
-    i = z3.fetch_valid_snippets()
+    # i = z3.fetch_valid_snippets()
     res = z3.prepare_smt_query(i)
     print res
 

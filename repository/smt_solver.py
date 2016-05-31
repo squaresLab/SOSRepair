@@ -2,6 +2,7 @@ __author__ = 'Afsoon Afzal'
 
 from itertools import permutations, product
 from utils.z3 import run_z3
+from repository.patch_generation import PatchGeneration
 
 
 class Z3:
@@ -74,6 +75,13 @@ class Z3:
                     all_satisfied = False
                 result.append((i, satisfied))
             if all_satisfied:
+                var_mappings = dict(r[0])
+                var_mappings.update(dict(r[1]))
+                print var_mappings
+                patch_generation = PatchGeneration(snippet[1], eval(snippet[2]), var_mappings)
+                patch_generation.prepare_snippet_to_parse()
+                ast = patch_generation.parse_snippet()
+                patch_generation.replace_vars(ast)
                 break
         return result
 

@@ -9,13 +9,14 @@ Config.set_library_file(LIBCLANG_PATH)
 
 
 class SuspiciousBlock():
-    def __init__(self, line_number, line_range, blocks, vars, outputs, functions):
+    def __init__(self, line_number, line_range, blocks, vars, outputs, functions, filename):
         self.line_number = line_number
         self.line_range = line_range
         self.blocks = blocks
         self.vars = vars
         self.outputs = outputs
         self.functions = functions
+        self.filename = filename
 
     def get_output_names(self):
         if isinstance(self.outputs, dict):
@@ -113,7 +114,7 @@ class FaultLocalization():
                 vars = CodeSnippetManager.find_vars(blocks)
                 outputs = CodeSnippetManager.find_outputs(blocks)
                 func_calls = CodeSnippetManager.find_function_calls(blocks)
-                sb = SuspiciousBlock(line_number, (from_line, line), blocks, vars, outputs, func_calls)
+                sb = SuspiciousBlock(line_number, (from_line, line), blocks, vars, outputs, func_calls, self.filename)
                 return sb
             if cursor:
                 blocks.append(child)
