@@ -23,6 +23,7 @@ class Z3:
     def prepare_smt_query(self, index):
         result = []
         snippet = self.db_manager.fetch_snippet(index)
+        print 'AAAAA ' + snippet[1]
         constraints = self.db_manager.fetch_constraints(index)
         if len(constraints) < 1 or not snippet:
             print "ERROR no constraints or snippet for this id %d" % index
@@ -34,41 +35,46 @@ class Z3:
             snippet_outputs = [i for i in snippet_outputs.keys()]
         else:
             snippet_outputs = []
-        for i in range(len(self.profile.input_list)):
-            profile = self.profile.input_list[i]
+        output_permutations = [list(zip(self.suspicious_block.get_output_names(), p)) for p in permutations(snippet_outputs)]
+        if len(output_permutations) == 0:
+            output_permutations = [None]
+        snippet_variables = list(set(snippet_variables) - set(snippet_outputs))
+        code_variables = list(set(self.suspicious_block.get_var_names()) - set(self.suspicious_block.get_output_names()))
+        variable_permutations = [list(zip(code_variables, p)) for p in permutations(snippet_variables)]
+        if len(variable_permutations) == 0:
+            variable_permutations = [None]
+        for r in product(variable_permutations, output_permutations):
+            all_satisfied = True
             query = decls + '\n'
-            for v, t in self.suspicious_block.vars:
-                query += '(assert (let ' + self.get_let_statement(v + '_in') + '(= ?A1 (_ bv' + profile[v][0] + \
-                         ' 32) ) ) ) \n'
-            if isinstance(self.suspicious_block.outputs, dict):
-                for v in self.suspicious_block.outputs.keys():
-                    query += '(assert (let ' + self.get_let_statement(v + '_out') + '(= ?A1 (_ bv' + profile[v][1] + \
-                             ' 32) ) ) ) \n'
-            query += consts
-            output_permutations = [list(zip(self.suspicious_block.get_output_names(), p)) for p in permutations(snippet_outputs)]
-            if len(output_permutations) == 0:
-                output_permutations = [None]
-            snippet_variables = list(set(snippet_variables) - set(snippet_outputs))
-            code_variables = list(set(self.suspicious_block.get_var_names()) - set(self.suspicious_block.get_output_names()))
-            variable_permutations = [list(zip(code_variables, p)) for p in permutations(snippet_variables)]
-            if len(variable_permutations) == 0:
-                variable_permutations = [None]
-            satisfied = False
-            for r in product(variable_permutations, output_permutations):
-                mappings = query + '\n'
-                if r[1]:
-                    for a, b in r[1]:
-                        mappings += '(assert (let ' + self.get_let_statement(a+'_out', 'A1') + '(let ' +\
-                            self.get_let_statement(b+'_ret', 'A2') + '(= ?A1 ?A2) ) ) ) \n'
-                if r[0]:
-                    for a, b in r[1]:
-                        mappings += '(assert (let ' + self.get_let_statement(a+'_in', 'A1') + '(let ' +\
-                            self.get_let_statement(b+'_ret', 'A2') + '(= ?A1 ?A2) ) ) ) \n'
-                print mappings
+            query += consts + '\n'
+            if r[1]:
+                for a, b in r[1]:
+                    query += '(assert (let ' + self.get_let_statement(a+'_out', 'A1') + '(let ' +\
+                        self.get_let_statement(b+'_ret', 'A2') + '(= ?A1 ?A2) ) ) ) \n'
+                    if a in self.suspicious_block.get_var_names():
+                        query += '(assert (let ' + self.get_let_statement(a+'_in', 'A1') + '(let ' +\
+                            self.get_let_statement(b, 'A2') + '(= ?A1 ?A2) ) ) ) \n'
+            if r[0]:
+                for a, b in r[0]:
+                    query += '(assert (let ' + self.get_let_statement(a+'_in', 'A1') + '(let ' +\
+                        self.get_let_statement(b, 'A2') + '(= ?A1 ?A2) ) ) ) \n'
+            print query
+            for i in range(len(self.profile.input_list)):
+                mappings = query
+                profile = self.profile.input_list[i]
+                for v, t in self.suspicious_block.vars:
+                    mappings += '(assert (let ' + self.get_let_statement(v + '_in') + '(= ?A1 (_ bv' + profile[v][0] + \
+                                ' 32) ) ) ) \n'
+                if isinstance(self.suspicious_block.outputs, dict):
+                    for v in self.suspicious_block.outputs.keys():
+                        mappings += '(assert (let ' + self.get_let_statement(v + '_out') + '(= ?A1 (_ bv' + profile[v][1] + \
+                                    ' 32) ) ) ) \n'
                 satisfied = run_z3(mappings + '(check-sat)\n')
-                if satisfied:
-                    break
-            result.append((i, satisfied))
+                if not satisfied:
+                    all_satisfied = False
+                result.append((i, satisfied))
+            if all_satisfied:
+                break
         return result
 
     def prepare_declarations(self, constraints):
@@ -89,7 +95,7 @@ class Z3:
                 # code_declarations.add('(declare-fun single_value_out () (Array (_ BitVec 32) (_ BitVec 8) ) )')  # TODO check later
 
         decls = '\n'.join(list(constraint_declarations)) + '\n' + '\n'.join(list(code_declarations))
-        print decls
+        print decls + "\n DECL_FINISHED\n"
         return decls
 
     @staticmethod
