@@ -22,6 +22,7 @@ class Z3:
         return index
 
     def prepare_smt_query(self, index):
+        result = []
         snippet = self.db_manager.fetch_snippet(index)
         print 'AAAAA ' + snippet[1]
         constraints = self.db_manager.fetch_constraints(index)
@@ -35,34 +36,33 @@ class Z3:
             snippet_outputs = [i for i in snippet_outputs.keys()]
         else:
             snippet_outputs = []
-        output_permutations = [list(zip(self.suspicious_block.get_output_names(), p)) for p in permutations(snippet_outputs)]
+        output_permutations = [list(zip(snippet_outputs, p)) for p in permutations(self.suspicious_block.get_output_names())]
         if len(output_permutations) == 0:
             output_permutations = [None]
         snippet_variables = list(set(snippet_variables) - set(snippet_outputs))
         code_variables = list(set(self.suspicious_block.get_var_names()) - set(self.suspicious_block.get_output_names()))
-        variable_permutations = [list(zip(code_variables, p)) for p in permutations(snippet_variables)]
+        variable_permutations = [list(zip(snippet_variables, p)) for p in permutations(code_variables)]
         if len(variable_permutations) == 0:
             variable_permutations = [None]
         for r in product(variable_permutations, output_permutations):
-            result = []
             all_satisfied = True
             query = decls + '\n'
             query += consts + '\n'
             if r[1]:
                 for a, b in r[1]:
-                    query += '(assert (let ' + self.get_let_statement(a+'_out', 'A1') + '(let ' +\
-                        self.get_let_statement(b+'_ret', 'A2') + '(= ?A1 ?A2) ) ) ) \n'
-                    if a in self.suspicious_block.get_var_names():
-                        query += '(assert (let ' + self.get_let_statement(a+'_in', 'A1') + '(let ' +\
-                            self.get_let_statement(b, 'A2') + '(= ?A1 ?A2) ) ) ) \n'
+                    query += '(assert (let ' + self.get_let_statement(b+'_out', 'A1') + '(let ' +\
+                        self.get_let_statement(a+'_ret', 'A2') + '(= ?A1 ?A2) ) ) ) \n'
+                    if b in self.suspicious_block.get_var_names():
+                        query += '(assert (let ' + self.get_let_statement(b+'_in', 'A1') + '(let ' +\
+                            self.get_let_statement(a, 'A2') + '(= ?A1 ?A2) ) ) ) \n'
             if r[0]:
                 for a, b in r[0]:
-                    query += '(assert (let ' + self.get_let_statement(a+'_in', 'A1') + '(let ' +\
-                        self.get_let_statement(b, 'A2') + '(= ?A1 ?A2) ) ) ) \n'
+                    query += '(assert (let ' + self.get_let_statement(b+'_in', 'A1') + '(let ' +\
+                        self.get_let_statement(a, 'A2') + '(= ?A1 ?A2) ) ) ) \n'
             print query
-            for i in range(len(self.profile.input_list)):
+            for profile in self.profile.input_list:
                 mappings = query
-                profile = self.profile.input_list[i]
+                # profile = self.profile.input_list[i]
                 for v, t in self.suspicious_block.vars:
                     mappings += '(assert (let ' + self.get_let_statement(v + '_in') + '(= ?A1 (_ bv' + profile[v][0] + \
                                 ' 32) ) ) ) \n'
@@ -73,16 +73,16 @@ class Z3:
                 satisfied = run_z3(mappings + '(check-sat)\n')
                 if not satisfied:
                     all_satisfied = False
-                result.append((i, satisfied))
             if all_satisfied:
                 var_mappings = dict(r[0])
                 var_mappings.update(dict(r[1]))
                 print var_mappings
-                patch_generation = PatchGeneration(snippet[1], eval(snippet[2]), var_mappings)
-                patch_generation.prepare_snippet_to_parse()
-                ast = patch_generation.parse_snippet()
-                patch_snippet = patch_generation.replace_vars(ast)
-                patch_generation.create_patch(self.suspicious_block, patch_snippet)
+                result.append((snippet[1], eval(snippet[2]), var_mappings))
+                # patch_generation = PatchGeneration(snippet[1], eval(snippet[2]), var_mappings)
+                # patch_generation.prepare_snippet_to_parse()
+                # ast = patch_generation.parse_snippet()
+                # patch_snippet = patch_generation.replace_vars(ast)
+                # patch_generation.create_patch(self.suspicious_block, patch_snippet)
                 # break
         return result
 

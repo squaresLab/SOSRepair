@@ -69,7 +69,9 @@ class Profile():
                         lines.append(l[index+12:].split('_'))
             if len(lines) != 2 or len(lines[0]) != len(lines[1]):
                 print "Error in generating profile " + str(len(lines))
-                raise Exception
+                # This happens when the block contains return
+                # raise Exception
+                return False
             profile_dict = {}
             for i in range(len(lines[0])):
                 if lines[0][i] == '\n':

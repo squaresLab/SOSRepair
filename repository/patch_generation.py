@@ -1,6 +1,7 @@
 __author__ = 'Afsoon Afzal'
 
 from clang.cindex import *
+import os
 
 
 class PatchGeneration():
@@ -54,7 +55,8 @@ class PatchGeneration():
         print "SNIPPET: " + s
         return s
 
-    def create_patch(self, suspicious_block, snippet, patch_file='patch1.c'):
+    @staticmethod
+    def create_patch(suspicious_block, snippet, patch_file='patch1.c'):
         print suspicious_block.line_range
         with open(patch_file, 'w') as patch:
             with open(suspicious_block.filename, 'r') as f:
@@ -71,3 +73,8 @@ class PatchGeneration():
                         patch.write(snippet)
         return patch_file
 
+    def remove_temp_file(self):
+        os.system('rm ' + self.temporary_file)
+
+    def __exit__(self, exc_type, exc_val, exc_tb):
+        self.remove_temp_file()
