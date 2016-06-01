@@ -22,7 +22,6 @@ class Z3:
         return index
 
     def prepare_smt_query(self, index):
-        result = []
         snippet = self.db_manager.fetch_snippet(index)
         print 'AAAAA ' + snippet[1]
         constraints = self.db_manager.fetch_constraints(index)
@@ -45,6 +44,7 @@ class Z3:
         if len(variable_permutations) == 0:
             variable_permutations = [None]
         for r in product(variable_permutations, output_permutations):
+            result = []
             all_satisfied = True
             query = decls + '\n'
             query += consts + '\n'
@@ -81,8 +81,9 @@ class Z3:
                 patch_generation = PatchGeneration(snippet[1], eval(snippet[2]), var_mappings)
                 patch_generation.prepare_snippet_to_parse()
                 ast = patch_generation.parse_snippet()
-                patch_generation.replace_vars(ast)
-                break
+                patch_snippet = patch_generation.replace_vars(ast)
+                patch_generation.create_patch(self.suspicious_block, patch_snippet)
+                # break
         return result
 
     def prepare_declarations(self, constraints):
