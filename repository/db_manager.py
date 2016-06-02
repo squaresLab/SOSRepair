@@ -53,7 +53,8 @@ class DatabaseManager():
        SOURCE           TEXT,
        VARIABLES         TEXT,
        OUTPUTS        TEXT,
-       FUNCTIONS         TEXT
+       FUNCTIONS         TEXT,
+       PATH             TEXT    NOT NULL
     );
     CREATE TABLE IF NOT EXISTS constraints (
       ID SERIAL PRIMARY KEY   NOT NULL ,
@@ -73,12 +74,12 @@ class DatabaseManager():
         try:
             cursor = self.connect().cursor()
             sql = """
-    INSERT INTO snippets (SOURCE, VARIABLES, OUTPUTS, FUNCTIONS)
-    VALUES (%s, %s, %s, %s)
+    INSERT INTO snippets (SOURCE, VARIABLES, OUTPUTS, FUNCTIONS, PATH)
+    VALUES (%s, %s, %s, %s, %s)
     RETURNING ID
             """
-            cursor.execute(sql, (str(snippet.source), str(snippet.variables), \
-                   str(snippet.outputs), str(snippet.function_calls)))
+            cursor.execute(sql, (str(snippet.source), str(snippet.variables),
+                                 str(snippet.outputs), str(snippet.function_calls), snippet.path))
             self.connect().commit()
             id = cursor.fetchone()[0]
             print id

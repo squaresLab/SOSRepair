@@ -24,7 +24,7 @@ class Z3:
     def prepare_smt_query(self, index):
         result = []
         snippet = self.db_manager.fetch_snippet(index)
-        print 'AAAAA ' + snippet[1]
+        print 'AAAAA ' + snippet[5]
         constraints = self.db_manager.fetch_constraints(index)
         if len(constraints) < 1 or not snippet:
             print "ERROR no constraints or snippet for this id %d" % index
@@ -77,6 +77,7 @@ class Z3:
                 var_mappings = dict(r[0])
                 var_mappings.update(dict(r[1]))
                 print var_mappings
+                print "ID: " + str(snippet[0])
                 result.append((snippet[1], eval(snippet[2]), var_mappings))
                 # patch_generation = PatchGeneration(snippet[1], eval(snippet[2]), var_mappings)
                 # patch_generation.prepare_snippet_to_parse()

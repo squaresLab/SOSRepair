@@ -19,3 +19,5 @@ DATABASE = {
     'user': 'afsoon',
     'password': None
 }
+
+ALL_PATCHES = False

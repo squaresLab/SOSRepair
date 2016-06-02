@@ -3,7 +3,7 @@ __author__ = 'Afsoon Afzal'
 from os import path
 from clang.cindex import *
 from clang.cindex import BinaryOperator
-from settings import *
+from settings import LIBCLANG_PATH, LARGEST_SNIPPET, SMALLEST_SNIPPET
 from utils.file_process import number_of_lines
 from utils.klee import *
 from repository.db_manager import DatabaseManager
@@ -60,7 +60,7 @@ class CodeSnippetManager:
                 func_calls = self.find_function_calls(blocks)
                 source = self.write_file(from_line, line, vars, outputs, func_calls)
                 print outputs
-                code_snippet = CodeSnippet(source, vars, outputs, func_calls)
+                code_snippet = CodeSnippet(source, vars, outputs, self.filename, func_calls)
                 self.symbolic_execution(code_snippet)
                 self.db_manager.insert_snippet(code_snippet)
                 del code_snippet
@@ -234,10 +234,11 @@ struct s foo('''
 
 class CodeSnippet():
 
-    def __init__(self, source, variables, outputs, function_calls=[]):
+    def __init__(self, source, variables, outputs, filepath, function_calls=[]):
         self.source = source
         self.variables = variables
         self.outputs = outputs
+        self.path = filepath
         self.function_calls = function_calls
         self.constraints = []
 
