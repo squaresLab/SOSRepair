@@ -58,8 +58,8 @@ class CodeSnippetManager:
                 vars = self.find_vars(blocks)
                 outputs = self.find_outputs(blocks)
                 func_calls = self.find_function_calls(blocks)
-                source = self.write_file(from_line, line, vars, outputs, func_calls)
-                print outputs
+                source = self.write_file(from_line, line, vars, outputs, func_calls, blocks)
+                print source
                 code_snippet = CodeSnippet(source, vars, outputs, self.filename, func_calls)
                 self.symbolic_execution(code_snippet)
                 self.db_manager.insert_snippet(code_snippet)
@@ -114,7 +114,7 @@ class CodeSnippetManager:
                     variables.add((i.displayname, i.type.spelling))
         return list(variables)
 
-    def write_file(self, from_line, to_line, variables, outputs, function_calls):
+    def write_file(self, from_line, to_line, variables, outputs, function_calls, blocks):
         s = '''#include <klee/klee.h>
 #include <stdio.h>
 #include <string.h>
@@ -129,6 +129,8 @@ class CodeSnippetManager:
             s += outputs + ' foo('
         elif len(outputs) == 1:
             s += outputs[outputs.keys()[0]]['type'] + ' foo('
+        elif len(outputs) == 0:
+            s += 'void foo('
         else:
             s += '''
 struct s{
@@ -148,15 +150,19 @@ struct s foo('''
             i += 1
         s += '){\n'
         code_snippet = ''
+        block_lines = [b.location.line for b in blocks]
         with open(self.filename, 'r') as f:
             i = 1
             for line in f:
                 if from_line <= i < to_line:
+                    if i in block_lines and line.strip().startswith('else'):  # Solo else
+                        s += 'if(0) return;\n'
                     code_snippet += line
+                    s += line
                 elif i >= to_line:
                     break
                 i += 1
-        s += code_snippet
+        # s += code_snippet
 
         if isinstance(outputs, str):
             s += '''
@@ -174,6 +180,12 @@ struct s foo('''
             '''
             s += outputs[outputs.keys()[0]]['type'] + ' ret;\n'
             s += 'klee_make_symbolic(&ret, sizeof(ret), "' + outputs.keys()[0] + '_ret");\n'
+        elif len(outputs) == 0:
+            s += '''
+            }
+
+            int main(){
+            '''
         else:
             s += 'struct s afs_ret;\n'
             for name in outputs.keys():
@@ -203,6 +215,8 @@ struct s foo('''
         foo += ')'
         if isinstance(outputs, str) or len(outputs) == 1:
             s += 'klee_assume(ret == ' + foo + ');\n'
+        elif len(outputs) == 0:
+            s += foo + ';\n'
         else:
             s += 'ret = ' + foo + ';\n'
             for name in outputs.keys():
