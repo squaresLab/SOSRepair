@@ -55,7 +55,9 @@ class Profile():
     def generate_profile(self, positive_tests):
         res = compile_c(self.marked_file, self.filename + '.o')
         if not res:
-            raise Exception
+            # raise Exception
+            print "ERROR: the profile is not compilable"
+            return False
         for pt in positive_tests:
             test = os.path.join(TESTS_DIRECTORY, pt)
             res = run_c_with_input(self.filename + '.o', test, self.filename+ '_temp.out')
@@ -85,6 +87,56 @@ class Profile():
             self.input_list.append(profile_dict)
         os.system('rm ' + self.filename + '.o ' + self.filename + '_temp.out')
         print self.input_list
+        return True
+
+    def generate_gdb_script(self, positive_tests):
+        res = compile_c(self.filename, self.filename + '.o', '-g')
+        if not res:
+            # raise Exception
+            print "ERROR: the profile is not compilable"
+            return False
+        file_and_breaks = 'file ' + self.filename + '.o\n'
+        file_and_breaks += 'break ' + self.filename + ':' + str(self.suspicious_block.line_range[0]) + '\n'
+        file_and_breaks += 'break ' + self.filename + ':' + str(self.suspicious_block.line_range[1]) + '\n'
+
+        vars = ''
+        for v, t in self.suspicious_block.vars:
+            vars += 'print ' + str(v) + '\n'
+        vars += 'continue\n'
+        vars += vars
+
+        for pt in positive_tests:
+            test = os.path.join(TESTS_DIRECTORY, pt)
+            states = []
+            with open('gdb_script.txt', 'w') as f:
+                f.write(file_and_breaks)
+                f.write('run < ' + test + '\n')
+                f.write(vars)
+
+            res = os.system('gdb < gdb_script.txt > gdb_out')
+            if res != 0:
+                print "WARNING: cannot run gdb"
+                continue
+            with open('gdb_out', 'r') as f:
+                for l in f:
+                    if l.startswith('(gdb) $'):
+                        parts = l[7:].split('=')
+                        if len(parts) != 2:
+                            print "WARNING: something is wrong"
+                            continue
+                        try:
+                            i = int(parts[0])
+                        except:
+                            print "WARNING: something is wrong"
+                            continue
+                        states.append(parts[1].strip())  # TODO strip for Strings?
+            if len(states) != len(self.suspicious_block.vars)*2:
+                print "WARNING: not enough output"
+                continue
+            profile_dict = {}
+            for i in range(len(states)/2):
+                profile_dict[self.suspicious_block.vars[i][0]] = (states[i], states[i+len(self.suspicious_block.vars)])
+            self.input_list.append(profile_dict)
         return True
 
 if __name__ == "__main__":

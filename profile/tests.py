@@ -30,7 +30,8 @@ class Tests():
             test = os.path.join(TESTS_DIRECTORY, file)
             res = run_c_with_input(self.plain_name, test, temp_output)
             if not res:
-                raise Exception
+                # raise Exception
+                return False
             out_file = file[0:-3]+'.out'
             if compare_files(os.path.join(TESTS_DIRECTORY, out_file), temp_output):
                 self.positives.append(file)

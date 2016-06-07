@@ -22,7 +22,7 @@ def re_build_database(db_manager):
 
 
 def main():
-    faulty_code = 'median.c'
+    faulty_code = 'smallest.c'
     tests = Tests('', faulty_code)
     tests.initialize_testing()
 
@@ -36,13 +36,18 @@ def main():
 
     passing_patches = []
     os.system('rm -r patches')
+    os.system('mkdir patches')
     for line, score in suspicious_lines.suspiciousness:
+        print "AAAA " + str(line)
         sb = fl.line_to_block(line)
+        print "BBBB " + str(sb.line_range)
         profile = Profile(faulty_code, sb)
-        profile.generate_file()
-        success = profile.generate_profile(tests.positives)
+        # profile.generate_file()
+        # success = profile.generate_profile(tests.positives)
+        success = profile.generate_gdb_script(tests.positives)
         if not success:
             continue
+        print 'SSS ' + str(profile.input_list)
 
         z3 = Z3(sb, profile, db_manager)
         i = z3.fetch_valid_snippets()
