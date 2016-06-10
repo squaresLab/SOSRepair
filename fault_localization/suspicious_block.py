@@ -1,11 +1,13 @@
 __author__ = 'Afsoon Afzal'
 
+import logging
 from clang.cindex import *
 from settings import *
 from utils.file_process import number_of_lines
 from repository.snippet_preparation import CodeSnippetManager
 
 Config.set_library_file(LIBCLANG_PATH)
+logger = logging.getLogger(__name__)
 
 
 class SuspiciousBlock():
@@ -51,9 +53,9 @@ class FaultLocalization():
                 cond = True
                 if str(child.location.file) != self.filename:
                     continue
-                print block
-                print str(child.spelling) + " " + str(child.location.file)
-                print child.location.line
+                # print block
+                # print str(child.spelling) + " " + str(child.location.file)
+                # print child.location.line
                 if child.location.line > line_number:
                     temp_block = (current.location.line, child.location.line)
                     if current.kind == CursorKind.IF_STMT:
@@ -85,7 +87,7 @@ class FaultLocalization():
             if cursor and (str(child.location.file) != self.filename or child.kind == CursorKind.DECL_STMT):
                 continue
             line = child.location.line if cursor else child
-            print line
+            # print line
             if from_line < 0:
                 from_line = line
                 blocks.append(child)

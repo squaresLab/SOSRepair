@@ -23,10 +23,8 @@ class SuspiciousLines():
         self.compute_coverage(self.tests.positives, '+')
         self.compute_coverage(self.tests.negatives, '-')
         run_command('rm ' + self.plain_name + ' ' + self.plain_name + '.gcno')
-        print self.counts
         self.suspicious_formula()
         self.suspiciousness.sort(key=lambda tuple: tuple[1], reverse=True)
-        print self.suspiciousness
         return
 
     def compute_coverage(self, test_list, pos_or_neg):

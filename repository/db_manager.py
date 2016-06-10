@@ -2,9 +2,11 @@ __author__ = 'afsoona'
 
 
 import collections
+import logging
 import psycopg2
 from settings import DATABASE
 
+logger = logging.getLogger(__name__)
 
 class DatabaseManager():
     def __init__(self):
@@ -21,7 +23,7 @@ class DatabaseManager():
         except psycopg2.DatabaseError, e:
             if self.connection:
                 self.connection.rollback()
-            print 'Error %s' % e
+            logger.error('%s' % str(e))
             self.close()
         return self.connection
 
@@ -38,10 +40,9 @@ class DatabaseManager():
     DROP TABLE snippets;
     """
             cursor.execute(sql)
-            ver = self.connect().commit()
-            print ver
+            self.connect().commit()
         except psycopg2.DatabaseError, e:
-            print 'Error %s' % e
+            logger.error('%s' % str(e))
             self.close()
 
     def initialize_tables(self):
@@ -64,10 +65,9 @@ class DatabaseManager():
     );
     """
             cursor.execute(sql)
-            ver = self.connect().commit()
-            print ver
+            self.connect().commit()
         except psycopg2.DatabaseError, e:
-            print 'Error %s' % e
+            logger.error('%s' % str(e))
             self.close()
 
     def insert_snippet(self, snippet):
@@ -82,10 +82,9 @@ class DatabaseManager():
                                  str(snippet.outputs), str(snippet.function_calls), snippet.path))
             self.connect().commit()
             id = cursor.fetchone()[0]
-            print id
             self.insert_constraint(snippet, id)
         except psycopg2.DatabaseError, e:
-            print 'Error %s' % e
+            logger.error('%s' % str(e))
             self.close()
 
     def insert_constraint(self, snippet, snippet_id):
@@ -100,7 +99,7 @@ class DatabaseManager():
                 cursor.execute(sql, (decl, smt, snippet_id))
                 self.connect().commit()
         except psycopg2.DatabaseError, e:
-            print 'Error %s' % e
+            logger.error('%s' % str(e))
             if self.connect():
                 self.connect().rollback()
             self.close()
@@ -115,7 +114,7 @@ class DatabaseManager():
             cursor.executemany(sql, values)
             self.connect().commit()
         except psycopg2.DatabaseError, e:
-            print 'Error %s' % e
+            logger.error('%s' % str(e))
             if self.connect():
                 self.connect().rollback()
             self.close()
@@ -149,7 +148,7 @@ class DatabaseManager():
                 if compare(var_types, v_types) and compare(output_types, o_types):
                     return id
         except psycopg2.DatabaseError, e:
-            print 'Error %s' % e
+            logger.error('%s' % str(e))
             if self.connect():
                 self.connect().rollback()
             self.close()
@@ -164,7 +163,7 @@ class DatabaseManager():
             row = cursor.fetchone()
             return row
         except psycopg2.DatabaseError, e:
-            print 'Error %s' % e
+            logger.error('%s' % str(e))
             if self.connect():
                 self.connect().rollback()
             self.close()
@@ -179,7 +178,7 @@ class DatabaseManager():
             rows = cursor.fetchall()
             return rows
         except psycopg2.DatabaseError, e:
-            print 'Error %s' % e
+            logger.error('%s' % str(e))
             if self.connect():
                 self.connect().rollback()
             self.close()

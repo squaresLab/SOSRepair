@@ -2,6 +2,7 @@ __author__ = 'afsoona'
 
 import os
 import fnmatch
+import logging
 from settings import INTROCLASS_PATH, ALL_PATCHES
 from profile.profile import *
 from profile.tests import *
@@ -10,6 +11,9 @@ from repository.snippet_preparation import *
 from repository.db_manager import DatabaseManager
 from repository.smt_solver import Z3
 from repository.patch_generation import PatchGeneration
+from utils.file_process import transform_file
+
+logger = logging.getLogger(__name__)
 
 
 def re_build_database(db_manager):
@@ -17,14 +21,24 @@ def re_build_database(db_manager):
     db_manager.initialize_tables()
     for root, dirs, files in os.walk(INTROCLASS_PATH):
         for items in fnmatch.filter(files, "*.c"):
-            fl = CodeSnippetManager(os.path.join(root, items))
+            ff = os.path.join(root, items)
+            ff = transform_file(ff)
+            fl = CodeSnippetManager(ff)
             fl.detach_snippets()
+            os.system('rm ' + ff)
 
 
 def main():
     faulty_code = 'smallest.c'
+    logger.info('***************************** %s' % faulty_code)
+    faulty_code = transform_file(faulty_code)
+
     tests = Tests('', faulty_code)
     tests.initialize_testing()
+    logger.debug('Tests %s' % str(tests))
+    if len(tests.positives) == 0:
+        print "No positive test!"
+        return
 
     suspicious_lines = SuspiciousLines(faulty_code, '', tests)
     suspicious_lines.compute_suspiciousness()
@@ -38,16 +52,19 @@ def main():
     os.system('rm -r patches')
     os.system('mkdir patches')
     for line, score in suspicious_lines.suspiciousness:
-        print "AAAA " + str(line)
+        logger.info("Suspicious line: %d ,score: %f" % (line, score))
         sb = fl.line_to_block(line)
-        print "BBBB " + str(sb.line_range)
+        if not sb:
+            logger.warning("No block found for line: %d" %line)
+            continue
+        logger.info("Suspicious block range %s" % str(sb.line_range))
         profile = Profile(faulty_code, sb)
         # profile.generate_file()
         # success = profile.generate_profile(tests.positives)
         success = profile.generate_gdb_script(tests.positives)
-        if not success:
+        logger.debug('Profile: ' + str(profile.input_list))
+        if not success or not profile.input_list:
             continue
-        print 'SSS ' + str(profile.input_list)
 
         z3 = Z3(sb, profile, db_manager)
         i = z3.fetch_valid_snippets()
@@ -69,6 +86,12 @@ def main():
                     break
             i = z3.fetch_valid_snippets()
 
+
+def main2():
+    faulty_code = 'smallest.c'
+
+    fl = CodeSnippetManager(faulty_code)
+    fl.detach_snippets()
 
 if __name__ == "__main__":
     main()

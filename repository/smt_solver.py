@@ -1,8 +1,11 @@
 __author__ = 'Afsoon Afzal'
 
+import logging
 from itertools import permutations, product
 from utils.z3 import run_z3
 from repository.patch_generation import PatchGeneration
+
+logger = logging.getLogger(__name__)
 
 
 class Z3:
@@ -24,10 +27,10 @@ class Z3:
     def prepare_smt_query(self, index):
         result = []
         snippet = self.db_manager.fetch_snippet(index)
-        print 'AAAAA ' + snippet[5]
         constraints = self.db_manager.fetch_constraints(index)
         if len(constraints) < 1 or not snippet:
-            print "ERROR no constraints or snippet for this id %d" % index
+            logger.error("ERROR no constraints or snippet for this id %d" % index)
+            return None
         decls = self.prepare_declarations(constraints)
         consts = self.prepare_constraints(constraints)
         snippet_variables = [i[0] for i in eval(snippet[2])]
@@ -59,7 +62,7 @@ class Z3:
                 for a, b in r[0]:
                     query += '(assert (let ' + self.get_let_statement(b+'_in', 'A1') + '(let ' +\
                         self.get_let_statement(a, 'A2') + '(= ?A1 ?A2) ) ) ) \n'
-            print query
+            logger.debug(query)
             for profile in self.profile.input_list:
                 mappings = query
                 # profile = self.profile.input_list[i]
@@ -76,8 +79,7 @@ class Z3:
             if all_satisfied:
                 var_mappings = dict(r[0])
                 var_mappings.update(dict(r[1]))
-                print var_mappings
-                print "ID: " + str(snippet[0])
+                logger.debug(var_mappings)
                 result.append((snippet[1], eval(snippet[2]), var_mappings))
                 # patch_generation = PatchGeneration(snippet[1], eval(snippet[2]), var_mappings)
                 # patch_generation.prepare_snippet_to_parse()
@@ -105,7 +107,6 @@ class Z3:
                 # code_declarations.add('(declare-fun single_value_out () (Array (_ BitVec 32) (_ BitVec 8) ) )')  # TODO check later
 
         decls = '\n'.join(list(constraint_declarations)) + '\n' + '\n'.join(list(code_declarations))
-        print decls + "\n DECL_FINISHED\n"
         return decls
 
     @staticmethod

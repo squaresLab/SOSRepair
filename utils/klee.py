@@ -22,7 +22,7 @@ def run_klee(filename, output_dir='klee-out'):
         os.system('rm -r ' + output_dir)
 
     proc = subprocess.Popen(["klee", "-use-query-log=all:smt2", "-write-smt2s", "-libc=uclibc", "-use-constant-arrays",
-                             "-const-array-opt", "-allow-external-sym-calls", "-watchdog", "-max-time=5",
+                             "-const-array-opt", "-allow-external-sym-calls", "-watchdog", "-max-time=2",
                              "-output-dir="+output_dir, filename], stdout=subprocess.PIPE)
     (out, err) = proc.communicate()
     if err:

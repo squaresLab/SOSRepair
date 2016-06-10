@@ -2,10 +2,13 @@ __author__ = 'Afsoon Afzal'
 
 from clang.cindex import *
 import os
+import logging
 
 from settings import TESTS_DIRECTORY
 from fault_localization.suspicious_block import FaultLocalization
 from utils.c_run import compile_c, run_c_with_input
+
+logger = logging.getLogger(__name__)
 
 
 class Profile():
@@ -56,7 +59,7 @@ class Profile():
         res = compile_c(self.marked_file, self.filename + '.o')
         if not res:
             # raise Exception
-            print "ERROR: the profile is not compilable"
+            logger.error("the profile is not compilable")
             return False
         for pt in positive_tests:
             test = os.path.join(TESTS_DIRECTORY, pt)
@@ -70,7 +73,7 @@ class Profile():
                     if index != -1:
                         lines.append(l[index+12:].split('_'))
             if len(lines) != 2 or len(lines[0]) != len(lines[1]):
-                print "Error in generating profile " + str(len(lines))
+                logger.error("Error in generating profile " + str(len(lines)))
                 # This happens when the block contains return
                 # raise Exception
                 return False
@@ -81,19 +84,19 @@ class Profile():
                 parts1 = lines[0][i].split(':')
                 parts2 = lines[1][i].split(':')
                 if len(parts1) < 3 or len(parts2) < 3 or parts1[0] != parts2[0]:
-                    print "ERROR: something is wrong in profile generation"
+                    logger.error("something is wrong in profile generation")
                     return
                 profile_dict[parts1[0]] = (''.join(parts1[1:-1]), ''.join(parts2[1:-1]))
             self.input_list.append(profile_dict)
         os.system('rm ' + self.filename + '.o ' + self.filename + '_temp.out')
-        print self.input_list
+        logger.debug(self.input_list)
         return True
 
     def generate_gdb_script(self, positive_tests):
         res = compile_c(self.filename, self.filename + '.o', '-g')
         if not res:
             # raise Exception
-            print "ERROR: the profile is not compilable"
+            logger.error("ERROR: the profile is not compilable")
             return False
         file_and_breaks = 'file ' + self.filename + '.o\n'
         file_and_breaks += 'break ' + self.filename + ':' + str(self.suspicious_block.line_range[0]) + '\n'
@@ -115,28 +118,29 @@ class Profile():
 
             res = os.system('gdb < gdb_script.txt > gdb_out')
             if res != 0:
-                print "WARNING: cannot run gdb"
+                logger.warning("cannot run gdb")
                 continue
             with open('gdb_out', 'r') as f:
                 for l in f:
                     if l.startswith('(gdb) $'):
                         parts = l[7:].split('=')
                         if len(parts) != 2:
-                            print "WARNING: something is wrong"
+                            logger.warning("something is wrong")
                             continue
                         try:
                             i = int(parts[0])
                         except:
-                            print "WARNING: something is wrong"
+                            logger.warning("something is wrong")
                             continue
                         states.append(parts[1].strip())  # TODO strip for Strings?
             if len(states) != len(self.suspicious_block.vars)*2:
-                print "WARNING: not enough output"
+                logger.warning("not enough output")
                 continue
             profile_dict = {}
             for i in range(len(states)/2):
                 profile_dict[self.suspicious_block.vars[i][0]] = (states[i], states[i+len(self.suspicious_block.vars)])
             self.input_list.append(profile_dict)
+        os.system('rm gdb_script.txt gdb_out')
         return True
 
 if __name__ == "__main__":

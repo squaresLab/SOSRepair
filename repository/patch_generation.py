@@ -1,7 +1,10 @@
 __author__ = 'Afsoon Afzal'
 
+import logging
 from clang.cindex import *
 import os
+
+logger = logging.getLogger(__name__)
 
 
 class PatchGeneration():
@@ -52,12 +55,11 @@ class PatchGeneration():
         s += lines[line][column:] + '\n'
         for j in range(line+1, len(lines)):
             s += lines[j] + '\n'
-        print "SNIPPET: " + s
+        logger.debug("SNIPPET: " + s)
         return s
 
     @staticmethod
     def create_patch(suspicious_block, snippet, patch_file='patch1.c'):
-        print suspicious_block.line_range
         with open(patch_file, 'w') as patch:
             with open(suspicious_block.filename, 'r') as f:
                 i = 0
