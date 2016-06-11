@@ -28,8 +28,7 @@ def re_build_database(db_manager):
             os.system('rm ' + ff)
 
 
-def main():
-    faulty_code = 'median.c'
+def main(faulty_code, build_db=False):
     logger.info('***************************** %s' % faulty_code)
     faulty_code = transform_file(faulty_code)
 
@@ -38,13 +37,17 @@ def main():
     logger.debug('Tests %s' % str(tests))
     if len(tests.positives) == 0:
         print "No positive test!"
-        return
+        return 1
+    if len(tests.negatives) == 0:
+        print "Passes all tests"
+        return 2
 
     suspicious_lines = SuspiciousLines(faulty_code, '', tests)
     suspicious_lines.compute_suspiciousness()
 
     db_manager = DatabaseManager()
-    # re_build_database(db_manager)
+    if build_db:
+        re_build_database(db_manager)
 
     fl = FaultLocalization(faulty_code)
 
@@ -82,16 +85,37 @@ def main():
                     print "Found a patch!!! YAY"
                     passing_patches.append(patch_file)
                     if not ALL_PATCHES:
-                        return
+                        return 0
                     break
             i = z3.fetch_valid_snippets()
+    return 3
 
 
 def main2():
-    faulty_code = 'smallest.c'
-
-    fl = CodeSnippetManager(faulty_code)
-    fl.detach_snippets()
+    success_file = open('success.txt', 'w')
+    failed_file = open('failed.txt', 'w')
+    exception = open('exception.txt', 'w')
+    first_time = True
+    for root, dirs, files in os.walk(INTROCLASS_PATH):
+        for items in fnmatch.filter(files, "*.c"):
+            ff = os.path.join(root, items)
+            try:
+                os.system('cp ' + ff + ' .')
+                res = main(items, first_time)
+                if res == 0:
+                    success_file.write(ff + '\n')
+                elif res == 1:
+                    exception.write(ff + ':No positive tests\n')
+                elif res == 2:
+                    exception.write(ff + ':Already correct\n')
+                elif res == 3:
+                    failed_file.write(ff + '\n')
+                first_time = False
+            except Exception as e:
+                exception.write(ff + ':Exception ' + str(e))
+    success_file.close()
+    failed_file.close()
+    exception.close()
 
 if __name__ == "__main__":
-    main()
+    main2()
