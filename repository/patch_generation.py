@@ -42,10 +42,10 @@ class PatchGeneration():
         for i in ast.walk_preorder():
             # print str(i.location.line) + ":" + str(i.location.column) + " " + str(i.kind) + " " + i.displayname + " " + str(i.type.kind)
             if str(i.location.file) != self.temporary_file or i.location.line <= self.extra_lines or\
-                    (i.location.line - (2+len(self.variables)) == line and column + 1 > i.location.column):
+                    (i.location.line - (1+self.extra_lines) == line and column + 1 > i.location.column):
                 continue
             if str(i.displayname) in var_dict.keys():
-                l, c = i.location.line - (2+len(self.variables)), i.location.column
+                l, c = i.location.line - (1+self.extra_lines), i.location.column
                 if line < l:
                     s += lines[line][column:] + '\n'
                     for j in range(line+1, l):
