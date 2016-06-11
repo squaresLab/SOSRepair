@@ -156,7 +156,7 @@ struct s foo('''
             for line in f:
                 if from_line <= i < to_line:
                     if i in block_lines and line.strip().startswith('else'):  # Solo else
-                        s += 'if(0) return;\n'
+                        s += 'if(0);\n'
                     code_snippet += line
                     s += line
                 elif i >= to_line:

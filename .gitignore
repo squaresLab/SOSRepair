@@ -1,4 +1,5 @@
 .idea
 *.pyc
+*.DS_Store
 settings.py
 IntroClass

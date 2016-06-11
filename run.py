@@ -29,7 +29,7 @@ def re_build_database(db_manager):
 
 
 def main():
-    faulty_code = 'smallest.c'
+    faulty_code = 'median.c'
     logger.info('***************************** %s' % faulty_code)
     faulty_code = transform_file(faulty_code)
 
