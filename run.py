@@ -73,6 +73,9 @@ def main(faulty_code, build_db=False):
         i = z3.fetch_valid_snippets()
         while i:
             res = z3.prepare_smt_query(i)
+            if not res:
+                i = z3.fetch_valid_snippets()
+                continue
             for source, variables, mapping in res:
                 patch_generation = PatchGeneration(source, variables, mapping)
                 patch_generation.prepare_snippet_to_parse()
@@ -95,10 +98,11 @@ def main2():
     success_file = open('success.txt', 'w')
     failed_file = open('failed.txt', 'w')
     exception = open('exception.txt', 'w')
-    first_time = True
+    first_time = False
     for root, dirs, files in os.walk(INTROCLASS_PATH):
         for items in fnmatch.filter(files, "*.c"):
             ff = os.path.join(root, items)
+            print "File: " + ff
             try:
                 os.system('cp ' + ff + ' .')
                 res = main(items, first_time)
@@ -112,7 +116,7 @@ def main2():
                     failed_file.write(ff + '\n')
                 first_time = False
             except Exception as e:
-                exception.write(ff + ':Exception ' + str(e))
+                exception.write(ff + ':Exception ' + str(e) + '\n')
     success_file.close()
     failed_file.close()
     exception.close()
