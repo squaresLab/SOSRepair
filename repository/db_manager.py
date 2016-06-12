@@ -141,6 +141,9 @@ class DatabaseManager():
             for id, v, o in rows:
                 v_types = [i[1] for i in eval(v)]
                 out = eval(o)
+                if (isinstance(out, dict) and not isinstance(outputs, dict)) or \
+                        (not isinstance(out, dict) and isinstance(outputs, dict)):
+                    continue
                 if isinstance(out, dict):
                     o_types = [out[i]['type'] for i in out.keys()]
                 else:
