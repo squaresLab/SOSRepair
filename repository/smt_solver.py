@@ -2,7 +2,7 @@ __author__ = 'Afsoon Afzal'
 
 import logging
 from itertools import permutations, product
-from utils.z3 import run_z3
+from utils.z3 import run_z3, twos_comp
 from repository.patch_generation import PatchGeneration
 
 logger = logging.getLogger(__name__)
@@ -67,11 +67,11 @@ class Z3:
                 mappings = query
                 # profile = self.profile.input_list[i]
                 for v, t in self.suspicious_block.vars:
-                    mappings += '(assert (let ' + self.get_let_statement(v + '_in') + '(= ?A1 (_ bv' + profile[v][0] + \
+                    mappings += '(assert (let ' + self.get_let_statement(v + '_in') + '(= ?A1 (_ bv' + self.proper_value(profile[v][0], t) + \
                                 ' 32) ) ) ) \n'
                 if isinstance(self.suspicious_block.outputs, dict):
                     for v in self.suspicious_block.outputs.keys():
-                        mappings += '(assert (let ' + self.get_let_statement(v + '_out') + '(= ?A1 (_ bv' + profile[v][1] + \
+                        mappings += '(assert (let ' + self.get_let_statement(v + '_out') + '(= ?A1 (_ bv' + self.proper_value(profile[v][1], t) + \
                                     ' 32) ) ) ) \n'
                 satisfied = run_z3(mappings + '(check-sat)\n')
                 if not satisfied:
@@ -108,6 +108,20 @@ class Z3:
 
         decls = '\n'.join(list(constraint_declarations)) + '\n' + '\n'.join(list(code_declarations))
         return decls
+
+    @staticmethod
+    def proper_value(value, typ):
+        if typ not in ['int', 'long', 'short']:
+            return value
+        try:
+            i = int(value)
+            if i < 0:
+                v = twos_comp(i, 32)
+                return str(v + 1)
+            return value
+        except:
+            logger.error("Something wrong in smt encoding %s" % value)
+            return value
 
     @staticmethod
     def prepare_constraints(constraints):
