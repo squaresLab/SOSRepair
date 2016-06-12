@@ -54,12 +54,16 @@ def main(faulty_code, build_db=False):
     passing_patches = []
     os.system('rm -r patches')
     os.system('mkdir patches')
+    investigated_blocks = set([])
     for line, score in suspicious_lines.suspiciousness:
         logger.info("Suspicious line: %d ,score: %f" % (line, score))
         sb = fl.line_to_block(line)
         if not sb:
             logger.warning("No block found for line: %d" %line)
             continue
+        if sb.line_range in investigated_blocks:
+            continue
+        investigated_blocks.add(sb.line_range)
         logger.info("Suspicious block range %s" % str(sb.line_range))
         profile = Profile(faulty_code, sb)
         # profile.generate_file()
@@ -98,7 +102,7 @@ def main2():
     success_file = open('success.txt', 'w')
     failed_file = open('failed.txt', 'w')
     exception = open('exception.txt', 'w')
-    first_time = False
+    first_time = True
     for root, dirs, files in os.walk(INTROCLASS_PATH):
         for items in fnmatch.filter(files, "*.c"):
             ff = os.path.join(root, items)
@@ -108,15 +112,20 @@ def main2():
                 res = main(items, first_time)
                 if res == 0:
                     success_file.write(ff + '\n')
+                    success_file.flush()
                 elif res == 1:
                     exception.write(ff + ':No positive tests\n')
+                    exception.flush()
                 elif res == 2:
                     exception.write(ff + ':Already correct\n')
+                    exception.flush()
                 elif res == 3:
                     failed_file.write(ff + '\n')
+                    failed_file.flush()
                 first_time = False
             except Exception as e:
                 exception.write(ff + ':Exception ' + str(e) + '\n')
+                exception.flush()
     success_file.close()
     failed_file.close()
     exception.close()
