@@ -4,7 +4,7 @@ import logging
 from os import path
 from clang.cindex import *
 from clang.cindex import BinaryOperator
-from settings import LIBCLANG_PATH, LARGEST_SNIPPET, SMALLEST_SNIPPET
+from settings import LIBCLANG_PATH, LARGEST_SNIPPET, SMALLEST_SNIPPET, VALID_TYPES
 from utils.file_process import number_of_lines
 from utils.klee import *
 from repository.db_manager import DatabaseManager
@@ -58,12 +58,13 @@ class CodeSnippetManager:
             while LARGEST_SNIPPET >= (line - from_line) >= SMALLEST_SNIPPET:
                 vars = self.find_vars(blocks)
                 outputs = self.find_outputs(blocks)
-                func_calls = self.find_function_calls(blocks)
-                source = self.write_file(from_line, line, vars, outputs, func_calls, blocks)
-                code_snippet = CodeSnippet(source, vars, outputs, self.filename, func_calls)
-                self.symbolic_execution(code_snippet)
-                self.db_manager.insert_snippet(code_snippet)
-                del code_snippet
+                if vars != -1 and outputs != -1:
+                    func_calls = self.find_function_calls(blocks)
+                    source = self.write_file(from_line, line, vars, outputs, func_calls, blocks)
+                    code_snippet = CodeSnippet(source, vars, outputs, self.filename, func_calls)
+                    self.symbolic_execution(code_snippet)
+                    self.db_manager.insert_snippet(code_snippet)
+                    del code_snippet
                 blocks.pop(0)
                 if len(blocks) > 0:
                     from_line = blocks[0].location.line
@@ -85,7 +86,16 @@ class CodeSnippetManager:
                     # Find the first child as the left-hand side
                     for i in node.walk_preorder():
                         if i.kind == CursorKind.DECL_REF_EXPR or i.kind == CursorKind.UNEXPOSED_EXPR:
-                            outputs[i.displayname] = {'line': i.location.line, 'type': i.type.spelling}
+                            temp = i.type.spelling
+                            if '[' in temp:
+                                temp = i.type.element_type.spelling + ' *'
+                            if str(temp).replace('*', '').strip() not in VALID_TYPES:
+                                logger.debug("Unrecognized type for output %s" % temp)
+                                return -1
+                            if temp == 'char':
+                                outputs[i.displayname] = {'line': i.location.line, 'type': 'int'}
+                            else:
+                                outputs[i.displayname] = {'line': i.location.line, 'type': temp}
                             break
                 elif node.kind == CursorKind.DECL_REF_EXPR or node.kind == CursorKind.UNEXPOSED_EXPR:
                     if node.displayname in outputs and node.location.line > outputs[node.displayname]['line']:
@@ -107,11 +117,21 @@ class CodeSnippetManager:
         for block in blocks:
             for i in block.walk_preorder():
                 if (i.kind == CursorKind.UNEXPOSED_EXPR or i.kind == CursorKind.DECL_REF_EXPR) and \
-                                i.displayname != '':
+                        i.displayname != '':
                     if i.type.kind == TypeKind.FUNCTIONPROTO or \
                             (i.type.kind == TypeKind.POINTER and i.type.get_pointee().kind == TypeKind.FUNCTIONPROTO):
                         continue
-                    variables.add((i.displayname, i.type.spelling))
+                    temp = i.type.spelling
+                    if '[' in temp:
+                        temp = i.type.element_type.spelling + ' *'
+                    if str(temp).replace('*', '').strip() not in VALID_TYPES:
+                        logger.debug("Unrecognized type for input %s" % temp)
+                        return -1
+                    print "line %d, name %s, spell %s, temp %s" %(i.location.line, str(i.displayname), str(i.type.spelling), temp)
+                    if temp == 'char':
+                        variables.add((i.displayname, 'int'))
+                    else:
+                        variables.add((i.displayname, temp))
         return list(variables)
 
     def write_file(self, from_line, to_line, variables, outputs, function_calls, blocks):
@@ -136,7 +156,10 @@ class CodeSnippetManager:
 struct s{
 '''
             for name in outputs.keys():
-                s += outputs[name]['type'] + " " + name + ";\n"
+                if '*' not in outputs[name]['type']:
+                    s += outputs[name]['type'] + " " + name + ";\n"
+                else:
+                    s += outputs[name]['type'].replace('*', '') + " " + name + "[10];\n"
             s += '''
             };
 
@@ -169,7 +192,10 @@ struct s foo('''
             }
             int main(){
             '''
-            s += outputs + ' ret;\n'
+            if '*' not in outputs:
+                s += outputs + ' ret;\n'
+            else:
+                s += outputs.replace('*', '') + ' ret[10];\n'
             s += 'klee_make_symbolic(&ret, sizeof(ret), "return_value");\n'
         elif len(outputs) == 1:
             s += 'return ' + outputs.keys()[0] + ';\n'
@@ -178,7 +204,10 @@ struct s foo('''
 
             int main(){
             '''
-            s += outputs[outputs.keys()[0]]['type'] + ' ret;\n'
+            if '*' not in outputs[outputs.keys()[0]]['type']:
+                s += outputs[outputs.keys()[0]]['type'] + ' ret;\n'
+            else:
+                s += outputs[outputs.keys()[0]]['type'].replace('*', '') + ' ret[10];\n'
             s += 'klee_make_symbolic(&ret, sizeof(ret), "' + outputs.keys()[0] + '_ret");\n'
         elif len(outputs) == 0:
             s += '''

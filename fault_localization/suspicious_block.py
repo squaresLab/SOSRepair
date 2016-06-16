@@ -115,9 +115,11 @@ class FaultLocalization():
                     from_line = blocks[0].location.line
                 vars = CodeSnippetManager.find_vars(blocks)
                 outputs = CodeSnippetManager.find_outputs(blocks)
-                func_calls = CodeSnippetManager.find_function_calls(blocks)
-                sb = SuspiciousBlock(line_number, (from_line, line), blocks, vars, outputs, func_calls, self.filename)
-                return sb
+                if vars != -1 and outputs != -1:
+                    func_calls = CodeSnippetManager.find_function_calls(blocks)
+                    sb = SuspiciousBlock(line_number, (from_line, line), blocks, vars, outputs, func_calls, self.filename)
+                    return sb
+                return None
             if cursor:
                 blocks.append(child)
                 from_line = blocks[0].location.line

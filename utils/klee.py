@@ -2,12 +2,12 @@ __author__ = 'Afsoon Afzal'
 
 import os
 import subprocess
-from utils.c_run import run_command_with_timeout
+from utils.c_run import run_command
 
 
 def compile_clang(filename):
     command = "clang-3.4 -emit-llvm -c -g " + filename
-    res = run_command_with_timeout(command)
+    res = run_command(command)
     if not res:
         return False
     return True

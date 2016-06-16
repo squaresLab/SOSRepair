@@ -30,3 +30,5 @@ LOGGING = {
 logging.basicConfig(**LOGGING)
 
 MAX_SUSPICIOUS_LINES = 5
+
+VALID_TYPES = ['int', 'short', 'long', 'char', 'float', 'double', 'long long']
