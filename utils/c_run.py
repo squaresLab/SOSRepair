@@ -20,7 +20,7 @@ def run_command(command):
 
 
 def run_command_with_timeout(command, timeout=10):
-    proc = subprocess.Popen(command, shell=True)
+    proc = subprocess.Popen(command, shell=True, preexec_fn=os.setsid)
     t = threading.Timer(timeout, timeout_function, [proc])
     t.start()
     (out, err) = proc.communicate()

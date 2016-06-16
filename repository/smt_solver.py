@@ -48,6 +48,9 @@ class Z3:
         if len(variable_permutations) == 0:
             variable_permutations = [None]
         for r in product(variable_permutations, output_permutations):
+            if not self.is_valid_mapping(r[0], eval(snippet[2]), self.suspicious_block.vars) or\
+                    not self.is_valid_mapping(r[1], eval(snippet[3]), self.suspicious_block.outputs):
+                continue
             all_satisfied = True
             query = decls + '\n'
             query += consts + '\n'
@@ -142,3 +145,12 @@ class Z3:
         s = '( (?' + abbreviation + ' (concat  (select  ' + var_name + ' (_ bv3 32) ) (concat  (select  ' + var_name + \
             ' (_ bv2 32) ) (concat  (select  ' + var_name + ' (_ bv1 32) ) (select  ' + var_name + ' (_ bv0 32) ) ) ) ) ) )'
         return s
+
+    @staticmethod
+    def is_valid_mapping(mapping, snippet_vars, code_vars):
+        s_dict = dict(snippet_vars)
+        c_dict = dict(code_vars)
+        for a, b in mapping:
+            if s_dict[a] != c_dict[b]:
+                return False
+        return True
