@@ -140,7 +140,10 @@ class DatabaseManager():
             compare = lambda x, y: collections.Counter(x) == collections.Counter(y)
             for id, v, o in rows:
                 v_types = [i[1] for i in eval(v)]
-                out = eval(o)
+                try:
+                    out = eval(o)
+                except:
+                    continue
                 if (isinstance(out, dict) and not isinstance(outputs, dict)) or \
                         (not isinstance(out, dict) and isinstance(outputs, dict)):
                     continue

@@ -3,7 +3,7 @@ __author__ = 'afsoona'
 import os
 import fnmatch
 import logging
-from settings import INTROCLASS_PATH, ALL_PATCHES
+from settings import INTROCLASS_PATH, ALL_PATCHES, MAX_SUSPICIOUS_LINES
 from profile.profile import *
 from profile.tests import *
 from fault_localization.suspicious_lines import *
@@ -55,7 +55,10 @@ def main(faulty_code, build_db=False):
     os.system('rm -r patches')
     os.system('mkdir patches')
     investigated_blocks = set([])
+    suspicious_lines_investigated = 0
     for line, score in suspicious_lines.suspiciousness:
+        if suspicious_lines_investigated >= MAX_SUSPICIOUS_LINES:
+            return 4
         logger.info("Suspicious line: %d ,score: %f" % (line, score))
         sb = fl.line_to_block(line)
         if not sb:
@@ -75,6 +78,7 @@ def main(faulty_code, build_db=False):
 
         z3 = Z3(sb, profile, db_manager)
         i = z3.fetch_valid_snippets()
+        suspicious_lines_investigated += 1
         while i:
             res = z3.prepare_smt_query(i)
             if not res:
@@ -102,11 +106,19 @@ def main2():
     success_file = open('success.txt', 'w')
     failed_file = open('failed.txt', 'w')
     exception = open('exception.txt', 'w')
-    first_time = True
+    first_time = False
+    #s = []
+    #with open('success1.txt', 'r') as f:
+    #    for l in f:
+    #        s.append(l)
     for root, dirs, files in os.walk(INTROCLASS_PATH):
         for items in fnmatch.filter(files, "*.c"):
             ff = os.path.join(root, items)
-            print "File: " + ff
+            logger.info("File: " + ff)
+            #if ff in s:
+            #    success_file.write(ff + '\n')
+            #    success_file.flush()
+            #    continue
             try:
                 os.system('cp ' + ff + ' .')
                 res = main(items, first_time)
@@ -121,6 +133,9 @@ def main2():
                     exception.flush()
                 elif res == 3:
                     failed_file.write(ff + '\n')
+                    failed_file.flush()
+                elif res == 4:
+                    failed_file.write(ff + ':Reached max of blocks\n')
                     failed_file.flush()
                 first_time = False
             except Exception as e:
