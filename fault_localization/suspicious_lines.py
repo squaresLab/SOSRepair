@@ -34,7 +34,7 @@ class SuspiciousLines():
             res = run_c_with_input(self.plain_name, test_path)
             if not res:
                 raise Exception
-            run_command('gcov --object-directory ./ ' + self.program)
+            run_command_with_timeout('gcov --object-directory ./ ' + self.program)
             self.parse_gcov_file(self.filename + '.gcov', pos_or_neg)
         run_command('rm ' + self.filename + '.* ')
 

@@ -6,7 +6,7 @@ import logging
 
 from settings import TESTS_DIRECTORY
 from fault_localization.suspicious_block import FaultLocalization
-from utils.c_run import compile_c, run_c_with_input
+from utils.c_run import compile_c, run_c_with_input, run_command_with_timeout
 
 logger = logging.getLogger(__name__)
 
@@ -116,8 +116,8 @@ class Profile():
                 f.write('run < ' + test + '\n')
                 f.write(vars)
 
-            res = os.system('gdb < gdb_script.txt > gdb_out')
-            if res != 0:
+            res = run_command_with_timeout('gdb < gdb_script.txt > gdb_out')
+            if not res:
                 logger.warning("cannot run gdb")
                 continue
             with open('gdb_out', 'r') as f:

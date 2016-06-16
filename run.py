@@ -61,7 +61,7 @@ def main(faulty_code, build_db=False):
             return 4
         logger.info("Suspicious line: %d ,score: %f" % (line, score))
         sb = fl.line_to_block(line)
-        if not sb:
+        if not sb or sb.line_range[0] > line or sb.line_range[1] < line:
             logger.warning("No block found for line: %d" %line)
             continue
         if sb.line_range in investigated_blocks:
