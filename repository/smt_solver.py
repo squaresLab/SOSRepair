@@ -48,8 +48,9 @@ class Z3:
         if len(variable_permutations) == 0:
             variable_permutations = [None]
         for r in product(variable_permutations, output_permutations):
-            if not self.is_valid_mapping(r[0], eval(snippet[2]), self.suspicious_block.vars) or\
-                    not self.is_valid_mapping(r[1], eval(snippet[3]), self.suspicious_block.outputs):
+            if not self.is_valid_mapping(r, eval(snippet[2]), self.suspicious_block.vars, eval(snippet[3]),\
+                                         self.suspicious_block.outputs):
+                logger.debug("Not a valid mapping %s" % str(r))
                 continue
             all_satisfied = True
             query = decls + '\n'
@@ -147,10 +148,15 @@ class Z3:
         return s
 
     @staticmethod
-    def is_valid_mapping(mapping, snippet_vars, code_vars):
+    def is_valid_mapping(mapping, snippet_vars, code_vars, snippet_outs, code_outs):
         s_dict = dict(snippet_vars)
         c_dict = dict(code_vars)
-        for a, b in mapping:
+        for a, b in mapping[0]:
             if s_dict[a] != c_dict[b]:
+                return False
+        if not isinstance(snippet_outs, dict) or not isinstance(code_outs, dict):
+            return True
+        for a, b in mapping[1]:
+            if snippet_outs[a]['type'] != code_outs[b]['type']:
                 return False
         return True

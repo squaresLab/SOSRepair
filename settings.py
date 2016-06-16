@@ -6,10 +6,10 @@ import logging
 LIBCLANG_PATH = '/home/afsoon/llvm/build/lib/libclang.so'
 #LIBCLANG_PATH = '/Users/afsoona/llvm/build/lib/libclang.dylib'
 
-TESTS_DIRECTORY = '/home/afsoon/searchrepair/IntroClass/digits/tests/blackbox'
-INTROCLASS_PATH = './IntroClass/digits'
+TESTS_DIRECTORY = '/home/afsoon/Documents/workspace/SCS/IntroClass/median/tests/blackbox'
+INTROCLASS_PATH = './IntroClass/median'
 
-Z3_COMMAND = '/home/afsoon/z3/build/z3'
+Z3_COMMAND = '/home/afsoon/Documents/z3/build/z3'
 
 LARGEST_SNIPPET = 7
 SMALLEST_SNIPPET = 3
