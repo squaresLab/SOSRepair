@@ -132,7 +132,10 @@ class Profile():
                         except:
                             logger.warning("something is wrong")
                             continue
-                        states.append(parts[1].strip())  # TODO strip for Strings?
+                        if parts[1].strip().startswith('"'): # it's a string
+                            states.append(parts[1].strip()[1:parts[1].strip().find('\\000')])
+                        else:
+                            states.append(parts[1].strip())  # TODO strip for Strings?
             if len(states) != len(self.suspicious_block.vars)*2:
                 logger.warning("not enough output")
                 continue

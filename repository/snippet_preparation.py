@@ -127,7 +127,6 @@ class CodeSnippetManager:
                     if str(temp).replace('*', '').strip() not in VALID_TYPES:
                         logger.debug("Unrecognized type for input %s" % temp)
                         return -1
-                    print "line %d, name %s, spell %s, temp %s" %(i.location.line, str(i.displayname), str(i.type.spelling), temp)
                     if temp == 'char':
                         variables.add((i.displayname, 'int'))
                     else:

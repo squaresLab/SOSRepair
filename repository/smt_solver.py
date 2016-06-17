@@ -71,12 +71,20 @@ class Z3:
                 mappings = query
                 # profile = self.profile.input_list[i]
                 for v, t in self.suspicious_block.vars:
-                    mappings += '(assert (let ' + self.get_let_statement(v + '_in') + '(= ?A1 (_ bv' + self.proper_value(profile[v][0], t) + \
-                                ' 32) ) ) ) \n'
+                    if t != 'char *':
+                        mappings += '(assert (let ' + self.get_let_statement(v + '_in') + '(= ?A1 (_ bv' + self.proper_value(profile[v][0], t) + \
+                                    ' 32) ) ) ) \n'
+                    else:
+                        mappings += self.get_string_mapping(profile[v][0], v + '_in')
                 if isinstance(self.suspicious_block.outputs, dict):
                     for v in self.suspicious_block.outputs.keys():
-                        mappings += '(assert (let ' + self.get_let_statement(v + '_out') + '(= ?A1 (_ bv' + self.proper_value(profile[v][1], t) + \
-                                    ' 32) ) ) ) \n'
+                        t = self.suspicious_block.outputs[v]['type']
+                        if t != 'char *':
+                            mappings += '(assert (let ' + self.get_let_statement(v + '_out') + '(= ?A1 (_ bv' + self.proper_value(profile[v][1], t) + \
+                                        ' 32) ) ) ) \n'
+                        else:
+                            mappings += self.get_string_mapping(profile[v][1], v + '_out')
+                # TODO deal with single output
                 satisfied = run_z3(mappings + '(check-sat)\n')
                 if not satisfied:
                     all_satisfied = False
@@ -160,3 +168,14 @@ class Z3:
             if snippet_outs[a]['type'] != code_outs[b]['type']:
                 return False
         return True
+
+    @staticmethod
+    def get_string_mapping(string, variable):
+        if len(string) == 0:
+            return ''
+        query = '(assert '
+        for i in range(len(string)):
+            query += '(and (= (select %s (_ bv%d 32) ) (_ bv%d 32) ) ' % (variable, i, ord(string[i]))
+        query += ') '*(len(string)+1)
+        query += '\n'
+        return query
