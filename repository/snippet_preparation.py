@@ -21,6 +21,7 @@ class CodeSnippetManager:
         self.db_manager = DatabaseManager()
 
     def detach_snippets(self):
+        logger.debug('Snippet file: ' + self.filename)
         index = Index.create()
         self.root = index.parse(self.filename)
         return self.traverse_tree(self.root.cursor, self.number_of_lines)
@@ -86,7 +87,7 @@ class CodeSnippetManager:
                     # Find the first child as the left-hand side
                     for i in node.walk_preorder():
                         if i.kind == CursorKind.DECL_REF_EXPR or i.kind == CursorKind.UNEXPOSED_EXPR:
-                            temp = i.type.spelling
+                            temp = i.type.spelling.replace('const', '')
                             if '[' in temp:
                                 temp = i.type.element_type.spelling + ' *'
                             if str(temp).replace('*', '').strip() not in VALID_TYPES:
@@ -95,7 +96,7 @@ class CodeSnippetManager:
                             if temp == 'char':
                                 outputs[i.displayname] = {'line': i.location.line, 'type': 'int'}
                             else:
-                                outputs[i.displayname] = {'line': i.location.line, 'type': temp}
+                                outputs[i.displayname] = {'line': i.location.line, 'type': temp.strip()}
                             break
                 elif node.kind == CursorKind.DECL_REF_EXPR or node.kind == CursorKind.UNEXPOSED_EXPR:
                     if node.displayname in outputs and node.location.line > outputs[node.displayname]['line']:
@@ -120,8 +121,12 @@ class CodeSnippetManager:
                         i.displayname != '':
                     if i.type.kind == TypeKind.FUNCTIONPROTO or \
                             (i.type.kind == TypeKind.POINTER and i.type.get_pointee().kind == TypeKind.FUNCTIONPROTO):
+                        for v, t in list(variables):
+                            if v == i.displayname:
+                                variables.remove((v, t))
+                                break
                         continue
-                    temp = i.type.spelling
+                    temp = i.type.spelling.replace('const', '')
                     if '[' in temp:
                         temp = i.type.element_type.spelling + ' *'
                     if str(temp).replace('*', '').strip() not in VALID_TYPES:
@@ -130,7 +135,7 @@ class CodeSnippetManager:
                     if temp == 'char':
                         variables.add((i.displayname, 'int'))
                     else:
-                        variables.add((i.displayname, temp))
+                        variables.add((i.displayname, temp.strip()))
         return list(variables)
 
     def write_file(self, from_line, to_line, variables, outputs, function_calls, blocks):
