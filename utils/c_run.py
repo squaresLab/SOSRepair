@@ -12,6 +12,12 @@ def get_plain_name(filename):
     return plain_name
 
 
+def get_plain_name_without_directory(filename):
+    parts = filename.split('/')
+    plain_name = parts[-1]
+    return plain_name
+
+
 def run_command(command):
     res = os.system(command)
     if res != 0:
@@ -19,7 +25,7 @@ def run_command(command):
     return True
 
 
-def run_command_with_timeout(command, timeout=10):
+def run_command_with_timeout(command, timeout=5):
     proc = subprocess.Popen(command, shell=True, preexec_fn=os.setsid)
     t = threading.Timer(timeout, timeout_function, [proc])
     t.start()
@@ -41,7 +47,12 @@ def compile_c(program, run_file_name, options=None):
 
 def run_c_with_input(run_file_name, input, output=None):
     if output:
-        command = './' + run_file_name + ' < ' + input + ' > ' + output
+        command = '' + run_file_name + ' < ' + input + ' > ' + output
     else:
-        command = './' + run_file_name + ' < ' + input
+        command = '' + run_file_name + ' < ' + input
+    return run_command_with_timeout(command)
+
+
+def run_c_with_input_provided(run_file_name, input):
+    command = run_file_name + ' ' + input
     return run_command_with_timeout(command)

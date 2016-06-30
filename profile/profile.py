@@ -109,13 +109,11 @@ class Profile():
         vars += vars
 
         for pt in positive_tests:
-            test = os.path.join(TESTS_DIRECTORY, pt)
             states = []
             with open('gdb_script.txt', 'w') as f:
                 f.write(file_and_breaks)
-                f.write('run < ' + test + '\n')
+                f.write('run ' + pt + '\n')
                 f.write(vars)
-
             res = run_command_with_timeout('gdb < gdb_script.txt > gdb_out')
             if not res:
                 logger.warning("cannot run gdb")

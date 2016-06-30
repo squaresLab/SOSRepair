@@ -1,9 +1,13 @@
 __author__ = 'afsoona'
 
 import os
+import logging
 from math import sqrt
 from utils.c_run import *
 from settings import TESTS_DIRECTORY
+
+logger = logging.getLogger(__name__)
+
 
 class SuspiciousLines():
 
@@ -29,13 +33,14 @@ class SuspiciousLines():
 
     def compute_coverage(self, test_list, pos_or_neg):
         for test in test_list:
-            test_path = os.path.join(TESTS_DIRECTORY, test)
-            run_command('rm ' + self.plain_name + '.gcda')
-            res = run_c_with_input(self.plain_name, test_path)
+            run_command('rm ' + get_plain_name_without_directory(self.filename) + '.gcda')
+            res = run_c_with_input_provided(self.plain_name, test)
             if not res:
-                raise Exception
+                logger.error("Coverage failed on this test %s" % test)
+                continue
             run_command_with_timeout('gcov --object-directory ./ ' + self.program)
-            self.parse_gcov_file(self.filename + '.gcov', pos_or_neg)
+
+            self.parse_gcov_file(get_plain_name_without_directory(self.filename) + '.gcov', pos_or_neg)
         run_command('rm ' + self.filename + '.* ')
 
     def parse_gcov_file(self, gcov_file, pos_or_neg):

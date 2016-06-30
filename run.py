@@ -28,12 +28,12 @@ def re_build_database(db_manager):
             os.system('rm ' + ff)
 
 
-def main(faulty_code, build_db=False):
+def main(faulty_code, build_db=False, test_script=''):
     logger.info('***************************** %s' % faulty_code)
     faulty_code = transform_file(faulty_code)
 
-    tests = Tests('', faulty_code)
-    tests.initialize_testing()
+    tests = Tests(faulty_code, test_script)
+    tests.initialize_script_testing()
     logger.debug('Tests %s' % str(tests))
     if len(tests.positives) == 0:
         print "No positive test!"
@@ -89,9 +89,10 @@ def main(faulty_code, build_db=False):
                 patch_generation.prepare_snippet_to_parse()
                 ast = patch_generation.parse_snippet()
                 patch_snippet = patch_generation.replace_vars(ast)
-                patch_file = patch_generation.create_patch(sb, patch_snippet, patch_file='patches/patch'+str(len(passing_patches))+'.c')
-                patch_test = Tests('', patch_file)
-                success = patch_test.initialize_testing()
+                patch_file = os.path.join(os.path.dirname(os.path.abspath(__file__)), 'patches/patch'+str(len(passing_patches))+'.c')
+                patch_file = patch_generation.create_patch(sb, patch_snippet, patch_file=patch_file)
+                patch_test = Tests(patch_file, test_script)
+                success = patch_test.initialize_script_testing()
                 if success and len(patch_test.negatives) == 0:
                     print "Found a patch!!! YAY"
                     passing_patches.append(patch_file)
@@ -146,4 +147,5 @@ def main2():
     exception.close()
 
 if __name__ == "__main__":
-    main('median.c')
+    main('/home/afsoon/Documents/workspace/SCS/genprog-benchmarks-2009/indent/indent_comb.c',
+         test_script='/home/afsoon/Documents/workspace/SCS/genprog-benchmarks-2009/indent/test-afs.sh')
