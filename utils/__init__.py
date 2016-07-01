@@ -8,10 +8,19 @@ kill_check = threading.Event()
 
 
 def timeout(p):
-        if p.poll() is None:
-            try:
-                os.killpg(os.getpgid(p.pid), signal.SIGTERM)
-                print 'Error: process taking too long to complete--terminating'
-                kill_check.set()
-            except OSError as e:
-                return
+    if p.poll() is None:
+        try:
+            os.killpg(os.getpgid(p.pid), signal.SIGTERM)
+            print 'Error: process taking too long to complete--terminating'
+            kill_check.set()
+        except OSError as e:
+            return
+
+
+def timeout_interrupt(p):
+    if p.poll() is None:
+        try:
+            os.killpg(os.getpgid(p.pid), signal.SIGINT)
+            print 'Error: process taking too long to complete--terminating'
+        except OSError as e:
+            return

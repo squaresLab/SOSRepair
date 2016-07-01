@@ -3,7 +3,7 @@ __author__ = 'afsoona'
 import os
 import subprocess
 import threading
-from utils import timeout as timeout_function, kill_check
+from utils import timeout as timeout_function, kill_check, timeout_interrupt
 
 
 def get_plain_name(filename):
@@ -56,3 +56,15 @@ def run_c_with_input(run_file_name, input, output=None):
 def run_c_with_input_provided(run_file_name, input):
     command = run_file_name + ' ' + input
     return run_command_with_timeout(command)
+
+
+def run_command_with_timeout_interrupt(command, timeout=5):
+    proc = subprocess.Popen(command, shell=True, preexec_fn=os.setsid)
+    t = threading.Timer(timeout, timeout_interrupt, [proc])
+    t.start()
+    (out, err) = proc.communicate()
+    t.cancel()
+    if err or kill_check.isSet():
+        kill_check.clear()
+        return False
+    return True

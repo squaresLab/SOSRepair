@@ -33,15 +33,19 @@ class SuspiciousLines():
 
     def compute_coverage(self, test_list, pos_or_neg):
         for test in test_list:
-            run_command('rm ' + get_plain_name_without_directory(self.filename) + '.gcda')
+            run_command('rm ' + get_plain_name_without_directory(self.plain_name) + '.gcda')
             res = run_c_with_input_provided(self.plain_name, test)
             if not res:
                 logger.error("Coverage failed on this test %s" % test)
-                continue
+                self.use_gdb_for_gcov(self.plain_name, test)
             run_command_with_timeout('gcov --object-directory ./ ' + self.program)
 
-            self.parse_gcov_file(get_plain_name_without_directory(self.filename) + '.gcov', pos_or_neg)
-        run_command('rm ' + self.filename + '.* ')
+            try:
+                self.parse_gcov_file(get_plain_name_without_directory(self.filename) + '.gcov', pos_or_neg)
+            except IOError:
+                logger.error("No gcov file found")
+                continue
+        run_command('rm ' + get_plain_name_without_directory(self.filename) + '.* ')
 
     def parse_gcov_file(self, gcov_file, pos_or_neg):
         with open(gcov_file, 'r') as f:
@@ -77,6 +81,12 @@ class SuspiciousLines():
             else:
                 self.suspiciousness.append((line_number, sqrt(left * right)))
 
-
-
+    @staticmethod
+    def use_gdb_for_gcov(filename, test):
+        with open('gdb_script.txt', 'w') as f:
+            f.write('file ' + filename + '\n')
+            f.write('run ' + test + '\n')
+            f.write('call exit()\nquit\n')
+        run_command_with_timeout_interrupt('gdb < gdb_script.txt')
+        run_command('rm gdb_script.txt')
 
