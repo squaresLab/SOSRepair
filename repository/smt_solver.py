@@ -24,6 +24,21 @@ class Z3:
         self.last_checked = index
         return index
 
+    def prepare_smt_query_new_version(self, index):
+        result = []
+        snippet = self.db_manager.fetch_snippet(index)
+        constraints = self.db_manager.fetch_constraints(index)
+        if len(constraints) < 1 or not snippet:
+            logger.error("ERROR no constraints or snippet for this id %d" % index)
+            return None
+        snippet_variables = [i[0] for i in eval(snippet[2])]
+        snippet_outputs = eval(snippet[3])
+        self.prepare_declarations_new_version(snippet_variables, snippet_outputs)
+        if isinstance(snippet_outputs, dict):
+            snippet_outputs = [i for i in snippet_outputs.keys()]
+        else:
+            snippet_outputs = []
+
     def prepare_smt_query(self, index):
         result = []
         snippet = self.db_manager.fetch_snippet(index)
@@ -32,13 +47,16 @@ class Z3:
             logger.error("ERROR no constraints or snippet for this id %d" % index)
             return None
         decls = self.prepare_declarations(constraints)
-        consts = self.prepare_constraints(constraints)
+        consts = '(assert ' + self.prepare_constraints(constraints)
         snippet_variables = [i[0] for i in eval(snippet[2])]
         snippet_outputs = eval(snippet[3])
         if isinstance(snippet_outputs, dict):
             snippet_outputs = [i for i in snippet_outputs.keys()]
         else:
             snippet_outputs = []
+        temp = self.prepare_declarations_new_version(snippet_variables, snippet_outputs)
+        print temp
+        raise Exception
         output_permutations = [list(zip(snippet_outputs, p)) for p in permutations(self.suspicious_block.get_output_names())]
         if len(output_permutations) == 0:
             output_permutations = [None]
@@ -121,6 +139,85 @@ class Z3:
         decls = '\n'.join(list(constraint_declarations)) + '\n' + '\n'.join(list(code_declarations))
         return decls
 
+    def prepare_declarations_new_version(self, snippet_vars, snippet_outputs):
+        output_len = 0
+        declarations = '''
+        (declare-fun input_map (Int) Int)
+        (declare-fun output_map (Int) Int)
+        '''
+        constraints = '''
+        (assert (forall ((n_afs Int)) (=> (and (>= n_afs 0) (> %(i)d n_afs)) (exists ((m_afs Int)) (and (and (>= m_afs 0) (> %(i)d m_afs)) (= (input_map n_afs) m_afs))))))
+        (assert (forall ((m_afs Int)) (=> (and (>= m_afs 0) (> %(i)d m_afs)) (exists ((n_afs Int)) (and (and (>= n_afs 0) (> %(i)d n_afs)) (= (input_map n_afs) m_afs))))))
+        (assert (forall ((n_afs Int)) (=> (and (>= n_afs 0) (> %(i)d n_afs)) (exists ((m_afs Int)) (and (and (>= m_afs 0) (> %(i)d m_afs)) (= (output_map n_afs) m_afs))))))
+        (assert (forall ((m_afs Int)) (=> (and (>= m_afs 0) (> %(i)d m_afs)) (exists ((n_afs Int)) (and (and (>= n_afs 0) (> %(i)d n_afs)) (= (output_map n_afs) m_afs))))))
+        ''' % {'i': len(self.profile.input_list)}
+        for i in range(len(self.profile.input_list)):
+            declarations += '''
+            (declare-const set_program_in_%(i)s (Array Int (Array (_ BitVec 32) (_ BitVec 8) )))
+            (declare-const set_snippet_in_%(i)s (Array Int (Array (_ BitVec 32) (_ BitVec 8) )))
+            (declare-const set_program_out_%(i)s (Array Int (Array (_ BitVec 32) (_ BitVec 8) )))
+            (declare-const set_snippet_out_%(i)s (Array Int (Array (_ BitVec 32) (_ BitVec 8) )))
+            ''' % {'i': i}
+
+            temp = 'set_program_in_%d' % i
+            n = 0
+            for v, t in self.suspicious_block.vars:
+                declarations += '(declare-fun %s_in_%d () (Array (_ BitVec 32) (_ BitVec 8) ) )\n' % (v, i)
+                temp = '(store ' + temp + ' ' + str(n) + ' ' + v + '_in_' + str(i) + ')'
+                n += 1
+            if n != 0:
+                constraints += '(assert (= ' + temp + ' set_program_in_' + str(i) + '))\n'
+            temp = 'set_snippet_in_%d' % i
+            n = 0
+            for v in snippet_vars:
+                declarations += '(declare-fun %s_%d () (Array (_ BitVec 32) (_ BitVec 8) ) )\n' % (v, i)
+                temp = '(store ' + temp + ' ' + str(n) + ' ' + v + '_' + str(i) + ')'
+                n += 1
+            if n != 0:
+                constraints += '(assert (= ' + temp + ' set_snippet_in_' + str(i) + '))\n'
+            if isinstance(self.suspicious_block.outputs, dict):
+                temp = 'set_program_out_%d' % i
+                n = 0
+                for v in self.suspicious_block.outputs.keys():
+                    declarations += '(declare-fun %s_out_%d () (Array (_ BitVec 32) (_ BitVec 8) ) )\n' % (v, i)
+                    temp = '(store ' + temp + ' ' + str(n) + ' ' + v + '_out_' + str(i) + ')'
+                    n += 1
+                if n != 0:
+                    constraints += '(assert (= ' + temp + ' set_program_out_' + str(i) + '))\n'
+            if isinstance(snippet_outputs, dict):
+                output_len = len(snippet_outputs.keys())
+                temp = 'set_program_out_%d' % i
+                n = 0
+                for v in snippet_outputs.keys():
+                    declarations += '(declare-fun %s_ret_%d () (Array (_ BitVec 32) (_ BitVec 8) ) )\n' % (v, i)
+                    temp = '(store ' + temp + ' ' + str(n) + ' ' + v + '_ret_' + str(i) + ')'
+                    n += 1
+                if n != 0:
+                    constraints += '(assert (= ' + temp + ' set_program_out_' + str(i) + '))\n'
+        constraints += '(assert (forall ((n_afs Int) (m_afs Int)) (=> (and (and (and (>= n_afs 0) (> %(i)d n_afs)) ' \
+                       '(and (>= m_afs 0) (> %(i)d m_afs))) (= (input_map n_afs) m_afs))' % {'i': len(snippet_vars)}
+        first = True
+        constraints += '(and ' * (len(self.profile.input_list) - 1)
+        for i in range(len(self.profile.input_list)):
+            constraints += '(= (select set_program_in_%(i)d n_afs) (select set_snippet_in_%(i)d m_afs))' % {'i': i}
+            if first:
+                first = False
+            else:
+                constraints += ')'
+        constraints += ')))\n'
+        constraints += '(assert (forall ((n_afs Int) (m_afs Int)) (=> (and (and (and (>= n_afs 0) (> %(i)d n_afs)) ' \
+                       '(and (>= m_afs 0) (> %(i)d m_afs))) (= (output_map n_afs) m_afs))' % {'i': output_len}
+        first = True
+        constraints += '(and ' * (len(self.profile.input_list) - 1)
+        for i in range(len(self.profile.input_list)):
+            constraints += '(= (select set_program_out_%(i)d n_afs) (select set_snippet_out_%(i)d m_afs))' % {'i': i}
+            if first:
+                first = False
+            else:
+                constraints += ')'
+        constraints += ')))\n'
+        return declarations + constraints
+
     @staticmethod
     def proper_value(value, typ):
         if typ not in ['int', 'long', 'short']:
@@ -137,8 +234,7 @@ class Z3:
 
     @staticmethod
     def prepare_constraints(constraints):
-        s = '(assert '
-        s += '(or ' * (len(constraints) - 1)
+        s = '(or ' * (len(constraints) - 1)
         first = True
         for c in constraints:
             s += c[2]
