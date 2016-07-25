@@ -33,11 +33,35 @@ class Z3:
             return None
         snippet_variables = [i[0] for i in eval(snippet[2])]
         snippet_outputs = eval(snippet[3])
-        self.prepare_declarations_new_version(snippet_variables, snippet_outputs)
+        consts = '(assert ' + self.prepare_constraints(constraints) + '\n'
         if isinstance(snippet_outputs, dict):
             snippet_outputs = [i for i in snippet_outputs.keys()]
         else:
             snippet_outputs = []
+        query = self.prepare_declarations_new_version(snippet_variables, snippet_outputs)
+        num = 0
+        for profile in self.profile.input_list:
+            query += self.replace_variable_names(num, consts, snippet_variables, snippet_outputs)
+            for v, t in self.suspicious_block.vars:
+                if t != 'char *':
+                    query += '(assert (let ' + self.get_let_statement(v + '_in_' + str(num)) + '(= ?A1 (_ bv' + self.proper_value(profile[v][0], t) + \
+                                ' 32) ) ) ) \n'
+                else:
+                    query += self.get_string_mapping(profile[v][0], v + '_in_' + str(num))
+            if isinstance(self.suspicious_block.outputs, dict):
+                for v in self.suspicious_block.outputs.keys():
+                    t = self.suspicious_block.outputs[v]['type']
+                    if t != 'char *':
+                        query += '(assert (let ' + self.get_let_statement(v + '_out_' + str(num)) + '(= ?A1 (_ bv' + self.proper_value(profile[v][1], t) + \
+                                    ' 32) ) ) ) \n'
+                    else:
+                        query += self.get_string_mapping(profile[v][1], v + '_out_' + str(num))
+            num += 1
+        query += '(check-sat)\n'
+        print query
+        satisfied = run_z3(query)
+        print satisfied
+        raise Exception
 
     def prepare_smt_query(self, index):
         result = []
@@ -54,9 +78,6 @@ class Z3:
             snippet_outputs = [i for i in snippet_outputs.keys()]
         else:
             snippet_outputs = []
-        temp = self.prepare_declarations_new_version(snippet_variables, snippet_outputs)
-        print temp
-        raise Exception
         output_permutations = [list(zip(snippet_outputs, p)) for p in permutations(self.suspicious_block.get_output_names())]
         if len(output_permutations) == 0:
             output_permutations = [None]
@@ -146,11 +167,11 @@ class Z3:
         (declare-fun output_map (Int) Int)
         '''
         constraints = '''
-        (assert (forall ((n_afs Int)) (=> (and (>= n_afs 0) (> %(i)d n_afs)) (exists ((m_afs Int)) (and (and (>= m_afs 0) (> %(i)d m_afs)) (= (input_map n_afs) m_afs))))))
-        (assert (forall ((m_afs Int)) (=> (and (>= m_afs 0) (> %(i)d m_afs)) (exists ((n_afs Int)) (and (and (>= n_afs 0) (> %(i)d n_afs)) (= (input_map n_afs) m_afs))))))
-        (assert (forall ((n_afs Int)) (=> (and (>= n_afs 0) (> %(i)d n_afs)) (exists ((m_afs Int)) (and (and (>= m_afs 0) (> %(i)d m_afs)) (= (output_map n_afs) m_afs))))))
-        (assert (forall ((m_afs Int)) (=> (and (>= m_afs 0) (> %(i)d m_afs)) (exists ((n_afs Int)) (and (and (>= n_afs 0) (> %(i)d n_afs)) (= (output_map n_afs) m_afs))))))
-        ''' % {'i': len(self.profile.input_list)}
+        (assert (forall ((n_afs Int)) (=> (and (>= n_afs 0) (> %(in)d n_afs)) (exists ((m_afs Int)) (and (and (>= m_afs 0) (> %(in)d m_afs)) (= (input_map n_afs) m_afs))))))
+        (assert (forall ((m_afs Int)) (=> (and (>= m_afs 0) (> %(in)d m_afs)) (exists ((n_afs Int)) (and (and (>= n_afs 0) (> %(in)d n_afs)) (= (input_map n_afs) m_afs))))))
+        (assert (forall ((n_afs Int)) (=> (and (>= n_afs 0) (> %(out)d n_afs)) (exists ((m_afs Int)) (and (and (>= m_afs 0) (> %(out)d m_afs)) (= (output_map n_afs) m_afs))))))
+        (assert (forall ((m_afs Int)) (=> (and (>= m_afs 0) (> %(out)d m_afs)) (exists ((n_afs Int)) (and (and (>= n_afs 0) (> %(out)d n_afs)) (= (output_map n_afs) m_afs))))))
+        ''' % {'in': len(snippet_vars), 'out': len(snippet_outputs)}
         for i in range(len(self.profile.input_list)):
             declarations += '''
             (declare-const set_program_in_%(i)s (Array Int (Array (_ BitVec 32) (_ BitVec 8) )))
@@ -184,16 +205,14 @@ class Z3:
                     n += 1
                 if n != 0:
                     constraints += '(assert (= ' + temp + ' set_program_out_' + str(i) + '))\n'
-            if isinstance(snippet_outputs, dict):
-                output_len = len(snippet_outputs.keys())
-                temp = 'set_program_out_%d' % i
-                n = 0
-                for v in snippet_outputs.keys():
-                    declarations += '(declare-fun %s_ret_%d () (Array (_ BitVec 32) (_ BitVec 8) ) )\n' % (v, i)
-                    temp = '(store ' + temp + ' ' + str(n) + ' ' + v + '_ret_' + str(i) + ')'
-                    n += 1
-                if n != 0:
-                    constraints += '(assert (= ' + temp + ' set_program_out_' + str(i) + '))\n'
+            temp = 'set_snippet_out_%d' % i
+            n = 0
+            for v in snippet_outputs:
+                declarations += '(declare-fun %s_ret_%d () (Array (_ BitVec 32) (_ BitVec 8) ) )\n' % (v, i)
+                temp = '(store ' + temp + ' ' + str(n) + ' ' + v + '_ret_' + str(i) + ')'
+                n += 1
+            if n != 0:
+                constraints += '(assert (= ' + temp + ' set_snippet_out_' + str(i) + '))\n'
         constraints += '(assert (forall ((n_afs Int) (m_afs Int)) (=> (and (and (and (>= n_afs 0) (> %(i)d n_afs)) ' \
                        '(and (>= m_afs 0) (> %(i)d m_afs))) (= (input_map n_afs) m_afs))' % {'i': len(snippet_vars)}
         first = True
@@ -206,7 +225,7 @@ class Z3:
                 constraints += ')'
         constraints += ')))\n'
         constraints += '(assert (forall ((n_afs Int) (m_afs Int)) (=> (and (and (and (>= n_afs 0) (> %(i)d n_afs)) ' \
-                       '(and (>= m_afs 0) (> %(i)d m_afs))) (= (output_map n_afs) m_afs))' % {'i': output_len}
+                       '(and (>= m_afs 0) (> %(i)d m_afs))) (= (output_map n_afs) m_afs))' % {'i': len(snippet_outputs)}
         first = True
         constraints += '(and ' * (len(self.profile.input_list) - 1)
         for i in range(len(self.profile.input_list)):
@@ -275,3 +294,14 @@ class Z3:
         query += ') '*(len(string)+1)
         query += '\n'
         return query
+
+    @staticmethod
+    def replace_variable_names(num, constraint, variables, outputs):
+        replaced = constraint
+        for v in variables:
+            replaced = replaced.replace(' %s ' % v, ' %s_%d ' % (v, num))
+            replaced = replaced.replace('(%s)' % v, '(%s_%d)' % (v, num))
+        for o in outputs:
+            replaced = replaced.replace(' %s_ret ' % o, ' %s_ret_%d ' % (v, num))
+            replaced = replaced.replace('(%s_ret)' % o, '(%s_ret_%d)' % (v, num))
+        return replaced
