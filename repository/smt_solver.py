@@ -37,7 +37,7 @@ class Z3:
             snippet_outputs = [i for i in snippet_outputs.keys()]
         else:
             snippet_outputs = []
-        query, get_value = self.prepare_declarations_new_version(snippet_variables, snippet_outputs)
+        query, get_value, program_mapping = self.prepare_declarations_new_version(snippet_variables, snippet_outputs)
         num = 0
         for profile in self.profile.input_list:
             query += self.replace_variable_names(num, consts, snippet_variables, snippet_outputs)
@@ -56,12 +56,20 @@ class Z3:
                     else:
                         query += self.get_string_mapping(profile[v][1], v + '_out_' + str(num))
             num += 1
-        query += '(check-sat)\n(get-value ('
-        query += ' '.join(get_value) + ') )\n'
+        query += '(check-sat)\n'
+        for s in get_value:
+            query += '(get-value (%s))\n' % s
         print query
-        satisfied = run_z3(query)
+        satisfied, mappings = run_z3(query)
         print satisfied
-        raise Exception
+        print mappings
+        if not satisfied:
+            return None
+        final_map = {}
+        for v, m in mappings:
+            final_map[v] = program_mapping[m]
+        print final_map
+        return [(snippet[1], eval(snippet[2]), final_map)]
 
     def prepare_smt_query(self, index):
         result = []
@@ -175,6 +183,7 @@ class Z3:
                 declarations += '(declare-fun %s_ret_%d () (Array (_ BitVec 32) (_ BitVec 8) ) )\n' % (v, i)
 
         get_value = []
+        mapping = {}
         # well-formed
         snippet_variables = list(set(snippet_vars) - set(snippet_outputs))
         code_variables = list(set(self.suspicious_block.get_var_names()) - set(self.suspicious_block.get_output_names()))
@@ -183,6 +192,7 @@ class Z3:
         for v in code_variables:
             declarations += '(declare-const l_%s_in Int)\n' % v
             constraints += '(= l_%s_in %d) ' % (v, i)
+            mapping[i] = v
             i += 1
         for v in snippet_variables:
             declarations += '(declare-const l_%s Int)\n' % v
@@ -191,11 +201,12 @@ class Z3:
         for v in self.suspicious_block.get_output_names():
             declarations += '(declare-const l_%s_out Int)\n' % v
             constraints += '(= l_%s_out %d) ' % (v, i)
+            mapping[i] = v
             i += 1
         for v in snippet_outputs:
-            declarations += '(declare-const l_%s_ret Int)\n' % v
-            constraints += '(<= %d l_%s_ret) (< l_%s_ret %d) ' % (len(snippet_variables), v, v, len(snippet_variables)+len(snippet_outputs))
-            get_value.append('l_%s_ret' % v)
+            declarations += '(declare-const l_%s Int)\n' % v
+            constraints += '(<= %d l_%s) (< l_%s %d) ' % (len(snippet_variables), v, v, len(snippet_variables)+len(snippet_outputs))
+            get_value.append('l_%s' % v)
         constraints += '))\n(assert (and '
         for v in code_variables:
             for sv in snippet_variables:
@@ -204,7 +215,7 @@ class Z3:
                 constraints += ') ) '
         for v in snippet_outputs:
             for pv in self.suspicious_block.outputs.keys():
-                constraints += '(=> (= l_%s_out l_%s_ret) (and ' % (pv, v)
+                constraints += '(=> (= l_%s_out l_%s) (and ' % (pv, v)
                 constraints += ''.join(['(= %(pv)s_out_%(i)d %(v)s_ret_%(i)d) (= %(pv)s_in_%(i)d %(v)s_%(i)d) '
                                         % {'pv': pv, 'v': v, 'i': i} for i in range(len(self.profile.input_list))])
                 constraints += ') ) '
@@ -213,9 +224,9 @@ class Z3:
         constraints += '(assert (= %d (+ ' % sum(range(len(snippet_variables))) + \
                        ' '.join(['l_%s' % s for s in snippet_variables]) + ') ) )\n'
         constraints += '(assert (= %d (+ ' % sum(range(len(snippet_variables), len(snippet_variables)+len(snippet_outputs))) + \
-                       ' '.join(['l_%s_ret' % s for s in snippet_outputs]) + ') ) )\n'
+                       ' '.join(['l_%s' % s for s in snippet_outputs]) + ') ) )\n'
 
-        return declarations + constraints, get_value
+        return declarations + constraints, get_value, mapping
 
     @staticmethod
     def proper_value(value, typ):

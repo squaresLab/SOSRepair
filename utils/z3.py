@@ -7,6 +7,7 @@ from settings import Z3_COMMAND
 
 def run_z3(query):
     ret = False
+    values = []
     with open('z3_query.smt2', 'w') as f:
         f.write(query)
         f.flush()
@@ -20,8 +21,14 @@ def run_z3(query):
                 ret = True
             elif l == 'unsat':
                 ret = False
+            if l.startswith('(('):
+                l_temp = l[2:-2]
+                parts = l_temp.split(' ')
+                if len(parts) != 2:
+                    print "ERROR: Why?"
+                values.append((parts[0][2:], int(parts[1])))
     os.system('rm z3_query.smt2')
-    return ret
+    return ret, values
 
 
 def twos_comp(val, bits):
