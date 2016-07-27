@@ -221,10 +221,10 @@ class Z3:
                 constraints += ') ) '
         constraints += ') )\n'
 
-        constraints += '(assert (= %d (+ ' % sum(range(len(snippet_variables))) + \
-                       ' '.join(['l_%s' % s for s in snippet_variables]) + ') ) )\n'
-        constraints += '(assert (= %d (+ ' % sum(range(len(snippet_variables), len(snippet_variables)+len(snippet_outputs))) + \
-                       ' '.join(['l_%s' % s for s in snippet_outputs]) + ') ) )\n'
+        constraints += '(assert (distinct ' + \
+                       ' '.join(['l_%s' % s for s in snippet_variables]) + ') )\n'
+        constraints += '(assert (distinct ' + \
+                       ' '.join(['l_%s' % s for s in snippet_outputs]) + ') )\n'
 
         return declarations + constraints, get_value, mapping
 
