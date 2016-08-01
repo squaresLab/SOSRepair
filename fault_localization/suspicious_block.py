@@ -31,9 +31,9 @@ class SuspiciousBlock():
 
 
 class FaultLocalization():
-    def __init__(self, filename):
-        self.filename = filename
-        self.number_of_lines = number_of_lines(filename)
+    def __init__(self):
+        self.filename = FAULTY_CODE
+        self.number_of_lines = number_of_lines(FAULTY_CODE)
         self.root = None
 
     def line_to_block(self, line_number):

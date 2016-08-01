@@ -32,3 +32,11 @@ logging.basicConfig(**LOGGING)
 MAX_SUSPICIOUS_LINES = 5
 
 VALID_TYPES = ['int', 'short', 'long', 'char', 'float', 'double', 'long long']
+
+TESTS_LIST = "/home/afsoon/Documents/ManyBugs/AutomatedRepairBenchmarks.c-master/many-bugs/gzip/gzip-bug-2009-09-26-a1d3d4019d-f17cbd13a1/tests-list.txt"
+TEST_SCRIPT = "/home/afsoon/Documents/ManyBugs/AutomatedRepairBenchmarks.c-master/many-bugs/gzip/gzip-bug-2009-09-26-a1d3d4019d-f17cbd13a1/test.sh a"
+TEST_SCRIPT_TYPE = "/bin/bash"
+COMPILE_SCRIPT = "/home/afsoon/Documents/ManyBugs/AutomatedRepairBenchmarks.c-master/many-bugs/gzip/gzip-bug-2009-09-26-a1d3d4019d-f17cbd13a1/compile.sh"
+FAULTY_CODE = "/home/afsoon/Documents/ManyBugs/AutomatedRepairBenchmarks.c-master/many-bugs/gzip/gzip-bug-2009-09-26-a1d3d4019d-f17cbd13a1/gzip/gzip.c"
+
+

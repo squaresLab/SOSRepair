@@ -3,7 +3,7 @@ __author__ = 'afsoona'
 import os
 import fnmatch
 import logging
-from settings import INTROCLASS_PATH, ALL_PATCHES, MAX_SUSPICIOUS_LINES
+from settings import *
 from profile.profile import *
 from profile.tests import *
 from fault_localization.suspicious_lines import *
@@ -28,11 +28,11 @@ def re_build_database(db_manager):
             os.system('rm ' + ff)
 
 
-def main(faulty_code, build_db=False, test_script=''):
-    logger.info('***************************** %s' % faulty_code)
-    faulty_code = transform_file(faulty_code)
+def main(build_db=False):
+    logger.info('***************************** %s' % FAULTY_CODE)
+    # faulty_code = transform_file(FAULTY_CODE)
 
-    tests = Tests(faulty_code, test_script)
+    tests = Tests()
     tests.initialize_script_testing()
     logger.debug('Tests %s' % str(tests))
     if len(tests.positives) == 0:
@@ -42,14 +42,14 @@ def main(faulty_code, build_db=False, test_script=''):
         print "Passes all tests"
         return 2
 
-    suspicious_lines = SuspiciousLines(faulty_code, '', tests)
+    suspicious_lines = SuspiciousLines(tests)
     suspicious_lines.compute_suspiciousness()
 
     db_manager = DatabaseManager()
     if build_db:
         re_build_database(db_manager)
 
-    fl = FaultLocalization(faulty_code)
+    fl = FaultLocalization()
 
     passing_patches = []
     os.system('rm -r patches')
@@ -68,7 +68,7 @@ def main(faulty_code, build_db=False, test_script=''):
             continue
         investigated_blocks.add(sb.line_range)
         logger.info("Suspicious block range %s" % str(sb.line_range))
-        profile = Profile(faulty_code, sb)
+        profile = Profile(sb)
         # profile.generate_file()
         # success = profile.generate_profile(tests.positives)
         success = profile.generate_gdb_script(tests.positives)
@@ -147,5 +147,4 @@ def main2():
     exception.close()
 
 if __name__ == "__main__":
-    main('/home/afsoon/Documents/workspace/SCS/genprog-benchmarks-2009/indent/indent_comb.c',
-         test_script='/home/afsoon/Documents/workspace/SCS/genprog-benchmarks-2009/indent/test-afs.sh')
+    main()

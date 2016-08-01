@@ -4,7 +4,7 @@ from clang.cindex import *
 import os
 import logging
 
-from settings import TESTS_DIRECTORY
+from settings import *
 from fault_localization.suspicious_block import FaultLocalization
 from utils.c_run import compile_c, run_c_with_input, run_command_with_timeout
 
@@ -13,8 +13,8 @@ logger = logging.getLogger(__name__)
 
 class Profile():
 
-    def __init__(self, filename, suspicious_block):
-        self.filename = filename
+    def __init__(self, suspicious_block):
+        self.filename = FAULTY_CODE
         self.suspicious_block = suspicious_block
         self.variables = []
         self.input_list = []
@@ -93,31 +93,37 @@ class Profile():
         return True
 
     def generate_gdb_script(self, positive_tests):
-        res = compile_c(self.filename, self.filename + '.o', '-g')
-        if not res:
-            # raise Exception
-            logger.error("ERROR: the profile is not compilable")
-            return False
-        file_and_breaks = 'file ' + self.filename + '.o\n'
+        file_and_breaks = 'file ' + TEST_SCRIPT_TYPE + '\n'
+        file_and_breaks += 'set breakpoint pending on\n'
         file_and_breaks += 'break ' + self.filename + ':' + str(self.suspicious_block.line_range[0]) + '\n'
         file_and_breaks += 'break ' + self.filename + ':' + str(self.suspicious_block.line_range[1]) + '\n'
+        file_and_breaks += '''
+set detach-on-fork off
+set non-stop on
+set pagination on
+set target-async on
+set confirm off
+'''
 
         vars = ''
         for v, t in self.suspicious_block.vars:
             vars += 'print ' + str(v) + '\n'
         vars += 'continue\n'
-        vars += vars
 
         for pt in positive_tests:
             states = []
             with open('gdb_script.txt', 'w') as f:
                 f.write(file_and_breaks)
-                f.write('run ' + pt + '\n')
-                f.write(vars)
+                f.write('set args ' + TEST_SCRIPT + ' ' + pt + '\n')
+                f.write('command 1\n' + vars + 'end\n')
+                f.write('command 2\n' + vars + 'end\n')
+                f.write('run\n')
+            raise Exception
             res = run_command_with_timeout('gdb < gdb_script.txt > gdb_out')
             if not res:
                 logger.warning("cannot run gdb")
                 continue
+            raise Exception
             with open('gdb_out', 'r') as f:
                 for l in f:
                     if l.startswith('(gdb) $'):

@@ -29,7 +29,7 @@ def transform_file(filename):
     with open(filename, 'r') as f:
         with open(transformed_file, 'w') as tf:
             for l in f:
-                if l.isspace() or l.strip().startswith('//') or l.strip().startswith('#'):
+                if l.isspace() or l.strip().startswith('//'):
                     continue
                 tf.write(l)
     return transformed_file

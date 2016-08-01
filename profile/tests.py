@@ -3,18 +3,19 @@ __author__ = 'afsoona'
 import os
 import logging
 
-from settings import TESTS_DIRECTORY
+from settings import *
 from utils.file_process import compare_files
-from utils.c_run import compile_c, run_c_with_input, get_plain_name, run_command_with_timeout, run_command
+from utils.c_run import compile_c, run_c_with_input, run_command_with_timeout, run_command, run_command_with_timeout_get_output
 
 logger = logging.getLogger(__name__)
 
 class Tests():
 
-    def __init__(self, program_name, test_script):
-        self.test_script = test_script
-        self.program_name = program_name
-        self.plain_name = get_plain_name(program_name)
+    def __init__(self):
+        self.tests_list = []
+        with open(TESTS_LIST, 'r') as f:
+            for l in f:
+                self.tests_list.append(l.strip())
         self.positives = []
         self.negatives = []
 
@@ -44,25 +45,20 @@ class Tests():
         return True
 
     def initialize_script_testing(self):
-        res = compile_c(self.program_name, self.plain_name)
-        if not res:
-            # raise Exception
-            return False
-        temp_output = self.plain_name + '_temp.out'
-        run_command('rm ' + temp_output)
-        command = self.test_script + ' ' + self.plain_name + ' ' + temp_output
-        res = run_command_with_timeout(command, 10)
+        res = run_command_with_timeout(COMPILE_SCRIPT, timeout=10)
         if not res:
             return False
-        with open(temp_output, 'r') as f:
-            for l in f:
-                if l.startswith('+'):
-                    self.positives.append(l[1:].strip())
-                elif l.startswith('-'):
-                    self.negatives.append(l[1:].strip())
-                else:
-                    logger.error("Unexpected output in tests")
-                    return False
+        for test in self.tests_list:
+            res = run_command_with_timeout_get_output(TEST_SCRIPT + ' ' + test)
+            if not res:
+                raise Exception
+            for l in res.splitlines():
+                if l.startswith("PASS"):
+                    self.positives.append(test)
+                    break
+                elif l.startswith("FAIL"):
+                    self.negatives.append(test)
+                    break
         return True
 
     def __str__(self):
