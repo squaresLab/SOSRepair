@@ -51,7 +51,7 @@ class Tests():
         for test in self.tests_list:
             res = run_command_with_timeout_get_output(TEST_SCRIPT + ' ' + test)
             if not res:
-                raise Exception
+                return False
             for l in res.splitlines():
                 if l.startswith("PASS"):
                     self.positives.append(test)

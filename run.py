@@ -31,6 +31,8 @@ def re_build_database(db_manager):
 def main(build_db=False):
     logger.info('***************************** %s' % FAULTY_CODE)
     # faulty_code = transform_file(FAULTY_CODE)
+    original_copy = FAULTY_CODE + '_orig.c'
+    run_command('cp ' + FAULTY_CODE + ' ' + original_copy)
 
     tests = Tests()
     tests.initialize_script_testing()
@@ -71,7 +73,8 @@ def main(build_db=False):
         profile = Profile(sb)
         # profile.generate_file()
         # success = profile.generate_profile(tests.positives)
-        success = profile.generate_gdb_script(tests.positives)
+        # success = profile.generate_gdb_script(tests.positives)
+        success = profile.generate_printing_profile(tests.positives, original_copy)
         logger.debug('Profile: ' + str(profile.input_list))
         if not success or not profile.input_list:
             continue
@@ -91,8 +94,10 @@ def main(build_db=False):
                 patch_snippet = patch_generation.replace_vars(ast)
                 patch_file = os.path.join(os.path.dirname(os.path.abspath(__file__)), 'patches/patch'+str(len(passing_patches))+'.c')
                 patch_file = patch_generation.create_patch(sb, patch_snippet, patch_file=patch_file)
-                patch_test = Tests(patch_file, test_script)
+                run_command('cp ' + patch_file + ' ' + FAULTY_CODE)
+                patch_test = Tests()
                 success = patch_test.initialize_script_testing()
+                run_command('cp ' + original_copy + ' ' + FAULTY_CODE)
                 if success and len(patch_test.negatives) == 0:
                     print "Found a patch!!! YAY"
                     passing_patches.append(patch_file)

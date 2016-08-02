@@ -6,7 +6,7 @@ import logging
 
 from settings import *
 from fault_localization.suspicious_block import FaultLocalization
-from utils.c_run import compile_c, run_c_with_input, run_command_with_timeout
+from utils.c_run import *
 
 logger = logging.getLogger(__name__)
 
@@ -19,6 +19,7 @@ class Profile():
         self.variables = []
         self.input_list = []
         self.marked_file = self.filename + "_marked.c"
+        self.output_file = self.filename + "_output.txt"
 
     # def find_variables(self):
     #     self.variables = []
@@ -28,8 +29,18 @@ class Profile():
     #             print str(i.displayname) + " " + str(i.location.line) + " " + str(i.kind) + " " + str(i.type.kind) + " " + str(i.location.file)
     #     return self.variables
 
+    def generate_printing_profile(self, positive_tests, original=FAULTY_CODE+'_orig.c'):
+        # copy original file to somewhere safe
+        self.generate_file()
+        run_command('cp ' + self.marked_file + ' ' + self.filename)
+        res = self.generate_profile(positive_tests)
+        print self.input_list
+        run_command('cp ' + original + ' ' + self.filename)
+        run_command('rm ' + self.marked_file)
+        return res
+
     def generate_file(self):
-        state = 'printf("input start:'
+        state = 'fprintf(fp, "input start:'
         state_vars = ''
         for v, t in self.suspicious_block.vars:
             state += v
@@ -40,38 +51,44 @@ class Profile():
             elif t == 'char*' or t == '*char' or t == 'char *' or t == '* char':
                 state += ':%s'
             #TODO Pointers
-            state += ':' + t + '_'
+            state += ':' + t + '_afs_'
             state_vars += ', ' + v
             self.variables.append(v)
         state += '\\n"' + state_vars + ");\n"
         i = 0
         with open(self.filename) as f:
-            out = open(self.marked_file , "w")
+            out = open(self.marked_file, "w")
             for line in f:
                 i += 1
-                if i == self.suspicious_block.line_range[0] or i == self.suspicious_block.line_range[1]:
+                if i == self.suspicious_block.line_range[0]:
+                    out.write('FILE *fp = fopen("' + self.output_file + '", "w");\n')
+                    out.write('fprintf(fp, "input\\n");\n')
                     out.write(state)
+                    out.write("fflush(fp);\n")
+                elif i == self.suspicious_block.line_range[1]:
+                    out.write('fprintf(fp, "output\\n");\n')
+                    out.write(state)
+                    out.write("fclose(fp);\n")
                 out.write(line)
             out.flush()
             out.close()
 
     def generate_profile(self, positive_tests):
-        res = compile_c(self.marked_file, self.filename + '.o')
+        res = run_command_with_timeout(COMPILE_SCRIPT, timeout=10)
         if not res:
             # raise Exception
             logger.error("the profile is not compilable")
             return False
         for pt in positive_tests:
-            test = os.path.join(TESTS_DIRECTORY, pt)
-            res = run_c_with_input(self.filename + '.o', test, self.filename+ '_temp.out')
+            res = run_command_with_timeout(TEST_SCRIPT + ' ' + pt)
             if not res:
                 raise Exception
             lines = []
-            with open(self.filename + '_temp.out') as file:
-                for l in file:
+            with open(self.output_file, 'r') as f:
+                for l in f:
                     index = l.find('input start:')
                     if index != -1:
-                        lines.append(l[index+12:].split('_'))
+                        lines.append(l[index+12:].split('_afs_'))
             if len(lines) != 2 or len(lines[0]) != len(lines[1]):
                 logger.error("Error in generating profile " + str(len(lines)))
                 # This happens when the block contains return
@@ -88,7 +105,6 @@ class Profile():
                     return
                 profile_dict[parts1[0]] = (''.join(parts1[1:-1]), ''.join(parts2[1:-1]))
             self.input_list.append(profile_dict)
-        os.system('rm ' + self.filename + '.o ' + self.filename + '_temp.out')
         logger.debug(self.input_list)
         return True
 
@@ -118,12 +134,10 @@ set confirm off
                 f.write('command 1\n' + vars + 'end\n')
                 f.write('command 2\n' + vars + 'end\n')
                 f.write('run\n')
-            raise Exception
             res = run_command_with_timeout('gdb < gdb_script.txt > gdb_out')
             if not res:
                 logger.warning("cannot run gdb")
                 continue
-            raise Exception
             with open('gdb_out', 'r') as f:
                 for l in f:
                     if l.startswith('(gdb) $'):
