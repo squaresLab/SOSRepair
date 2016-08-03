@@ -82,6 +82,7 @@ class DatabaseManager():
                                  str(snippet.outputs), str(snippet.function_calls), snippet.path))
             self.connect().commit()
             id = cursor.fetchone()[0]
+            print "ID %d" % id
             self.insert_constraint(snippet, id)
         except psycopg2.DatabaseError, e:
             logger.error('%s' % str(e))

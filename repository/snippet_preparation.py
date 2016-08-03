@@ -65,7 +65,7 @@ class CodeSnippetManager:
                         source = self.write_file(from_line, line, vars, outputs, func_calls, blocks)
                         code_snippet = CodeSnippet(source, vars, outputs, self.filename, func_calls)
                         res = self.symbolic_execution(code_snippet)
-                        if res > 0:
+                        if res:
                             self.db_manager.insert_snippet(code_snippet)
                         del code_snippet
                 except Exception as e:
