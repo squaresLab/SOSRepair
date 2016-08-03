@@ -57,15 +57,19 @@ class CodeSnippetManager:
                         else:
                             break
             while LARGEST_SNIPPET >= (line - from_line) >= SMALLEST_SNIPPET:
-                vars = self.find_vars(blocks)
-                outputs = self.find_outputs(blocks)
-                if vars != -1 and outputs != -1:
-                    func_calls = self.find_function_calls(blocks)
-                    source = self.write_file(from_line, line, vars, outputs, func_calls, blocks)
-                    code_snippet = CodeSnippet(source, vars, outputs, self.filename, func_calls)
-                    self.symbolic_execution(code_snippet)
-                    self.db_manager.insert_snippet(code_snippet)
-                    del code_snippet
+                try:
+                    vars = self.find_vars(blocks)
+                    outputs = self.find_outputs(blocks)
+                    if (vars != -1 and outputs != -1) or (len(vars) == 0 and len(outputs) == 0):
+                        func_calls = self.find_function_calls(blocks)
+                        source = self.write_file(from_line, line, vars, outputs, func_calls, blocks)
+                        code_snippet = CodeSnippet(source, vars, outputs, self.filename, func_calls)
+                        res = self.symbolic_execution(code_snippet)
+                        if res > 0:
+                            self.db_manager.insert_snippet(code_snippet)
+                        del code_snippet
+                except Exception as e:
+                    logger.error("Something wrong in snippet prepration: %s" %str(e))
                 blocks.pop(0)
                 if len(blocks) > 0:
                     from_line = blocks[0].location.line
