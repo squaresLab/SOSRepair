@@ -31,7 +31,7 @@ class SuspiciousLines():
             if not res:
                 #TODO
                 logger.error("Coverage failed on this test %s" % test)
-                # self.use_gdb_for_gcov(self.plain_name, test)
+                self.use_gdb_for_gcov(test)
             run_command_with_timeout('gcov ' + FAULTY_CODE)
 
             try:
@@ -76,11 +76,24 @@ class SuspiciousLines():
                 self.suspiciousness.append((line_number, sqrt(left * right)))
 
     @staticmethod
-    def use_gdb_for_gcov(filename, test):
+    def use_gdb_for_gcov(test):
         with open('gdb_script.txt', 'w') as f:
-            f.write('file ' + filename + '\n')
-            f.write('run ' + test + '\n')
-            f.write('call exit()\nquit\n')
+            f.write('file ' + TEST_SCRIPT_TYPE + '\n')
+            f.write('''
+set detach-on-fork off
+set non-stop on
+set pagination on
+set target-async on
+set confirm off
+''')
+            f.write('set args ' + TEST_SCRIPT + ' ' + test + '\n')
+            f.write('run\n')
+            f.write('''
+interrupt -a
+thread apply all call exit()
+thread all apply kill
+quit
+''')
         run_command_with_timeout_interrupt('gdb < gdb_script.txt')
         run_command('rm gdb_script.txt')
 
