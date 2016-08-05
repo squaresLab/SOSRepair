@@ -76,7 +76,6 @@ class Profile():
     def generate_profile(self, positive_tests):
         res = run_command_with_timeout(COMPILE_SCRIPT, timeout=10)
         if not res:
-            # raise Exception
             logger.error("the profile is not compilable")
             return False
         for pt in positive_tests:
@@ -84,11 +83,15 @@ class Profile():
             if not res:
                 raise Exception
             lines = []
-            with open(self.output_file, 'r') as f:
-                for l in f:
-                    index = l.find('input start:')
-                    if index != -1:
-                        lines.append(l[index+12:].split('_afs_'))
+            try:
+                with open(self.output_file, 'r') as f:
+                    for l in f:
+                        index = l.find('input start:')
+                        if index != -1:
+                            lines.append(l[index+12:].split('_afs_'))
+            except IOError:
+                logger.warning("This test probabely does not pass the faulty code %s" % pt)
+                continue
             if len(lines) != 2 or len(lines[0]) != len(lines[1]):
                 logger.error("Error in generating profile " + str(len(lines)))
                 # This happens when the block contains return
