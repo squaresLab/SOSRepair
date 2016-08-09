@@ -76,6 +76,9 @@ def main(build_db=False):
         # success = profile.generate_gdb_script(tests.positives)
         success = profile.generate_printing_profile(tests.positives, original_copy)
         logger.debug('Profile: ' + str(profile.input_list))
+        #if not success:
+        #    success = profile.generate_gdb_script(tests.positives)
+        #    logger.debug('Profile with gdb: ' + str(profile.input_list))
         if not success or not profile.input_list:
             continue
 

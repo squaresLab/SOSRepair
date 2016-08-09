@@ -79,6 +79,7 @@ class Profile():
             logger.error("the profile is not compilable")
             return False
         for pt in positive_tests:
+            run_command('rm ' + self.output_file)
             res = run_command_with_timeout(TEST_SCRIPT + ' ' + pt)
             if not res:
                 raise Exception
@@ -115,7 +116,7 @@ class Profile():
         file_and_breaks = 'file ' + TEST_SCRIPT_TYPE + '\n'
         file_and_breaks += 'set breakpoint pending on\n'
         file_and_breaks += 'break ' + self.filename + ':' + str(self.suspicious_block.line_range[0]) + '\n'
-        file_and_breaks += 'break ' + self.filename + ':' + str(self.suspicious_block.line_range[1]) + '\n'
+        file_and_breaks += 'break ' + self.filename + ':' + str(self.suspicious_block.line_range[1])
         file_and_breaks += '''
 set detach-on-fork off
 set non-stop on
@@ -137,7 +138,7 @@ set confirm off
                 f.write('command 1\n' + vars + 'end\n')
                 f.write('command 2\n' + vars + 'end\n')
                 f.write('run\n')
-            res = run_command_with_timeout('gdb < gdb_script.txt > gdb_out')
+            res = run_command('gdb --command=gdb_script.txt > gdb_out')
             if not res:
                 logger.warning("cannot run gdb")
                 continue

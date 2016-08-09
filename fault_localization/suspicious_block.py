@@ -38,7 +38,9 @@ class FaultLocalization():
 
     def line_to_block(self, line_number):
         index = Index.create()
+        logger.info("parsing")
         self.root = index.parse(self.filename)
+        logger.info("parsing root")
         return self.traverse_tree_suspicious_block(self.root.cursor, self.number_of_lines, line_number)
 
     def traverse_tree(self, line_number, ast):

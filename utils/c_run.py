@@ -43,7 +43,7 @@ def run_command_with_timeout_get_output(command, timeout=5):
     t.start()
     (out, err) = proc.communicate()
     t.cancel()
-    if err or kill_check.isSet():
+    if err or kill_check.isSet() or proc.returncode:
         kill_check.clear()
         return None
     return out

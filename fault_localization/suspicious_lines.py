@@ -88,12 +88,12 @@ set confirm off
 ''')
             f.write('set args ' + TEST_SCRIPT + ' ' + test + '\n')
             f.write('run\n')
-            f.write('''
-interrupt -a
-thread apply all call exit()
-thread all apply kill
-quit
-''')
-        run_command_with_timeout_interrupt('gdb < gdb_script.txt')
-        run_command('rm gdb_script.txt')
+            #f.write('''
+#interrupt -a
+#thread apply all call exit()
+#thread all apply kill
+#quit
+#''')
+        run_command_with_timeout_interrupt('gdb --command=gdb_script.txt', 20)
+        #run_command('rm gdb_script.txt')
 
