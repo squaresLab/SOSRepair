@@ -95,6 +95,9 @@ class CodeSnippetManager:
                             if '[' in temp:
                                 temp = i.type.element_type.spelling + ' *'
                             if str(temp).replace('*', '').strip() not in VALID_TYPES:
+                                if str(temp).replace('*', '').strip() == 'FILE' and i.displayname in ['stderr', 'stdout', 'stdin']:
+                                    logger.debug("std outs found, skipping")
+                                    continue
                                 logger.debug("Unrecognized type for output %s" % temp)
                                 return -1
                             if temp == 'char':
@@ -134,6 +137,9 @@ class CodeSnippetManager:
                     if '[' in temp:
                         temp = i.type.element_type.spelling + ' *'
                     if str(temp).replace('*', '').strip() not in VALID_TYPES:
+                        if str(temp).replace('*', '').strip() == 'FILE' and i.displayname in ['stderr', 'stdout', 'stdin']:
+                            logger.debug("std vars found, skipping")
+                            continue
                         logger.debug("Unrecognized type for input %s" % temp)
                         return -1
                     if temp == 'char':
@@ -174,8 +180,8 @@ struct s{
 struct s foo('''
 
         i = 0
-        for name, type in variables:
-            s += type + " " + name
+        for name, typ in variables:
+            s += typ + " " + name
             if i < len(variables) - 1:
                 s += ', '
             i += 1
