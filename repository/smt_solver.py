@@ -32,7 +32,7 @@ class Z3:
             return None
         snippet_variables = [i[0] for i in eval(snippet[2])]
         snippet_outputs = eval(snippet[3])
-        consts = '(assert ' + self.prepare_constraints(constraints) + '\n'
+        consts = '(assert ' + self.prepare_constraints(constraints) + ')\n'
         if isinstance(snippet_outputs, dict):
             snippet_outputs = [i for i in snippet_outputs.keys()]
         else:
@@ -79,7 +79,7 @@ class Z3:
             logger.error("ERROR no constraints or snippet for this id %d" % index)
             return None
         decls = self.prepare_declarations(constraints)
-        consts = '(assert ' + self.prepare_constraints(constraints)
+        consts = '(assert ' + self.prepare_constraints(constraints) + ')'
         snippet_variables = [i[0] for i in eval(snippet[2])]
         snippet_outputs = eval(snippet[3])
         if isinstance(snippet_outputs, dict):
@@ -187,16 +187,27 @@ class Z3:
         # well-formed
         snippet_variables = list(set(snippet_vars) - set(snippet_outputs))
         code_variables = list(set(self.suspicious_block.get_var_names()) - set(self.suspicious_block.get_output_names()))
+        types = {}
+        code_vars_dict = dict(self.suspicious_block.get_var_names())
+        snippet_vars_dict = dict(snippet_vars)
         constraints += '(assert (and '
         i = 0
         for v in code_variables:
             declarations += '(declare-const l_%s_in Int)\n' % v
             constraints += '(= l_%s_in %d) ' % (v, i)
             mapping[i] = v
+            if code_vars_dict[v] in types:
+                types[code_vars_dict[v]] = [i, ]
+            else:
+                types[code_vars_dict[v]].append(i)
             i += 1
         for v in snippet_variables:
             declarations += '(declare-const l_%s Int)\n' % v
-            constraints += '(<= 0 l_%s) (< l_%s %d) ' % (v, v, len(snippet_variables))
+            if len(types[snippet_vars_dict[v]]) == 1:
+                constraints += '(= %d l_%s)' % (types[snippet_vars_dict[v]][0], v)
+            else:
+                constraints += '(or ' + ' '.join(['(= %d l_%s)' % (i, v) for i in types[snippet_vars_dict[v]]]) + ')'
+            # constraints += '(<= 0 l_%s) (< l_%s %d) ' % (v, v, len(snippet_variables))
             get_value.append('l_%s' % v)
         for v in self.suspicious_block.get_output_names():
             declarations += '(declare-const l_%s_out Int)\n' % v
@@ -252,7 +263,6 @@ class Z3:
                 first = False
             else:
                 s += ') '
-        s += ')'
         return s
 
     @staticmethod
