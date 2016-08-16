@@ -37,29 +37,57 @@ class Z3:
             snippet_outputs = [i for i in snippet_outputs.keys()]
         else:
             snippet_outputs = []
-        query, get_value, program_mapping = self.prepare_declarations_new_version(snippet_variables, snippet_outputs)
+        positive = True
+        if len(self.profile.input_list) == 0:
+            positive = False
+        query, get_value, program_mapping = self.prepare_declarations_new_version(snippet_variables, snippet_outputs,
+                                                                                  len(self.profile.input_list) if
+                                                                                  positive else len(self.profile.negative_input_list))
         num = 0
-        for profile in self.profile.input_list:
-            query += self.replace_variable_names(num, consts, snippet_variables, snippet_outputs)
-            for v, t in self.suspicious_block.vars:
-                if t != 'char *':
-                    query += '(assert (let ' + self.get_let_statement(v + '_in_' + str(num)) + '(= ?A1 (_ bv' + self.proper_value(profile[v][0], t) + \
-                                ' 32) ) ) ) \n'
-                else:
-                    query += self.get_string_mapping(profile[v][0], v + '_in_' + str(num))
-            if isinstance(self.suspicious_block.outputs, dict):
-                for v in self.suspicious_block.outputs.keys():
-                    t = self.suspicious_block.outputs[v]['type']
+        if positive:
+            for profile in self.profile.input_list:
+                query += self.replace_variable_names(num, consts, snippet_variables, snippet_outputs)
+                for v, t in self.suspicious_block.vars:
                     if t != 'char *':
-                        query += '(assert (let ' + self.get_let_statement(v + '_out_' + str(num)) + '(= ?A1 (_ bv' + self.proper_value(profile[v][1], t) + \
+                        query += '(assert (let ' + self.get_let_statement(v + '_in_' + str(num)) + '(= ?A1 (_ bv' + self.proper_value(profile[v][0], t) + \
                                     ' 32) ) ) ) \n'
                     else:
-                        query += self.get_string_mapping(profile[v][1], v + '_out_' + str(num))
-            num += 1
+                        query += '(assert ' + self.get_string_mapping(profile[v][0], v + '_in_' + str(num)) + ')\n'
+                if isinstance(self.suspicious_block.outputs, dict):
+                    for v in self.suspicious_block.outputs.keys():
+                        t = self.suspicious_block.outputs[v]['type']
+                        if t != 'char *':
+                            query += '(assert (let ' + self.get_let_statement(v + '_out_' + str(num)) + '(= ?A1 (_ bv' + self.proper_value(profile[v][1], t) + \
+                                        ' 32) ) ) ) \n'
+                        else:
+                            query += '(assert ' + self.get_string_mapping(profile[v][1], v + '_out_' + str(num)) + ')\n'
+                num += 1
+        else:
+            logger.debug("We only have negative tests!")
+            for profile in self.profile.negative_input_list:
+                query += self.replace_variable_names(num, consts, snippet_variables, snippet_outputs)
+                query += '(assert (not (and '
+                for v, t in self.suspicious_block.vars:
+                    if t != 'char *':
+                        query += '(let ' + self.get_let_statement(v + '_in_' + str(num)) + '(= ?A1 (_ bv' + self.proper_value(profile[v][0], t) + \
+                                    ' 32) ) ) '
+                    else:
+                        query += self.get_string_mapping(profile[v][0], v + '_in_' + str(num)) + ' '
+                if isinstance(self.suspicious_block.outputs, dict):
+                    for v in self.suspicious_block.outputs.keys():
+                        t = self.suspicious_block.outputs[v]['type']
+                        if t != 'char *':
+                            query += '(let ' + self.get_let_statement(v + '_out_' + str(num)) + '(= ?A1 (_ bv' + self.proper_value(profile[v][1], t) + \
+                                        ' 32) ) ) '
+                        else:
+                            query += self.get_string_mapping(profile[v][1], v + '_out_' + str(num)) + ' '
+                query += ') ) )\n'
+                num += 1
         query += '(check-sat)\n'
         for s in get_value:
             query += '(get-value (%s))\n' % s
         print query
+        logger.debug('Query: %s' % query)
         satisfied, mappings = run_z3(query)
         print satisfied
         print mappings
@@ -122,7 +150,7 @@ class Z3:
                         mappings += '(assert (let ' + self.get_let_statement(v + '_in') + '(= ?A1 (_ bv' + self.proper_value(profile[v][0], t) + \
                                     ' 32) ) ) ) \n'
                     else:
-                        mappings += self.get_string_mapping(profile[v][0], v + '_in')
+                        mappings += '(assert ' + self.get_string_mapping(profile[v][0], v + '_in') + ')\n'
                 if isinstance(self.suspicious_block.outputs, dict):
                     for v in self.suspicious_block.outputs.keys():
                         t = self.suspicious_block.outputs[v]['type']
@@ -130,7 +158,7 @@ class Z3:
                             mappings += '(assert (let ' + self.get_let_statement(v + '_out') + '(= ?A1 (_ bv' + self.proper_value(profile[v][1], t) + \
                                         ' 32) ) ) ) \n'
                         else:
-                            mappings += self.get_string_mapping(profile[v][1], v + '_out')
+                            mappings += 'assert ' + self.get_string_mapping(profile[v][1], v + '_out') + ')\n'
                 # TODO deal with single output
                 satisfied = run_z3(mappings + '(check-sat)\n')
                 if not satisfied:
@@ -168,10 +196,10 @@ class Z3:
         decls = '\n'.join(list(constraint_declarations)) + '\n' + '\n'.join(list(code_declarations))
         return decls
 
-    def prepare_declarations_new_version(self, snippet_vars, snippet_outputs):
+    def prepare_declarations_new_version(self, snippet_vars, snippet_outputs, number_of_profiles):
         declarations = ''
         constraints = ''
-        for i in range(len(self.profile.input_list)):
+        for i in range(number_of_profiles):
             for v, t in self.suspicious_block.vars:
                 declarations += '(declare-fun %s_in_%d () (Array (_ BitVec 32) (_ BitVec 8) ) )\n' % (v, i)
             for v in snippet_vars:
@@ -222,13 +250,13 @@ class Z3:
         for v in code_variables:
             for sv in snippet_variables:
                 constraints += '(=> (= l_%s_in l_%s) (and ' % (v, sv)
-                constraints += ''.join(['(= %s_in_%d %s_%d) ' % (v, i, sv, i) for i in range(len(self.profile.input_list))])
+                constraints += ''.join(['(= %s_in_%d %s_%d) ' % (v, i, sv, i) for i in range(number_of_profiles)])
                 constraints += ') ) '
         for v in snippet_outputs:
             for pv in self.suspicious_block.outputs.keys():
                 constraints += '(=> (= l_%s_out l_%s) (and ' % (pv, v)
                 constraints += ''.join(['(= %(pv)s_out_%(i)d %(v)s_ret_%(i)d) (= %(pv)s_in_%(i)d %(v)s_%(i)d) '
-                                        % {'pv': pv, 'v': v, 'i': i} for i in range(len(self.profile.input_list))])
+                                        % {'pv': pv, 'v': v, 'i': i} for i in range(number_of_profiles)])
                 constraints += ') ) '
         constraints += ') )\n'
 
@@ -289,11 +317,10 @@ class Z3:
     def get_string_mapping(string, variable):
         if len(string) == 0:
             return ''
-        query = '(assert '
+        query = ''
         for i in range(len(string)):
             query += '(and (= (select %s (_ bv%d 32) ) (_ bv%d 32) ) ' % (variable, i, ord(string[i]))
-        query += ') '*(len(string)+1)
-        query += '\n'
+        query += ') '*(len(string))
         return query
 
     @staticmethod

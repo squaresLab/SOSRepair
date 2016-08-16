@@ -11,13 +11,14 @@ from utils.c_run import *
 logger = logging.getLogger(__name__)
 
 
-class Profile():
+class Profile:
 
     def __init__(self, suspicious_block):
         self.filename = FAULTY_CODE
         self.suspicious_block = suspicious_block
         self.variables = []
         self.input_list = []
+        self.negative_input_list = []
         self.marked_file = self.filename + "_marked.c"
         self.output_file = self.filename + "_output.txt"
 
@@ -29,14 +30,25 @@ class Profile():
     #             print str(i.displayname) + " " + str(i.location.line) + " " + str(i.kind) + " " + str(i.type.kind) + " " + str(i.location.file)
     #     return self.variables
 
-    def generate_printing_profile(self, positive_tests, original=FAULTY_CODE+'_orig.c'):
+    def generate_printing_profile(self, tests,  original=FAULTY_CODE+'_orig.c'):
         # copy original file to somewhere safe
         self.generate_file()
         run_command('cp ' + self.marked_file + ' ' + self.filename)
-        res = self.generate_profile(positive_tests)
+        res = self.generate_profile(tests.positives, self.input_list)
         print self.input_list
+        if not res or len(self.input_list) == 0:
+            res = self.generate_profile(tests.negatives, self.negative_input_list)
         run_command('cp ' + original + ' ' + self.filename)
         run_command('rm ' + self.marked_file)
+        return res
+
+    def update_profile(self, tests,  original=FAULTY_CODE+'_orig.c'):
+        # copy original file to somewhere safe
+        if not os.path.isfile(self.marked_file):
+            self.generate_file()
+        run_command('cp ' + self.marked_file + ' ' + self.filename)
+        res = self.generate_profile(tests.negatives, self.negative_input_list)
+        run_command('cp ' + original + ' ' + self.filename)
         return res
 
     def generate_file(self):
@@ -73,12 +85,12 @@ class Profile():
             out.flush()
             out.close()
 
-    def generate_profile(self, positive_tests):
+    def generate_profile(self, tests, input_list):
         res = run_command_with_timeout(COMPILE_SCRIPT, timeout=10)
         if not res:
             logger.error("the profile is not compilable")
             return False
-        for pt in positive_tests:
+        for pt in tests:
             run_command('rm ' + self.output_file)
             res = run_command_with_timeout(TEST_SCRIPT + ' ' + pt)
             if not res:
@@ -106,9 +118,9 @@ class Profile():
                 parts2 = lines[1][i].split(':')
                 if len(parts1) < 3 or len(parts2) < 3 or parts1[0] != parts2[0]:
                     logger.error("something is wrong in profile generation")
-                    return
+                    return False
                 profile_dict[parts1[0]] = (''.join(parts1[1:-1]), ''.join(parts2[1:-1]))
-            self.input_list.append(profile_dict)
+            input_list.append(profile_dict)
         logger.debug(self.input_list)
         return True
 

@@ -74,19 +74,19 @@ def main(build_db=False):
         # profile.generate_file()
         # success = profile.generate_profile(tests.positives)
         # success = profile.generate_gdb_script(tests.positives)
-        success = profile.generate_printing_profile(tests.positives, original_copy)
+        success = profile.generate_printing_profile(tests, original_copy)
         logger.debug('Profile: ' + str(profile.input_list))
         #if not success:
         #    success = profile.generate_gdb_script(tests.positives)
         #    logger.debug('Profile with gdb: ' + str(profile.input_list))
-        if not success or not profile.input_list:
+        if not success or (not profile.input_list and not profile.negative_input_list):
             continue
 
         z3 = Z3(sb, profile, db_manager)
         i = z3.fetch_valid_snippets()
         suspicious_lines_investigated += 1
         while i:
-            res = z3.prepare_smt_query(i)
+            res = z3.prepare_smt_query_new_version(i)
             if not res:
                 i = z3.fetch_valid_snippets()
                 continue
@@ -100,13 +100,17 @@ def main(build_db=False):
                 run_command('cp ' + patch_file + ' ' + FAULTY_CODE)
                 patch_test = Tests()
                 success = patch_test.initialize_script_testing()
-                run_command('cp ' + original_copy + ' ' + FAULTY_CODE)
                 if success and len(patch_test.negatives) == 0:
                     print "Found a patch!!! YAY"
+                    run_command('cp ' + original_copy + ' ' + FAULTY_CODE)
                     passing_patches.append(patch_file)
                     if not ALL_PATCHES:
                         return 0
                     break
+                elif len(profile.input_list) == 0:
+                    profile.update_profile(patch_test, original_copy)
+                    logger.debug('Updated profile: ' + str(profile.negative_input_list))
+                    run_command('cp ' + original_copy + ' ' + FAULTY_CODE)
             i = z3.fetch_valid_snippets()
     return 3
 
