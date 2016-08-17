@@ -200,20 +200,20 @@ struct s foo('''
             i = 1
             for line in f:
                 if i == blocks[0].extent.start.line:
-                    if line[blocks[0].extent.start.column:].strip().startswith('else'):  # Solo else
+                    if line[blocks[0].extent.start.column-1:].strip().startswith('else'):  # Solo else
                         s += 'if(0);\n'
                     if i == blocks[-1].extent.end.line:
-                        s += line[blocks[0].extent.start.column:blocks[-1].extent.end.column+1]
-                        code_snippet += line[blocks[0].extent.start.column:blocks[-1].extent.end.column+1]
+                        s += line[blocks[0].extent.start.column-1:blocks[-1].extent.end.column]
+                        code_snippet += line[blocks[0].extent.start.column-1:blocks[-1].extent.end.column]
                     else:
-                        s += line[blocks[0].extent.start.column:]
-                        code_snippet += line[blocks[0].extent.start.column:]
+                        s += line[blocks[0].extent.start.column-1:]
+                        code_snippet += line[blocks[0].extent.start.column-1:]
                 elif blocks[0].extent.start.line < i < blocks[-1].extent.end.line:
                     s += line
                     code_snippet += line
                 elif i == blocks[-1].extent.end.line:
-                    s += line[:blocks[-1].extent.end.column+1]
-                    code_snippet += line[:blocks[-1].extent.end.column+1]
+                    s += line[:blocks[-1].extent.end.column]
+                    code_snippet += line[:blocks[-1].extent.end.column]
                 elif i > blocks[-1].extent.end.line:
                     break
                 i += 1
