@@ -62,7 +62,7 @@ class CodeSnippetManager:
                     outputs = self.find_outputs(blocks)
                     if (vars != -1 and outputs != -1) or (len(vars) == 0 and len(outputs) == 0):
                         func_calls = self.find_function_calls(blocks)
-                        source = self.write_file(from_line, line, vars, outputs, func_calls, blocks)
+                        source = self.write_file(blocks, vars, outputs, func_calls)
                         code_snippet = CodeSnippet(source, vars, outputs, self.filename, func_calls)
                         res = self.symbolic_execution(code_snippet)
                         if res:
@@ -157,7 +157,7 @@ class CodeSnippetManager:
                         variables.add((i.displayname, temp.strip()))
         return list(variables)
 
-    def write_file(self, from_line, to_line, variables, outputs, function_calls, blocks):
+    def write_file(self, blocks, variables, outputs, function_calls):
         s = '''#include <klee/klee.h>
 #include <stdio.h>
 #include <string.h>
@@ -196,18 +196,28 @@ struct s foo('''
             i += 1
         s += '){\n'
         code_snippet = ''
-        block_lines = [b.location.line for b in blocks]
         with open(self.filename, 'r') as f:
             i = 1
             for line in f:
-                if from_line <= i < to_line:
-                    if i in block_lines and line.strip().startswith('else'):  # Solo else
+                if i == blocks[0].extent.start.line:
+                    if line[blocks[0].extent.start.column:].strip().startswith('else'):  # Solo else
                         s += 'if(0);\n'
-                    code_snippet += line
+                    if i == blocks[-1].extent.end.line:
+                        s += line[blocks[0].extent.start.column:blocks[-1].extent.end.column+1]
+                        code_snippet += line[blocks[0].extent.start.column:blocks[-1].extent.end.column+1]
+                    else:
+                        s += line[blocks[0].extent.start.column:]
+                        code_snippet += line[blocks[0].extent.start.column:]
+                elif blocks[0].extent.start.line < i < blocks[-1].extent.end.line:
                     s += line
-                elif i >= to_line:
+                    code_snippet += line
+                elif i == blocks[-1].extent.end.line:
+                    s += line[:blocks[-1].extent.end.column+1]
+                    code_snippet += line[:blocks[-1].extent.end.column+1]
+                elif i > blocks[-1].extent.end.line:
                     break
                 i += 1
+        logger.debug("Snippet: %s" % code_snippet)
         # s += code_snippet
 
         if isinstance(outputs, str):
