@@ -45,7 +45,7 @@ class Tests():
         return True
 
     def initialize_script_testing(self):
-        res = run_command_with_timeout(COMPILE_SCRIPT, timeout=10)
+        res = run_command_with_timeout(COMPILE_SCRIPT, timeout=50)
         if not res:
             return False
         for test in self.tests_list:

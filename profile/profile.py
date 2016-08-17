@@ -37,7 +37,9 @@ class Profile:
         res = self.generate_profile(tests.positives, self.input_list)
         print self.input_list
         if not res or len(self.input_list) == 0:
+            logger.debug("no positive profile")
             res = self.generate_profile(tests.negatives, self.negative_input_list)
+            logger.debug("Negative profile: %s" % str(self.negative_input_list))
         run_command('cp ' + original + ' ' + self.filename)
         run_command('rm ' + self.marked_file)
         return res
@@ -48,6 +50,9 @@ class Profile:
             self.generate_file()
         run_command('cp ' + self.marked_file + ' ' + self.filename)
         res = self.generate_profile(tests.negatives, self.negative_input_list)
+        if not res or len(self.negative_input_list) == 0:
+            res = self.generate_gdb_script(tests.negatives, self.negative_input_list)
+            logger.debug("Update negative profile: %s" % str(self.negative_input_list))
         run_command('cp ' + original + ' ' + self.filename)
         return res
 
@@ -92,8 +97,11 @@ class Profile:
             return False
         for pt in tests:
             run_command('rm ' + self.output_file)
+            logger.debug('Test running: %s' % pt)
             res = run_command_with_timeout(TEST_SCRIPT + ' ' + pt)
             if not res:
+                print "Run failed: %s" % pt
+                print "Res: %s" % str(res)
                 raise Exception
             lines = []
             try:
@@ -124,7 +132,11 @@ class Profile:
         logger.debug(self.input_list)
         return True
 
-    def generate_gdb_script(self, positive_tests):
+    def generate_gdb_script(self, positive_tests, input_list):
+        res = run_command_with_timeout(COMPILE_SCRIPT, timeout=10)
+        if not res:
+            logger.error("the gdb profile is not compilable")
+            return False
         file_and_breaks = 'file ' + TEST_SCRIPT_TYPE + '\n'
         file_and_breaks += 'set breakpoint pending on\n'
         file_and_breaks += 'break ' + self.filename + ':' + str(self.suspicious_block.line_range[0]) + '\n'
@@ -140,15 +152,14 @@ set confirm off
         vars = ''
         for v, t in self.suspicious_block.vars:
             vars += 'print ' + str(v) + '\n'
-        vars += 'continue\n'
 
         for pt in positive_tests:
             states = []
             with open('gdb_script.txt', 'w') as f:
                 f.write(file_and_breaks)
                 f.write('set args ' + TEST_SCRIPT + ' ' + pt + '\n')
-                f.write('command 1\n' + vars + 'end\n')
-                f.write('command 2\n' + vars + 'end\n')
+                f.write('command 1\n' + vars + 'continue\nend\n')
+                f.write('command 2\n' + vars + 'quit\nend\n')
                 f.write('run\n')
             res = run_command('gdb --command=gdb_script.txt > gdb_out')
             if not res:
@@ -156,8 +167,8 @@ set confirm off
                 continue
             with open('gdb_out', 'r') as f:
                 for l in f:
-                    if l.startswith('(gdb) $'):
-                        parts = l[7:].split('=')
+                    if l.startswith('$'):
+                        parts = l[1:].split('=')
                         if len(parts) != 2:
                             logger.warning("something is wrong")
                             continue
@@ -166,8 +177,9 @@ set confirm off
                         except:
                             logger.warning("something is wrong")
                             continue
-                        if parts[1].strip().startswith('"'): # it's a string
-                            states.append(parts[1].strip()[1:parts[1].strip().find('\\000')])
+                        string_index = parts[1].strip().find('"')
+                        if string_index != -1: # it's a string
+                            states.append(parts[1].strip()[string_index+1:parts[1].strip().rfind('"')])
                         else:
                             states.append(parts[1].strip())  # TODO strip for Strings?
             if len(states) != len(self.suspicious_block.vars)*2:
@@ -176,7 +188,8 @@ set confirm off
             profile_dict = {}
             for i in range(len(states)/2):
                 profile_dict[self.suspicious_block.vars[i][0]] = (states[i], states[i+len(self.suspicious_block.vars)])
-            self.input_list.append(profile_dict)
+            input_list.append(profile_dict)
+        print input_list
         os.system('rm gdb_script.txt gdb_out')
         return True
 

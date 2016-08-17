@@ -94,6 +94,6 @@ set confirm off
 #thread all apply kill
 #quit
 #''')
-        run_command_with_timeout_interrupt('gdb --command=gdb_script.txt', 20)
+        run_command_with_timeout_interrupt('gdb --command=gdb_script.txt', 30)
         #run_command('rm gdb_script.txt')
 

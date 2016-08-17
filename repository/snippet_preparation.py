@@ -91,9 +91,11 @@ class CodeSnippetManager:
                     # Find the first child as the left-hand side
                     for i in node.walk_preorder():
                         if i.kind == CursorKind.DECL_REF_EXPR or i.kind == CursorKind.UNEXPOSED_EXPR:
-                            temp = i.type.spelling.replace('const', '')
+                            temp = i.type.spelling
                             if '[' in temp:
                                 temp = i.type.element_type.spelling + ' *'
+                            temp = temp.replace('const', '')
+                            temp = temp.replace('unsigned', '')
                             if str(temp).replace('*', '').strip() not in VALID_TYPES:
                                 if str(temp).replace('*', '').strip() == 'FILE' and i.displayname in ['stderr', 'stdout', 'stdin']:
                                     logger.debug("std outs found, skipping")
@@ -126,21 +128,28 @@ class CodeSnippetManager:
             for i in block.walk_preorder():
                 if (i.kind == CursorKind.UNEXPOSED_EXPR or i.kind == CursorKind.DECL_REF_EXPR) and \
                         i.displayname != '':
-                    if i.type.kind == TypeKind.FUNCTIONPROTO or \
-                            (i.type.kind == TypeKind.POINTER and i.type.get_pointee().kind == TypeKind.FUNCTIONPROTO):
+                    if i.type.kind == TypeKind.FUNCTIONPROTO or i.type.kind == TypeKind.FUNCTIONNOPROTO or\
+                            (i.type.kind == TypeKind.POINTER and (i.type.get_pointee().kind == TypeKind.FUNCTIONPROTO or i.type.get_pointee().kind == TypeKind.FUNCTIONNOPROTO or\
+                             i.type.get_pointee().kind == TypeKind.UNEXPOSED)) or i.type.kind == TypeKind.UNEXPOSED:
                         for v, t in list(variables):
                             if v == i.displayname:
                                 variables.remove((v, t))
                                 break
+                        logger.debug('Here')
                         continue
-                    temp = i.type.spelling.replace('const', '')
+                    temp = i.type.spelling
                     if '[' in temp:
                         temp = i.type.element_type.spelling + ' *'
+                    logger.debug('Type: %s' % str(i.type.spelling))
+                    temp = temp.replace('const', '')
+                    temp = temp.replace('unsigned', '')
+                    logger.debug('No const: %s' % str(temp))
                     if str(temp).replace('*', '').strip() not in VALID_TYPES:
                         if str(temp).replace('*', '').strip() == 'FILE' and i.displayname in ['stderr', 'stdout', 'stdin']:
                             logger.debug("std vars found, skipping")
                             continue
                         logger.debug("Unrecognized type for input %s" % temp)
+                        logger.debug("name: %s, line: %d, kind: %s, pointee: %s" % (str(i.displayname), i.location.line, str(i.type.kind), str(i.type.get_pointee().kind)))
                         return -1
                     if temp == 'char':
                         variables.add((i.displayname, 'int'))
