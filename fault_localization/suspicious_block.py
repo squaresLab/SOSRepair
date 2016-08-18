@@ -14,6 +14,7 @@ class SuspiciousBlock():
     def __init__(self, line_number, line_range, blocks, vars, outputs, functions, filename):
         self.line_number = line_number
         self.line_range = line_range
+        self.column_range = (blocks[0].extent.start.column-1, blocks[-1].extent.end.column)
         self.blocks = blocks
         self.vars = vars
         self.outputs = outputs

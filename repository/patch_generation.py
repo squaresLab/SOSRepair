@@ -72,11 +72,14 @@ class PatchGeneration():
                     i += 1
                     if i < suspicious_block.line_range[0] or i >= suspicious_block.line_range[1]:
                         patch.write(l)
-                    elif snippet_written:
-                        continue
-                    else:
+                    elif i == suspicious_block.line_range[0]:
+                        patch.write(l[:suspicious_block.column_range[0]])
                         snippet_written = True
                         patch.write(snippet)
+                    elif i == suspicious_block.line_range[1]-1:
+                        patch.write(l[suspicious_block.column_range[1]-1:])
+                    elif snippet_written:
+                        continue
         return patch_file
 
     def remove_temp_file(self):
