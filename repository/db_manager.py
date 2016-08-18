@@ -1,10 +1,10 @@
 __author__ = 'afsoona'
 
 
-import collections
 import logging
 import psycopg2
 from settings import DATABASE
+from utils import counter_subset
 
 logger = logging.getLogger(__name__)
 
@@ -138,7 +138,6 @@ class DatabaseManager():
                 output_types = [outputs[i]['type'] for i in outputs.keys()]
             else:
                 output_types = [outputs]
-            compare = lambda x, y: collections.Counter(x) == collections.Counter(y)
             for id, v, o in rows:
                 v_types = [i[1] for i in eval(v)]
                 try:
@@ -153,7 +152,7 @@ class DatabaseManager():
                 else:
                     o_types = [out]
                 logger.debug("var: %s, v: %s, out: %s, o: %s" % (str(var_types), str(v_types), str(output_types), str(o_types)))
-                if compare(var_types, v_types) and compare(output_types, o_types):
+                if counter_subset(var_types, v_types) and counter_subset(output_types, o_types):
                     return id
         except psycopg2.DatabaseError, e:
             logger.error('%s' % str(e))

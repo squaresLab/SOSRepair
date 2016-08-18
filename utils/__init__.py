@@ -3,6 +3,7 @@ __author__ = 'afsoona'
 import os
 import signal
 import threading
+from collections import Counter
 
 kill_check = threading.Event()
 
@@ -24,3 +25,11 @@ def timeout_interrupt(p):
             print 'Error: process taking too long to complete--terminating'
         except OSError as e:
             return
+
+
+def counter_subset(list1, list2):
+    c1, c2 = Counter(list1), Counter(list2)
+    for k, n in c1.items():
+        if n >= c2[k]:
+            return True
+    return False
