@@ -49,9 +49,10 @@ class Profile:
         if not os.path.isfile(self.marked_file):
             self.generate_file()
         run_command('cp ' + self.marked_file + ' ' + self.filename)
+        original_len = len(self.negative_input_list)
         res = self.generate_profile(tests.negatives, self.negative_input_list)
-        if not res or len(self.negative_input_list) == 0:
-            res = self.generate_gdb_script(tests.negatives, self.negative_input_list)
+        if not res or len(self.negative_input_list) == original_len:
+#            res = self.generate_gdb_script(tests.negatives, self.negative_input_list)
             logger.debug("Update negative profile: %s" % str(self.negative_input_list))
         run_command('cp ' + original + ' ' + self.filename)
         return res

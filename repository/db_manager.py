@@ -151,7 +151,7 @@ class DatabaseManager():
                     o_types = [out[i]['type'] for i in out.keys()]
                 else:
                     o_types = [out]
-                logger.debug("var: %s, v: %s, out: %s, o: %s" % (str(var_types), str(v_types), str(output_types), str(o_types)))
+                logger.debug("var: %s, v: %s, subset: %s, out: %s, o: %s, subset: %s" % (str(var_types), str(v_types), str(counter_subset(var_types, v_types)), str(output_types), str(o_types), str(counter_subset(output_types, o_types))))
                 if counter_subset(var_types, v_types) and counter_subset(output_types, o_types):
                     return id
         except psycopg2.DatabaseError, e:

@@ -112,7 +112,7 @@ class FaultLocalization():
                             generate_block = True
                             break
             if generate_block or (LARGEST_SNIPPET >= (line - from_line) >= SMALLEST_SNIPPET and line >= line_number >= from_line):
-                while len(blocks) > 1 and blocks[1].location.line <= line_number and \
+                while len(blocks) > 1 and blocks[1].location.line < line_number and \
                                         LARGEST_SNIPPET >= (line - blocks[1].location.line) >= SMALLEST_SNIPPET:
                     blocks.pop(0)
                     from_line = blocks[0].location.line

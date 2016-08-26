@@ -30,6 +30,9 @@ def timeout_interrupt(p):
 def counter_subset(list1, list2):
     c1, c2 = Counter(list1), Counter(list2)
     for k, n in c1.items():
-        if n >= c2[k]:
-            return True
-    return False
+        if n < c2[k]:
+            return False
+    for k, n in c2.items():
+        if n > c1[k]:
+            return False
+    return True

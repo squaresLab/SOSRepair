@@ -60,9 +60,11 @@ class CodeSnippetManager:
                 try:
                     vars = self.find_vars(blocks)
                     outputs = self.find_outputs(blocks)
+                    logger.debug("Vars and outputs: %s and %s" % (str(vars), str(outputs)))
                     if (vars != -1 and outputs != -1) or (len(vars) == 0 and len(outputs) == 0):
                         func_calls = self.find_function_calls(blocks)
                         source = self.write_file(blocks, vars, outputs, func_calls)
+                        logger.debug("Source, line, from_line: %s, %d, %d" % (str(source), line, from_line)) 
                         code_snippet = CodeSnippet(source, vars, outputs, self.filename, func_calls)
                         res = self.symbolic_execution(code_snippet)
                         if res:
@@ -217,6 +219,9 @@ struct s foo('''
                 elif i > blocks[-1].extent.end.line:
                     break
                 i += 1
+        if not (code_snippet.strip().endswith(";") or code_snippet.strip().endswith("}")):
+            code_snippet += ";"
+            s += ";\n"
         logger.debug("Snippet: %s" % code_snippet)
         # s += code_snippet
 
