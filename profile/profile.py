@@ -60,7 +60,12 @@ class Profile:
     def generate_file(self):
         state = 'fprintf(fp, "input start:'
         state_vars = ''
-        for v, t in self.suspicious_block.vars:
+        invalid_vars = []
+        for var in self.suspicious_block.vars:
+            if len(var) == 3:
+                invalid_vars.append(var)
+                continue
+            v, t = var[0], var[1]
             state += v
             if t == 'int' or t == 'char':
                 state += ':%d'
@@ -72,7 +77,22 @@ class Profile:
             state += ':' + t + '_afs_'
             state_vars += ', ' + v
             self.variables.append(v)
-        state += '\\n"' + state_vars + ");\n"
+        if not invalid_vars:
+            state += '\\n"' + state_vars + ");\n"
+        else:
+            state += '"' + state_vars + ");\n"
+            for v, t, f in invalid_vars:
+                if '*' in t:
+                    state += 'buffer_afs = (unsigned char *)' + v + ';'
+                else:
+                    state += 'buffer_afs = (unsigned char *) &' + v + ';'
+                state += '''
+                fprintf(fp, "%s:");
+                for (int i = 0; i < sizeof(%s); i++)
+                    fprintf(fp, "%%d,", (unsigned) buffer_afs[i]);
+                fprintf(fp, ":%s_afs_");
+                ''' % (v, t.replace('*', '', 1), t)
+            state += 'fprintf(fp, "\\n");'
         i = 0
         with open(self.filename) as f:
             out = open(self.marked_file, "w")
@@ -81,6 +101,7 @@ class Profile:
                 if i == self.suspicious_block.line_range[0]:
                     out.write('FILE *fp = fopen("' + self.output_file + '", "w");\n')
                     out.write('fprintf(fp, "input\\n");\n')
+                    out.write('unsigned char *buffer_afs;\n')
                     out.write(state)
                     out.write("fflush(fp);\n")
                 elif i == self.suspicious_block.line_range[1]:

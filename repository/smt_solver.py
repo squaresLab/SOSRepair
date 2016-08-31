@@ -3,7 +3,7 @@ __author__ = 'Afsoon Afzal'
 import logging
 from itertools import permutations, product
 from utils.z3 import run_z3, twos_comp
-from repository.patch_generation import PatchGeneration
+from settings import VALID_TYPES
 
 logger = logging.getLogger(__name__)
 
@@ -48,19 +48,23 @@ class Z3:
             for profile in self.profile.input_list:
                 query += self.replace_variable_names(num, consts, snippet_variables, snippet_outputs)
                 for v, t in self.suspicious_block.vars:
-                    if t != 'char *':
+                    if t != 'char *' and t in VALID_TYPES:
                         query += '(assert (let ' + self.get_let_statement(v + '_in_' + str(num)) + '(= ?A1 (_ bv' + self.proper_value(profile[v][0], t) + \
                                     ' 32) ) ) ) \n'
-                    else:
+                    elif t == 'char *':
                         query += '(assert ' + self.get_string_mapping(profile[v][0], v + '_in_' + str(num)) + ')\n'
+                    else:
+                        query += '(assert ' + self.get_struct_mapping(profile[v][0], v + '_in_' + str(num)) + ')\n'
                 if isinstance(self.suspicious_block.outputs, dict):
                     for v in self.suspicious_block.outputs.keys():
                         t = self.suspicious_block.outputs[v]['type']
-                        if t != 'char *':
+                        if t != 'char *' and t in VALID_TYPES:
                             query += '(assert (let ' + self.get_let_statement(v + '_out_' + str(num)) + '(= ?A1 (_ bv' + self.proper_value(profile[v][1], t) + \
                                         ' 32) ) ) ) \n'
-                        else:
+                        elif t == 'char *':
                             query += '(assert ' + self.get_string_mapping(profile[v][1], v + '_out_' + str(num)) + ')\n'
+                        else:
+                            query += '(assert ' + self.get_struct_mapping(profile[v][0], v + '_out_' + str(num)) + ')\n'
                 num += 1
         else:
             logger.debug("We only have negative tests!")
@@ -215,10 +219,10 @@ class Z3:
         # well-formed
         snippet_variables = list(set(snippet_vars) - set(snippet_outputs))
         code_variables = list(set(self.suspicious_block.get_var_names()) - set(self.suspicious_block.get_output_names()))
-        #types = {}
-        #code_vars_dict = dict(self.suspicious_block.get_var_names())
-        #print "Vars: %s" % str(snippet_vars)
-        #snippet_vars_dict = dict(snippet_vars)
+        # types = {}
+        # code_vars_dict = dict(self.suspicious_block.get_var_names())
+        # print "Vars: %s" % str(snippet_vars)
+        # snippet_vars_dict = dict(snippet_vars)
         constraints += '(assert (and '
         i = 0
         for v in code_variables:
@@ -325,6 +329,22 @@ class Z3:
             query += '(and (= (select %s (_ bv%d 32) ) (_ bv%d 32) ) ' % (variable, i, ord(string[i]))
         query += ') '*(len(string))
         return query
+
+    @staticmethod
+    def get_struct_mapping(mem_array, variable):
+        parts = mem_array.split(',')
+        if len(parts) <= 1:
+            return ''
+        query = '(and '
+        i = 0
+        for i in range(len(parts)):
+            if parts[i]:
+                try:
+                    query += '(= (select %s (_ bv%d 32) ) (_ bv%d 32) ) ' % (variable, i, int(parts[i]))
+                except Exception as e:
+                    logger.error("The output of struct profile doesn't seem right: %s" % str(e))
+                    raise e
+        return query + ')'
 
     @staticmethod
     def replace_variable_names(num, constraint, variables, outputs):

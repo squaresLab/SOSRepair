@@ -20,7 +20,8 @@ class PatchGeneration():
     def prepare_snippet_to_parse(self):
         with open(self.temporary_file, 'w') as f:
             f.write("void foo(){\n")
-            for v, t in self.variables:
+            for var in self.variables:
+                v, t = var[0], var[1]
                 f.write(t + " " + v + ";\n")
             if self.source.strip().startswith('else'):
                 f.write('if(0);\n')

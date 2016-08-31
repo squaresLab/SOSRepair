@@ -71,7 +71,7 @@ class CodeSnippetManager:
                             self.db_manager.insert_snippet(code_snippet)
                         del code_snippet
                 except Exception as e:
-                    logger.error("Something wrong in snippet prepration: %s" %str(e))
+                    logger.error("Something wrong in snippet preparation: %s" % str(e))
                 blocks.pop(0)
                 if len(blocks) > 0:
                     from_line = blocks[0].location.line
@@ -133,9 +133,10 @@ class CodeSnippetManager:
                     if i.type.kind == TypeKind.FUNCTIONPROTO or i.type.kind == TypeKind.FUNCTIONNOPROTO or\
                             (i.type.kind == TypeKind.POINTER and (i.type.get_pointee().kind == TypeKind.FUNCTIONPROTO or i.type.get_pointee().kind == TypeKind.FUNCTIONNOPROTO or\
                              i.type.get_pointee().kind == TypeKind.UNEXPOSED)) or i.type.kind == TypeKind.UNEXPOSED:
-                        for v, t in list(variables):
+                        for var in list(variables):
+                            v, t = var[0], var[1]
                             if v == i.displayname:
-                                variables.remove((v, t))
+                                variables.remove(var)
                                 break
                         logger.debug('Here')
                         continue
@@ -146,22 +147,29 @@ class CodeSnippetManager:
                     temp = temp.replace('const', '')
                     temp = temp.replace('unsigned', '')
                     logger.debug('No const: %s' % str(temp))
-                    if str(temp).replace('*', '').strip() not in VALID_TYPES:
-                        if str(temp).replace('*', '').strip() == 'FILE' and i.displayname in ['stderr', 'stdout', 'stdin']:
-                            logger.debug("std vars found, skipping")
-                            continue
-                        logger.debug("Unrecognized type for input %s" % temp)
-                        logger.debug("name: %s, line: %d, kind: %s, pointee: %s" % (str(i.displayname), i.location.line, str(i.type.kind), str(i.type.get_pointee().kind)))
-                        return -1
+                    # if str(temp).replace('*', '').strip() not in VALID_TYPES:
+                    #     if str(temp).replace('*', '').strip() == 'FILE' and i.displayname in ['stderr', 'stdout', 'stdin']:
+                    #         logger.debug("std vars found, skipping")
+                    #         continue
+                    #     logger.debug("Unrecognized type for input %s" % temp)
+                    #     logger.debug("name: %s, line: %d, kind: %s, pointee: %s" % (str(i.displayname), i.location.line, str(i.type.kind), str(i.type.get_pointee().kind)))
+                    #     return -1
                     if temp == 'char':
                         variables.add((i.displayname, 'int'))
-                    else:
+                    elif str(temp).replace('*', '').strip() in VALID_TYPES:
                         variables.add((i.displayname, temp.strip()))
+                    else:
+                        final_type = i.type
+                        while final_type.kind == TypeKind.POINTER:
+                            final_type = final_type.get_pointee()
+                        print final_type.get_declaration().extent
+                        variables.add((i.displayname, temp.strip(), final_type.get_declaration().extent.start.file.name))
         return list(variables)
 
     def write_file(self, blocks, variables, outputs, function_calls):
         s = '''#include <klee/klee.h>
 #include <stdio.h>
+#include <stdlib.h>
 #include <string.h>
 '''
         includes = []
@@ -170,6 +178,12 @@ class CodeSnippetManager:
                 continue
             s += '#include "' + func + '"\n'
             includes.append(func)
+        for var in variables:
+            if len(var) == 3:
+                if var[2] in includes:
+                    continue
+                s += '#include "' + var[2] + '"\n'
+                includes.append(var[2])
         if isinstance(outputs, str):
             s += outputs + ' foo('
         elif len(outputs) == 1:
@@ -191,7 +205,8 @@ struct s{
 struct s foo('''
 
         i = 0
-        for name, typ in variables:
+        for var in variables:
+            name, typ = var[0], var[1]
             s += typ + " " + name
             if i < len(variables) - 1:
                 s += ', '
@@ -233,7 +248,7 @@ struct s foo('''
             if '*' not in outputs:
                 s += outputs + ' ret;\n'
             else:
-                s += outputs.replace('*', '') + ' ret[10];\n'
+                s += outputs.replace('*', '', 1) + ' ret[10];\n'
             s += 'klee_make_symbolic(&ret, sizeof(ret), "return_value");\n'
         elif len(outputs) == 1:
             s += 'return ' + outputs.keys()[0] + ';\n'
@@ -245,7 +260,7 @@ struct s foo('''
             if '*' not in outputs[outputs.keys()[0]]['type']:
                 s += outputs[outputs.keys()[0]]['type'] + ' ret;\n'
             else:
-                s += outputs[outputs.keys()[0]]['type'].replace('*', '') + ' ret[10];\n'
+                s += outputs[outputs.keys()[0]]['type'].replace('*', '', 1) + ' ret[10];\n'
             s += 'klee_make_symbolic(&ret, sizeof(ret), "' + outputs.keys()[0] + '_ret");\n'
         elif len(outputs) == 0:
             s += '''
@@ -268,13 +283,22 @@ struct s foo('''
                 s += outputs[name]['type'] + " " + name + "_ret;\n"
                 s += 'klee_make_symbolic(&' + name + '_ret, sizeof(' + name + '_ret), "' + name + '_ret");\n'
 
-        for name, type in variables:
-            s += type + " " + name + ";\n"
-            s += 'klee_make_symbolic(&' + name + ', sizeof(' + name + '), "' + name + '");\n'
+        for var in variables:
+            name, typ = var[0], var[1]
+            if '*' not in typ:
+                s += typ + " " + name + ";\n"
+                s += 'klee_make_symbolic(&' + name + ', sizeof(' + name + '), "' + name + '");\n'
+            elif typ.replace('*', '').strip() in VALID_TYPES:
+                s += typ + " " + name + " = malloc( 20 * sizeof(" + typ.replace('*', '', 1) + " ));\n"
+                s += 'klee_make_symbolic(' + name + ', 20 * sizeof(' + typ.replace('*', '', 1) + '), "' + name + '");\n'
+            else:
+                s += typ + " " + name + " = malloc( sizeof(" + typ.replace('*', '', 1) + " ));\n"
+                s += 'klee_make_symbolic(' + name + ', sizeof(' + typ.replace('*', '', 1) + '), "' + name + '");\n'
 
         foo = 'foo('
         i = 0
-        for name, type in variables:
+        for var in variables:
+            name, typ = var[0], var[1]
             foo += name
             if i < len(variables) - 1:
                 foo += ', '
