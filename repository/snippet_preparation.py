@@ -89,7 +89,8 @@ class CodeSnippetManager:
                 if node.kind == CursorKind.RETURN_STMT:
                     for i in node.get_children():
                         return i.type.spelling
-                if node.kind == CursorKind.BINARY_OPERATOR and node.binary_operator == BinaryOperator.Assign:
+                if (node.kind == CursorKind.BINARY_OPERATOR and node.binary_operator == BinaryOperator.Assign) or \
+                        node.kind == CursorKind.COMPOUND_ASSIGNMENT_OPERATOR:
                     # Find the first child as the left-hand side
                     for i in node.walk_preorder():
                         if i.kind == CursorKind.DECL_REF_EXPR or i.kind == CursorKind.UNEXPOSED_EXPR:
@@ -98,16 +99,27 @@ class CodeSnippetManager:
                                 temp = i.type.element_type.spelling + ' *'
                             temp = temp.replace('const', '')
                             temp = temp.replace('unsigned', '')
-                            if str(temp).replace('*', '').strip() not in VALID_TYPES:
-                                if str(temp).replace('*', '').strip() == 'FILE' and i.displayname in ['stderr', 'stdout', 'stdin']:
-                                    logger.debug("std outs found, skipping")
-                                    continue
-                                logger.debug("Unrecognized type for output %s" % temp)
-                                return -1
                             if temp == 'char':
                                 outputs[i.displayname] = {'line': i.location.line, 'type': 'int'}
-                            else:
+                            elif str(temp).replace('*', '').strip() in VALID_TYPES:
                                 outputs[i.displayname] = {'line': i.location.line, 'type': temp.strip()}
+                            else:
+                                final_type = i.type
+                                while final_type.kind == TypeKind.POINTER:
+                                    final_type = final_type.get_pointee()
+                                print final_type.get_declaration().extent
+                                outputs[i.displayname] = {'line': i.location.line, 'type': temp.strip(),
+                                                          'declaration': final_type.get_declaration().extent.start.file.name}
+                            # if str(temp).replace('*', '').strip() not in VALID_TYPES:
+                            #     if str(temp).replace('*', '').strip() == 'FILE' and i.displayname in ['stderr', 'stdout', 'stdin']:
+                            #         logger.debug("std outs found, skipping")
+                            #         continue
+                            #     logger.debug("Unrecognized type for output %s" % temp)
+                            #     return -1
+                            # if temp == 'char':
+                            #     outputs[i.displayname] = {'line': i.location.line, 'type': 'int'}
+                            # else:
+                            #     outputs[i.displayname] = {'line': i.location.line, 'type': temp.strip()}
                             break
                 elif node.kind == CursorKind.DECL_REF_EXPR or node.kind == CursorKind.UNEXPOSED_EXPR:
                     if node.displayname in outputs and node.location.line > outputs[node.displayname]['line']:
