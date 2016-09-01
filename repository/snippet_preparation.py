@@ -61,7 +61,7 @@ class CodeSnippetManager:
                     vars = self.find_vars(blocks)
                     outputs = self.find_outputs(blocks)
                     logger.debug("Vars and outputs: %s and %s" % (str(vars), str(outputs)))
-                    if (vars != -1 and outputs != -1) or (len(vars) == 0 and len(outputs) == 0):
+                    if (vars != -1 and outputs != -1):
                         func_calls = self.find_function_calls(blocks)
                         source = self.write_file(blocks, vars, outputs, func_calls)
                         logger.debug("Source, line, from_line: %s, %d, %d" % (str(source), line, from_line)) 
@@ -120,7 +120,8 @@ class CodeSnippetManager:
         for block in snippet_blocks:
             for node in block.walk_preorder():
                 if node.kind == CursorKind.CALL_EXPR:
-                    function_calls.add((node.displayname, node.referenced.location.file.name))
+                    if node.referenced:
+                        function_calls.add((node.displayname, node.referenced.location.file.name))
         return list(function_calls)
 
     @staticmethod
@@ -128,8 +129,15 @@ class CodeSnippetManager:
         variables = set({})
         for block in blocks:
             for i in block.walk_preorder():
+                if i.kind == CursorKind.MEMBER_REF_EXPR and i.displayname != '':
+                    for var in list(variables):
+                        v, t = var[0], var[1]
+                        if v == i.displayname: # and t == i.type.spelling.replace('*', '').replace('const', '').strip():
+                            variables.remove(var)
+                            break
                 if (i.kind == CursorKind.UNEXPOSED_EXPR or i.kind == CursorKind.DECL_REF_EXPR) and \
                         i.displayname != '':
+                    logger.debug("Just for debug: %s, %s" % (str(i.displayname), str(i.type.kind))) 
                     if i.type.kind == TypeKind.FUNCTIONPROTO or i.type.kind == TypeKind.FUNCTIONNOPROTO or\
                             (i.type.kind == TypeKind.POINTER and (i.type.get_pointee().kind == TypeKind.FUNCTIONPROTO or i.type.get_pointee().kind == TypeKind.FUNCTIONNOPROTO or\
                              i.type.get_pointee().kind == TypeKind.UNEXPOSED)) or i.type.kind == TypeKind.UNEXPOSED:
@@ -138,7 +146,6 @@ class CodeSnippetManager:
                             if v == i.displayname:
                                 variables.remove(var)
                                 break
-                        logger.debug('Here')
                         continue
                     temp = i.type.spelling
                     if '[' in temp:
@@ -146,7 +153,6 @@ class CodeSnippetManager:
                     logger.debug('Type: %s' % str(i.type.spelling))
                     temp = temp.replace('const', '')
                     temp = temp.replace('unsigned', '')
-                    logger.debug('No const: %s' % str(temp))
                     # if str(temp).replace('*', '').strip() not in VALID_TYPES:
                     #     if str(temp).replace('*', '').strip() == 'FILE' and i.displayname in ['stderr', 'stdout', 'stdin']:
                     #         logger.debug("std vars found, skipping")
@@ -319,6 +325,7 @@ struct s foo('''
         '''
         with open('snippet.c', 'w') as f:
             f.write(s)
+        logger.debug("Snippet on file:\n %s" % s)
         return code_snippet
 
     def symbolic_execution(self, code_snippet, filename='snippet.c'):
