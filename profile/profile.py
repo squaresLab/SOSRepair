@@ -88,8 +88,8 @@ class Profile:
                     state += 'buffer_afs = (unsigned char *) &' + v + ';'
                 state += '''
                 fprintf(fp, "%s:");
-                for (int i = 0; i < sizeof(%s); i++)
-                    fprintf(fp, "%%d,", (unsigned) buffer_afs[i]);
+                for (i_afs = 0; i_afs < sizeof(%s); i_afs++)
+                    fprintf(fp, "%%d,", (unsigned) buffer_afs[i_afs]);
                 fprintf(fp, ":%s_afs_");
                 ''' % (v, t.replace('*', '', 1), t)
             state += 'fprintf(fp, "\\n");'
@@ -101,7 +101,7 @@ class Profile:
                 if i == self.suspicious_block.line_range[0]:
                     out.write('FILE *fp = fopen("' + self.output_file + '", "w");\n')
                     out.write('fprintf(fp, "input\\n");\n')
-                    out.write('unsigned char *buffer_afs;\n')
+                    out.write('unsigned char *buffer_afs;\nint i_afs;\n')
                     out.write(state)
                     out.write("fflush(fp);\n")
                 elif i == self.suspicious_block.line_range[1]:
@@ -113,14 +113,14 @@ class Profile:
             out.close()
 
     def generate_profile(self, tests, input_list):
-        res = run_command_with_timeout(COMPILE_SCRIPT, timeout=10)
+        res = run_command_with_timeout(COMPILE_SCRIPT, timeout=70)
         if not res:
             logger.error("the profile is not compilable")
             return False
         for pt in tests:
             run_command('rm ' + self.output_file)
             logger.debug('Test running: %s' % pt)
-            res = run_command_with_timeout(TEST_SCRIPT + ' ' + pt)
+            res = run_command_with_timeout(TEST_SCRIPT + ' ' + pt, timeout=70)
             if not res:
                 print "Run failed: %s" % pt
                 print "Res: %s" % str(res)
@@ -139,7 +139,7 @@ class Profile:
                 logger.error("Error in generating profile " + str(len(lines)))
                 # This happens when the block contains return
                 # raise Exception
-                return False
+                continue
             profile_dict = {}
             for i in range(len(lines[0])):
                 if lines[0][i] == '\n':
@@ -155,7 +155,7 @@ class Profile:
         return True
 
     def generate_gdb_script(self, positive_tests, input_list):
-        res = run_command_with_timeout(COMPILE_SCRIPT, timeout=10)
+        res = run_command_with_timeout(COMPILE_SCRIPT, timeout=70)
         if not res:
             logger.error("the gdb profile is not compilable")
             return False

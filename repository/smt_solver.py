@@ -47,7 +47,8 @@ class Z3:
         if positive:
             for profile in self.profile.input_list:
                 query += self.replace_variable_names(num, consts, snippet_variables, snippet_outputs)
-                for v, t in self.suspicious_block.vars:
+                for var in self.suspicious_block.vars:
+                    v, t = var[0], var[1]
                     if t != 'char *' and t in VALID_TYPES:
                         query += '(assert (let ' + self.get_let_statement(v + '_in_' + str(num)) + '(= ?A1 (_ bv' + self.proper_value(profile[v][0], t) + \
                                     ' 32) ) ) ) \n'
@@ -71,7 +72,8 @@ class Z3:
             for profile in self.profile.negative_input_list:
                 query += self.replace_variable_names(num, consts, snippet_variables, snippet_outputs)
                 query += '(assert (not (and '
-                for v, t in self.suspicious_block.vars:
+                for var in self.suspicious_block.vars:
+                    v, t = var[0], var[1]
                     if t != 'char *':
                         query += '(let ' + self.get_let_statement(v + '_in_' + str(num)) + '(= ?A1 (_ bv' + self.proper_value(profile[v][0], t) + \
                                     ' 32) ) ) '
@@ -204,7 +206,8 @@ class Z3:
         declarations = ''
         constraints = ''
         for i in range(number_of_profiles):
-            for v, t in self.suspicious_block.vars:
+            for var in self.suspicious_block.vars:
+                v, t = var[0], var[1]
                 declarations += '(declare-fun %s_in_%d () (Array (_ BitVec 32) (_ BitVec 8) ) )\n' % (v, i)
             for v in snippet_vars:
                 declarations += '(declare-fun %s_%d () (Array (_ BitVec 32) (_ BitVec 8) ) )\n' % (v, i)

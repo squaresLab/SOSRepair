@@ -105,8 +105,14 @@ class CodeSnippetManager:
                                 outputs[i.displayname] = {'line': i.location.line, 'type': temp.strip()}
                             else:
                                 final_type = i.type
-                                while final_type.kind == TypeKind.POINTER:
-                                    final_type = final_type.get_pointee()
+                                while True:
+                                    if final_type.kind == TypeKind.POINTER:
+                                        final_type = final_type.get_pointee()
+                                        continue
+                                    if final_type.kind == TypeKind.INCOMPLETEARRAY:
+                                        final_type = final_type.element_type
+                                        continue
+                                    break
                                 print final_type.get_declaration().extent
                                 outputs[i.displayname] = {'line': i.location.line, 'type': temp.strip(),
                                                           'declaration': final_type.get_declaration().extent.start.file.name}
@@ -141,6 +147,7 @@ class CodeSnippetManager:
         variables = set({})
         for block in blocks:
             for i in block.walk_preorder():
+                logger.debug("Just for debug: %s, %s" % (str(i.displayname), str(i.type.kind)))
                 if i.kind == CursorKind.MEMBER_REF_EXPR and i.displayname != '':
                     for var in list(variables):
                         v, t = var[0], var[1]
@@ -149,7 +156,7 @@ class CodeSnippetManager:
                             break
                 if (i.kind == CursorKind.UNEXPOSED_EXPR or i.kind == CursorKind.DECL_REF_EXPR) and \
                         i.displayname != '':
-                    logger.debug("Just for debug: %s, %s" % (str(i.displayname), str(i.type.kind))) 
+                    #logger.debug("Just for debug: %s, %s" % (str(i.displayname), str(i.type.kind))) 
                     if i.type.kind == TypeKind.FUNCTIONPROTO or i.type.kind == TypeKind.FUNCTIONNOPROTO or\
                             (i.type.kind == TypeKind.POINTER and (i.type.get_pointee().kind == TypeKind.FUNCTIONPROTO or i.type.get_pointee().kind == TypeKind.FUNCTIONNOPROTO or\
                              i.type.get_pointee().kind == TypeKind.UNEXPOSED)) or i.type.kind == TypeKind.UNEXPOSED:
@@ -178,8 +185,15 @@ class CodeSnippetManager:
                         variables.add((i.displayname, temp.strip()))
                     else:
                         final_type = i.type
-                        while final_type.kind == TypeKind.POINTER:
-                            final_type = final_type.get_pointee()
+                        while True:
+                            if final_type.kind == TypeKind.INCOMPLETEARRAY:
+                                final_type = final_type.element_type
+                                continue
+                            if  final_type.kind == TypeKind.POINTER:
+                                final_type = final_type.get_pointee()
+                                continue
+                            break
+                        print str(i.type.get_declaration().extent) + " " + str(final_type.spelling)
                         print final_type.get_declaration().extent
                         variables.add((i.displayname, temp.strip(), final_type.get_declaration().extent.start.file.name))
         return list(variables)

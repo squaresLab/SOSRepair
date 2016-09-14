@@ -37,15 +37,18 @@ class PatchGeneration():
 
     def replace_vars(self, ast):
         lines = self.source.splitlines()
+        if len(lines) == 0:
+            logger.warning("Source doesn't have any split lines: %s" % self.source)
+            return self.source
         s = ''
         line, column = 0, 0
-        var_dict = dict(self.variables)
+        var_list = [i[0] for i in self.variables]
         for i in ast.walk_preorder():
-            # print str(i.location.line) + ":" + str(i.location.column) + " " + str(i.kind) + " " + i.displayname + " " + str(i.type.kind)
+            print str(i.location.line) + ":" + str(i.location.column) + " " + str(i.kind) + " " + i.displayname + " " + str(i.type.kind)
             if str(i.location.file) != self.temporary_file or i.location.line <= self.extra_lines or\
                     (i.location.line - (1+self.extra_lines) == line and column + 1 > i.location.column):
                 continue
-            if str(i.displayname) in var_dict.keys():
+            if str(i.displayname) in var_list:
                 l, c = i.location.line - (1+self.extra_lines), i.location.column
                 if line < l:
                     s += lines[line][column:] + '\n'

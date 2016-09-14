@@ -45,11 +45,11 @@ class Tests():
         return True
 
     def initialize_script_testing(self):
-        res = run_command_with_timeout(COMPILE_SCRIPT, timeout=50)
+        res = run_command_with_timeout(COMPILE_SCRIPT, timeout=70)
         if not res:
             return False
         for test in self.tests_list:
-            res = run_command_with_timeout_get_output(TEST_SCRIPT + ' ' + test)
+            res = run_command_with_timeout_get_output(TEST_SCRIPT + ' ' + test, timeout=70)
             if not res:
                 self.negatives.append(test)
                 logger.error("Test failed!") # Fix me

@@ -128,6 +128,7 @@ class DatabaseManager():
             cursor = self.connect().cursor()
             sql = """
             SELECT ID,VARIABLES,OUTPUTS FROM snippets WHERE ID>%d
+            ORDER BY ID
             """ % index
             cursor.execute(sql)
             rows = cursor.fetchall()  # TODO are you sure?
