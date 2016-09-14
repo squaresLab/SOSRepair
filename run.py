@@ -19,6 +19,10 @@ logger = logging.getLogger(__name__)
 def re_build_database(db_manager):
     db_manager.drop_tables()
     db_manager.initialize_tables()
+    deletion_snippet = CodeSnippet('', [], {}, '', [])
+    deletion_snippet.add_constraint('(assert true)')
+    db_manager.insert_snippet(deletion_snippet)
+    del deletion_snippet
     for root, dirs, files in os.walk(INTROCLASS_PATH):
         for items in fnmatch.filter(files, "*.c"):
             ff = os.path.join(root, items)
