@@ -102,6 +102,8 @@ class FaultLocalization():
             generate_block = False
             if dist > LARGEST_SNIPPET:
                 while (line - from_line) > LARGEST_SNIPPET:
+                    logger.debug("line: %d, from_line: %d" % (line, from_line))
+                    logger.debug("block0: %s" % str(blocks[0].kind))
                     if len(blocks) == 1:  # means it's a large block
                         return self.traverse_tree_suspicious_block(blocks[0], line, line_number)
                     else:
@@ -116,7 +118,7 @@ class FaultLocalization():
                                         LARGEST_SNIPPET >= (line - blocks[1].location.line) >= SMALLEST_SNIPPET:
                     blocks.pop(0)
                     from_line = blocks[0].location.line
-                vars = CodeSnippetManager.find_vars(blocks)
+                vars, labels = CodeSnippetManager.find_vars(blocks)
                 outputs = CodeSnippetManager.find_outputs(blocks)
                 if vars != -1 and outputs != -1:
                     func_calls = CodeSnippetManager.find_function_calls(blocks)
