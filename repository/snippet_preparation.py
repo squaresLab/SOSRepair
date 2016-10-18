@@ -173,41 +173,41 @@ class CodeSnippetManager:
                                 variables.remove(var)
                                 break
                         continue
-                    temp = i.type.spelling
-                    if '[' in temp:
-                        temp = i.type.element_type.spelling + ' *'
-                    logger.debug('Type: %s' % str(i.type.spelling))
-                    temp = temp.replace('const', '')
-                    temp = temp.replace('unsigned', '')
-                    # if str(temp).replace('*', '').strip() not in VALID_TYPES:
-                    #     if str(temp).replace('*', '').strip() == 'FILE' and i.displayname in ['stderr', 'stdout', 'stdin']:
-                    #         logger.debug("std vars found, skipping")
-                    #         continue
-                    #     logger.debug("Unrecognized type for input %s" % temp)
-                    #     logger.debug("name: %s, line: %d, kind: %s, pointee: %s" % (str(i.displayname), i.location.line, str(i.type.kind), str(i.type.get_pointee().kind)))
-                    #     return -1
-                    if temp == 'char' or temp.find('int') != -1:
-                        variables.add((i.displayname, 'int'))
-                    elif str(temp).replace('*', '').strip() in VALID_TYPES:
-                        variables.add((i.displayname, temp.strip()))
-                    elif str(temp).replace('*', '').strip() == 'void':
-                        if i.displayname in [t[0] for t in variables]:
-                            continue
+                    res = CodeSnippetManager.find_type_and_add(variables, i)
+                    if not res:
                         return -1, None
-                    else:
-                        final_type = i.type
-                        while True:
-                            if final_type.kind == TypeKind.INCOMPLETEARRAY:
-                                final_type = final_type.element_type
-                                continue
-                            if  final_type.kind == TypeKind.POINTER:
-                                final_type = final_type.get_pointee()
-                                continue
-                            break
-                        print str(i.type.get_declaration().extent) + " " + str(final_type.spelling)
-                        print final_type.get_declaration().extent
-                        variables.add((i.displayname, temp.strip(), final_type.get_declaration().extent.start.file.name))
         return list(variables), list(labels)
+
+    @staticmethod
+    def find_type_and_add(variables, i):
+        temp = i.type.spelling
+        if '[' in temp:
+            temp = i.type.element_type.spelling + ' *'
+        logger.debug('Type: %s' % str(i.type.spelling))
+        temp = temp.replace('const', '')
+        temp = temp.replace('unsigned', '')
+        if temp == 'char' or temp.find('int') != -1:
+            variables.add((i.displayname, 'int'))
+        elif str(temp).replace('*', '').strip() in VALID_TYPES:
+            variables.add((i.displayname, temp.strip()))
+        elif str(temp).replace('*', '').strip() == 'void':
+            if i.displayname in [t[0] for t in variables]:
+                return True  # continue
+            return False  # -1, None
+        else:
+            final_type = i.type
+            while True:
+                if final_type.kind == TypeKind.INCOMPLETEARRAY:
+                    final_type = final_type.element_type
+                    continue
+                if final_type.kind == TypeKind.POINTER:
+                    final_type = final_type.get_pointee()
+                    continue
+                break
+            print str(i.type.get_declaration().extent) + " " + str(final_type.spelling)
+            print final_type.get_declaration().extent
+            variables.add((i.displayname, temp.strip(), final_type.get_declaration().extent.start.file.name))
+        return True
 
     def write_file(self, blocks, variables, outputs, function_calls, labels=None):
         s = '''#include <klee/klee.h>
