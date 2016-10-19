@@ -62,12 +62,12 @@ class Profile:
         state_vars = ''
         invalid_vars = []
         for var in self.suspicious_block.vars:
-            if len(var) == 3:
-                invalid_vars.append(var)
-                continue
             v, t = var[0], var[1]
+            if t not in VALID_TYPES and t not in ['char *', '* char', 'char*', '*char']:
+                invalid_vars.append((v, t))
+                continue
             state += v
-            if t == 'int' or t == 'char' or t == 'long':
+            if t.find('int') != -1 or t == 'char' or t == 'long':
                 state += ':%d'
             elif t == 'float' or t == 'double':
                 state += ':%f'
@@ -81,7 +81,7 @@ class Profile:
             state += '\\n"' + state_vars + ");\n"
         else:
             state += '"' + state_vars + ");\n"
-            for v, t, f in invalid_vars:
+            for v, t in invalid_vars:
                 if '*' in t:
                     state += 'buffer_afs = (unsigned char *)' + v + ';'
                 else:

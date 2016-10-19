@@ -38,32 +38,34 @@ class CodeSnippetManager:
                 cursor = True
             if cursor and (str(child.location.file) != self.filename or child.kind == CursorKind.DECL_STMT):
                 continue
+            if cursor and (child.kind == CursorKind.DEFAULT_STMT or child.kind == CursorKind.CASE_STMT):
+                blocks = [child,]
+                continue
             line = child.location.line if cursor else child
             if from_line < 0:
                 from_line = line
                 blocks.append(child)
                 continue
             dist = line - from_line
-            if dist > LARGEST_SNIPPET:
-                while (line - from_line) > LARGEST_SNIPPET:
-                    if len(blocks) == 1:  # means it's a large block
-                        self.traverse_tree(blocks[0], line)
-                        blocks.pop(0)
-                        break
+            while (line - from_line) > LARGEST_SNIPPET or blocks[0].kind == CursorKind.DEFAULT_STMT or blocks[0].kind == CursorKind.CASE_STMT:
+                if len(blocks) == 1:  # means it's a large block
+                    self.traverse_tree(blocks[0], line)
+                    blocks.pop(0)
+                    break
+                else:
+                    blocks.pop(0)
+                    if len(blocks) > 0:
+                        from_line = blocks[0].location.line
                     else:
-                        blocks.pop(0)
-                        if len(blocks) > 0:
-                            from_line = blocks[0].location.line
-                        else:
-                            break
-            while LARGEST_SNIPPET >= (line - from_line) >= SMALLEST_SNIPPET:
+                        break
+            while LARGEST_SNIPPET >= (line - from_line) >= SMALLEST_SNIPPET and len(blocks) > 0:
                 try:
-                    vars = self.find_vars(blocks)
+                    vars, labels = self.find_vars(blocks)
                     outputs = self.find_outputs(blocks)
                     logger.debug("Vars and outputs: %s and %s" % (str(vars), str(outputs)))
                     if (vars != -1 and outputs != -1) and (len(vars) != 0 or len(outputs) != 0):
                         func_calls = self.find_function_calls(blocks)
-                        source = self.write_file(blocks, vars, outputs, func_calls)
+                        source = self.write_file(blocks, vars, outputs, func_calls, labels)
                         logger.debug("Source, line, from_line: %s, %d, %d" % (str(source), line, from_line)) 
                         code_snippet = CodeSnippet(source, vars, outputs, self.filename, func_calls)
                         res = self.symbolic_execution(code_snippet)
@@ -99,7 +101,7 @@ class CodeSnippetManager:
                                 temp = i.type.element_type.spelling + ' *'
                             temp = temp.replace('const', '')
                             temp = temp.replace('unsigned', '')
-                            if temp == 'char':
+                            if temp == 'char' or temp.find('int') != -1:
                                 outputs[i.displayname] = {'line': i.location.line, 'type': 'int'}
                             elif str(temp).replace('*', '').strip() in VALID_TYPES:
                                 outputs[i.displayname] = {'line': i.location.line, 'type': temp.strip()}
@@ -145,9 +147,14 @@ class CodeSnippetManager:
     @staticmethod
     def find_vars(blocks):
         variables = set({})
+        labels = set({})
         for block in blocks:
+            logger.debug("Block: %s, %s, %s" % (str(block.displayname), str(block.kind), str(block.type.kind)))
             for i in block.walk_preorder():
-                logger.debug("Just for debug: %s, %s" % (str(i.displayname), str(i.type.kind)))
+                logger.debug("Just for debug: %s, %s, %s" % (str(i.displayname), str(i.kind), str(i.type.kind)))
+                if i.kind == CursorKind.LABEL_REF and i.displayname != '':
+                    labels.add((i.displayname, 'ref'))
+                    continue
                 if i.kind == CursorKind.MEMBER_REF_EXPR and i.displayname != '':
                     for var in list(variables):
                         v, t = var[0], var[1]
@@ -166,39 +173,43 @@ class CodeSnippetManager:
                                 variables.remove(var)
                                 break
                         continue
-                    temp = i.type.spelling
-                    if '[' in temp:
-                        temp = i.type.element_type.spelling + ' *'
-                    logger.debug('Type: %s' % str(i.type.spelling))
-                    temp = temp.replace('const', '')
-                    temp = temp.replace('unsigned', '')
-                    # if str(temp).replace('*', '').strip() not in VALID_TYPES:
-                    #     if str(temp).replace('*', '').strip() == 'FILE' and i.displayname in ['stderr', 'stdout', 'stdin']:
-                    #         logger.debug("std vars found, skipping")
-                    #         continue
-                    #     logger.debug("Unrecognized type for input %s" % temp)
-                    #     logger.debug("name: %s, line: %d, kind: %s, pointee: %s" % (str(i.displayname), i.location.line, str(i.type.kind), str(i.type.get_pointee().kind)))
-                    #     return -1
-                    if temp == 'char':
-                        variables.add((i.displayname, 'int'))
-                    elif str(temp).replace('*', '').strip() in VALID_TYPES:
-                        variables.add((i.displayname, temp.strip()))
-                    else:
-                        final_type = i.type
-                        while True:
-                            if final_type.kind == TypeKind.INCOMPLETEARRAY:
-                                final_type = final_type.element_type
-                                continue
-                            if  final_type.kind == TypeKind.POINTER:
-                                final_type = final_type.get_pointee()
-                                continue
-                            break
-                        print str(i.type.get_declaration().extent) + " " + str(final_type.spelling)
-                        print final_type.get_declaration().extent
-                        variables.add((i.displayname, temp.strip(), final_type.get_declaration().extent.start.file.name))
-        return list(variables)
+                    res = CodeSnippetManager.find_type_and_add(variables, i)
+                    if not res:
+                        return -1, None
+        return list(variables), list(labels)
 
-    def write_file(self, blocks, variables, outputs, function_calls):
+    @staticmethod
+    def find_type_and_add(variables, i):
+        temp = i.type.spelling
+        if '[' in temp:
+            temp = i.type.element_type.spelling + ' *'
+        logger.debug('Type: %s' % str(i.type.spelling))
+        temp = temp.replace('const', '')
+        temp = temp.replace('unsigned', '')
+        if temp == 'char' or temp.find('int') != -1:
+            variables.add((i.displayname, 'int'))
+        elif str(temp).replace('*', '').strip() in VALID_TYPES:
+            variables.add((i.displayname, temp.strip()))
+        elif str(temp).replace('*', '').strip() == 'void':
+            if i.displayname in [t[0] for t in variables]:
+                return True  # continue
+            return False  # -1, None
+        else:
+            final_type = i.type
+            while True:
+                if final_type.kind == TypeKind.INCOMPLETEARRAY:
+                    final_type = final_type.element_type
+                    continue
+                if final_type.kind == TypeKind.POINTER:
+                    final_type = final_type.get_pointee()
+                    continue
+                break
+            print str(i.type.get_declaration().extent) + " " + str(final_type.spelling)
+            print final_type.get_declaration().extent
+            variables.add((i.displayname, temp.strip(), final_type.get_declaration().extent.start.file.name))
+        return True
+
+    def write_file(self, blocks, variables, outputs, function_calls, labels=None):
         s = '''#include <klee/klee.h>
 #include <stdio.h>
 #include <stdlib.h>
@@ -259,6 +270,15 @@ struct s foo('''
                     else:
                         s += line[blocks[0].extent.start.column-1:]
                         code_snippet += line[blocks[0].extent.start.column-1:]
+                    for letter in line[blocks[0].extent.start.column-2::-1]:
+                        logger.debug('Letter: %s' % letter)
+                        if letter == ' ':
+                            continue
+                        elif letter == '(':
+                            s = '(' + s
+                            code_snippet = '(' + code_snippet
+                        else:
+                            break
                 elif blocks[0].extent.start.line < i < blocks[-1].extent.end.line:
                     s += line
                     code_snippet += line
@@ -273,6 +293,10 @@ struct s foo('''
             s += ";\n"
         logger.debug("Snippet: %s" % code_snippet)
         # s += code_snippet
+
+        if labels:
+            for l, t in labels:
+                s += str(l) + ':;\n'
 
         if isinstance(outputs, str):
             s += '''

@@ -2,6 +2,7 @@ __author__ = 'Afsoon Afzal'
 
 import logging
 from clang.cindex import *
+from clang.cindex import BinaryOperator
 from settings import *
 from utils.file_process import number_of_lines
 from repository.snippet_preparation import CodeSnippetManager
@@ -20,6 +21,7 @@ class SuspiciousBlock():
         self.outputs = outputs
         self.functions = functions
         self.filename = filename
+        self.live_vars = vars
 
     def get_output_names(self):
         if isinstance(self.outputs, dict):
@@ -77,7 +79,7 @@ class FaultLocalization():
 
         return SuspiciousBlock(line_number, block, current, function)
 
-    def traverse_tree_suspicious_block(self, ast, end_of_file, line_number):
+    def traverse_tree_suspicious_block(self, ast, end_of_file, line_number, function=None):
         assert (isinstance(ast, Cursor))
         from_line = -1
         blocks = []
@@ -89,6 +91,8 @@ class FaultLocalization():
                 cursor = True
             if cursor and (str(child.location.file) != self.filename or child.kind == CursorKind.DECL_STMT):
                 continue
+            if not function and child.kind == CursorKind.FUNCTION_DECL:
+                function = child
             line = child.location.line if cursor else child
             # print line
             if from_line < 0:
@@ -102,8 +106,10 @@ class FaultLocalization():
             generate_block = False
             if dist > LARGEST_SNIPPET:
                 while (line - from_line) > LARGEST_SNIPPET:
+                    logger.debug("line: %d, from_line: %d" % (line, from_line))
+                    logger.debug("block0: %s" % str(blocks[0].kind))
                     if len(blocks) == 1:  # means it's a large block
-                        return self.traverse_tree_suspicious_block(blocks[0], line, line_number)
+                        return self.traverse_tree_suspicious_block(blocks[0], line, line_number, function)
                     else:
                         if len(blocks) > 1 and blocks[1].location.line <= line_number:
                             blocks.pop(0)
@@ -116,7 +122,7 @@ class FaultLocalization():
                                         LARGEST_SNIPPET >= (line - blocks[1].location.line) >= SMALLEST_SNIPPET:
                     blocks.pop(0)
                     from_line = blocks[0].location.line
-                vars = CodeSnippetManager.find_vars(blocks)
+                vars, labels = CodeSnippetManager.find_vars(blocks)
                 outputs = CodeSnippetManager.find_outputs(blocks)
                 if vars != -1 and outputs != -1:
                     func_calls = CodeSnippetManager.find_function_calls(blocks)
@@ -127,6 +133,44 @@ class FaultLocalization():
                 blocks.append(child)
                 from_line = blocks[0].location.line
         return None
+
+    @staticmethod
+    def find_live_variables(function, line):
+        final_list = set([])
+        all_vars = set([])
+        live_vars = set([])
+        dead_vars = set([])
+        for cursor in function.walk_preorder():
+            if cursor.location.line < line and cursor.kind == CursorKind.PARM_DECL or cursor.kind == CursorKind.VAR_DECL:
+                all_vars.add(str(cursor.displayname))
+            if cursor.location.line >= line and (cursor.kind == CursorKind.DECL_REF_EXPR or cursor.kind == CursorKind.UNEXPOSED_EXPR) \
+                    and str(cursor.displayname) not in dead_vars and str(cursor.displayname) in all_vars:
+                live_vars.add(str(cursor.displayname))
+                res = CodeSnippetManager.find_type_and_add(final_list, cursor)
+                # if not res:
+                #     return False
+            if cursor.location.line >= line and (cursor.kind == CursorKind.BINARY_OPERATOR and
+                                                 cursor.binary_operator == BinaryOperator.Assign):
+                left_side = None
+                visited = []
+                for node in cursor.walk_preorder():
+                    if node.hash in visited:
+                        continue
+                    if node.kind == CursorKind.DECL_REF_EXPR or node.kind == CursorKind.UNEXPOSED_EXPR:
+                        if not left_side:
+                            left_side = str(node.displayname)
+                        elif str(node.displayname) not in dead_vars and str(node.displayname) in all_vars:
+                            live_vars.add(str(node.displayname))
+                            CodeSnippetManager.find_type_and_add(final_list, node)
+                    elif not left_side and node.kind == CursorKind.MEMBER_REF_EXPR:
+                        for inner in node.walk_preorder():
+                            visited.append(inner.hash)
+                            if inner.kind == CursorKind.DECL_REF_EXPR or inner.kind == CursorKind.UNEXPOSED_EXPR:
+                                left_side = str(inner.displayname)
+                if left_side not in live_vars and left_side in all_vars:
+                    dead_vars.add(left_side)
+        return final_list
+
 
 if __name__ == "__main__":
     fl = FaultLocalization('src/fdevent_freebsd_kqueue.c')

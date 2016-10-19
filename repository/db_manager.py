@@ -83,6 +83,7 @@ class DatabaseManager():
             self.connect().commit()
             id = cursor.fetchone()[0]
             print "ID %d" % id
+            logger.debug("ID: %d" % id)
             self.insert_constraint(snippet, id)
         except psycopg2.DatabaseError, e:
             logger.error('%s' % str(e))
@@ -148,10 +149,11 @@ class DatabaseManager():
                 if (isinstance(out, dict) and not isinstance(outputs, dict)) or \
                         (not isinstance(out, dict) and isinstance(outputs, dict)):
                     continue
+                logger.debug("id: %d, o: %s, out: %s, is: %s" %(id, str(o), str(out), str(isinstance(out, dict))))
                 if isinstance(out, dict):
                     o_types = [out[i]['type'] for i in out.keys()]
                 else:
-                    o_types = [out]
+                    o_types = [str(o)]
                 logger.debug("var: %s, v: %s, subset: %s, out: %s, o: %s, subset: %s" % (str(var_types), str(v_types), str(counter_subset(var_types, v_types)), str(output_types), str(o_types), str(counter_subset(output_types, o_types))))
                 if counter_subset(var_types, v_types) and counter_subset(output_types, o_types):
                     return id
