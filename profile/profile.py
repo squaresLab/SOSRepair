@@ -67,7 +67,7 @@ class Profile:
                 continue
             v, t = var[0], var[1]
             state += v
-            if t == 'int' or t == 'char':
+            if t == 'int' or t == 'char' or t == 'long':
                 state += ':%d'
             elif t == 'float' or t == 'double':
                 state += ':%f'
@@ -148,8 +148,10 @@ class Profile:
                 parts2 = lines[1][i].split(':')
                 if len(parts1) < 3 or len(parts2) < 3 or parts1[0] != parts2[0]:
                     logger.error("something is wrong in profile generation")
+                    raise Exception
                     return False
                 profile_dict[parts1[0]] = (''.join(parts1[1:-1]), ''.join(parts2[1:-1]))
+                logger.debug("Profile generated from this test: %s" % pt)
             input_list.append(profile_dict)
         logger.debug(self.input_list)
         return True

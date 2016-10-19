@@ -23,7 +23,7 @@ class CodeSnippetManager:
     def detach_snippets(self):
         logger.debug('Snippet file: ' + self.filename)
         index = Index.create()
-        self.root = index.parse(self.filename)
+        self.root = index.parse(self.filename, ['-I/home/afsoon/ManyBugs/AutomatedRepairBenchmarks.c-master/many-bugs/python/python-original/python/Include', '-I/usr/include/x86_64-linux-gnu', '-I/usr/local/include', '-I/home/afsoon/ManyBugs/AutomatedRepairBenchmarks.c-master/many-bugs/python/python-original/python'])
         return self.traverse_tree(self.root.cursor, self.number_of_lines)
 
     def traverse_tree(self, ast, end_of_file):
@@ -61,7 +61,7 @@ class CodeSnippetManager:
                     vars = self.find_vars(blocks)
                     outputs = self.find_outputs(blocks)
                     logger.debug("Vars and outputs: %s and %s" % (str(vars), str(outputs)))
-                    if (vars != -1 and outputs != -1):
+                    if (vars != -1 and outputs != -1) and (len(vars) != 0 or len(outputs) != 0):
                         func_calls = self.find_function_calls(blocks)
                         source = self.write_file(blocks, vars, outputs, func_calls)
                         logger.debug("Source, line, from_line: %s, %d, %d" % (str(source), line, from_line)) 
@@ -203,8 +203,10 @@ class CodeSnippetManager:
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
+#include "/home/afsoon/ManyBugs/AutomatedRepairBenchmarks.c-master/many-bugs/python/python-original/python/Include/pyport.h"
+#include "/home/afsoon/ManyBugs/AutomatedRepairBenchmarks.c-master/many-bugs/python/python-original/python/Include/object.h"
 '''
-        includes = []
+        includes = ['/home/afsoon/ManyBugs/AutomatedRepairBenchmarks.c-master/many-bugs/python/python-original/python/Include/object.h', '/home/afsoon/ManyBugs/AutomatedRepairBenchmarks.c-master/many-bugs/python/python-original/python/Include/pyport.h']
         for temp, func in function_calls:
             if func in includes:
                 continue
@@ -380,6 +382,7 @@ class CodeSnippet():
         self.constraints = []
 
     def add_constraint(self, constraint):
+        logger.debug("Constraint %s" % str(constraint))
         self.constraints.append(constraint)
 
     def seperate_declarations(self, constraint):

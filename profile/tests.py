@@ -46,9 +46,11 @@ class Tests():
 
     def initialize_script_testing(self):
         res = run_command_with_timeout(COMPILE_SCRIPT, timeout=70)
+        print "RES %s" % str(res)
         if not res:
             return False
         for test in self.tests_list:
+            print "running test %s" %test
             res = run_command_with_timeout_get_output(TEST_SCRIPT + ' ' + test, timeout=70)
             if not res:
                 self.negatives.append(test)

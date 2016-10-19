@@ -80,12 +80,11 @@ def main(build_db=False):
         # success = profile.generate_gdb_script(tests.positives)
         success = profile.generate_printing_profile(tests, original_copy)
         logger.debug('Profile: ' + str(profile.input_list))
-        if not success:
-            success = profile.generate_gdb_script(tests.negatives, profile.negative_input_list)
-            logger.debug('Profile with gdb: ' + str(profile.input_list))
+        #if not success:
+            #success = profile.generate_gdb_script(tests.negatives, profile.negative_input_list)
+            #logger.debug('Profile with gdb: ' + str(profile.input_list))
         if not success or (not profile.input_list and not profile.negative_input_list):
             continue
-
         z3 = Z3(sb, profile, db_manager)
         i = z3.fetch_valid_snippets()
         suspicious_lines_investigated += 1
@@ -164,3 +163,5 @@ def main2():
 
 if __name__ == "__main__":
     main()
+    #db_manager = DatabaseManager()
+    #re_build_database(db_manager)

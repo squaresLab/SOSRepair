@@ -6,7 +6,7 @@ from utils.c_run import run_command
 
 
 def compile_clang(filename):
-    command = "clang-3.4 -emit-llvm -c -g " + filename
+    command = "clang-3.4 -I/home/afsoon/ManyBugs/AutomatedRepairBenchmarks.c-master/many-bugs/python/python-original/python -I/home/afsoon/ManyBugs/AutomatedRepairBenchmarks.c-master/many-bugs/python/python-original/python/Include -emit-llvm -c -g " + filename
     res = run_command(command)
     if not res:
         return False

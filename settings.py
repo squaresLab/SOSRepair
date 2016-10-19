@@ -7,7 +7,7 @@ LIBCLANG_PATH = '/home/afsoon/llvm/build/lib/libclang.so'
 #LIBCLANG_PATH = '/Users/afsoona/llvm/build/lib/libclang.dylib'
 
 TESTS_DIRECTORY = '/home/afsoon/Documents/workspace/SCS/IntroClass/median/tests/blackbox'
-INTROCLASS_PATH = '/home/afsoon/ManyBugs/AutomatedRepairBenchmarks.c-master/many-bugs/gzip/gzip-bug-2010-02-19-3eb6091d69-884ef6d16c/tempfix'
+INTROCLASS_PATH = '/home/afsoon/ManyBugs/AutomatedRepairBenchmarks.c-master/many-bugs/python/python-original/python'
 
 Z3_COMMAND = '/home/afsoon/z3/build/z3'
 
@@ -33,10 +33,10 @@ MAX_SUSPICIOUS_LINES = 10
 
 VALID_TYPES = ['int', 'short', 'long', 'char', 'float', 'double', 'long long']
 
-TESTS_LIST = "/home/afsoon/ManyBugs/AutomatedRepairBenchmarks.c-master/many-bugs/gzip/gzip-bug-2009-10-09-1a085b1446-118a107f2d/tests-list.txt"
-TEST_SCRIPT = "/home/afsoon/ManyBugs/AutomatedRepairBenchmarks.c-master/many-bugs/gzip/gzip-bug-2009-10-09-1a085b1446-118a107f2d/test.sh a"
+TESTS_LIST = "/home/afsoon/ManyBugs/AutomatedRepairBenchmarks.c-master/many-bugs/python/python-original/tests-list1.txt"
+TEST_SCRIPT = "/home/afsoon/ManyBugs/AutomatedRepairBenchmarks.c-master/many-bugs/python/python-original/test.sh a"
 TEST_SCRIPT_TYPE = "/bin/bash"
-COMPILE_SCRIPT = "/home/afsoon/ManyBugs/AutomatedRepairBenchmarks.c-master/many-bugs/gzip/gzip-bug-2009-10-09-1a085b1446-118a107f2d/compile1.sh"
-FAULTY_CODE = "/home/afsoon/ManyBugs/AutomatedRepairBenchmarks.c-master/many-bugs/gzip/gzip-bug-2009-10-09-1a085b1446-118a107f2d/gzip/gzip.c"
+COMPILE_SCRIPT = "/home/afsoon/ManyBugs/AutomatedRepairBenchmarks.c-master/many-bugs/python/python-original/compile1.sh"
+FAULTY_CODE = "/home/afsoon/ManyBugs/AutomatedRepairBenchmarks.c-master/many-bugs/python/python-original/python/Modules/selectmodule.c"
 
 
