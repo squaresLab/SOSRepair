@@ -136,19 +136,19 @@ class FaultLocalization():
 
     @staticmethod
     def find_live_variables(function, line):
+        final_list = set([])
         all_vars = set([])
         live_vars = set([])
         dead_vars = set([])
         for cursor in function.walk_preorder():
             if cursor.location.line < line and cursor.kind == CursorKind.PARM_DECL or cursor.kind == CursorKind.VAR_DECL:
-                res = CodeSnippetManager.find_type_and_add(all_vars, cursor)
-                if not res:
-                    return False
+                all_vars.add(str(cursor.displayname))
             if cursor.location.line >= line and (cursor.kind == CursorKind.DECL_REF_EXPR or cursor.kind == CursorKind.UNEXPOSED_EXPR) \
                     and str(cursor.displayname) not in dead_vars and str(cursor.displayname) in all_vars:
-                res = CodeSnippetManager.find_type_and_add(live_vars, cursor)
-                if not res:
-                    return False
+                live_vars.add(str(cursor.displayname))
+                res = CodeSnippetManager.find_type_and_add(final_list, cursor)
+                # if not res:
+                #     return False
             if cursor.location.line >= line and (cursor.kind == CursorKind.BINARY_OPERATOR and
                                                  cursor.binary_operator == BinaryOperator.Assign):
                 left_side = None
@@ -158,9 +158,10 @@ class FaultLocalization():
                         continue
                     if node.kind == CursorKind.DECL_REF_EXPR or node.kind == CursorKind.UNEXPOSED_EXPR:
                         if not left_side:
-                            left_side = node
+                            left_side = str(node.displayname)
                         elif str(node.displayname) not in dead_vars and str(node.displayname) in all_vars:
                             live_vars.add(str(node.displayname))
+                            CodeSnippetManager.find_type_and_add(final_list, node)
                     elif not left_side and node.kind == CursorKind.MEMBER_REF_EXPR:
                         for inner in node.walk_preorder():
                             visited.append(inner.hash)
@@ -168,7 +169,7 @@ class FaultLocalization():
                                 left_side = str(inner.displayname)
                 if left_side not in live_vars and left_side in all_vars:
                     dead_vars.add(left_side)
-        return live_vars
+        return final_list
 
 
 if __name__ == "__main__":
