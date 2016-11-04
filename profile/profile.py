@@ -120,7 +120,7 @@ class Profile:
         for pt in tests:
             run_command('rm ' + self.output_file)
             logger.debug('Test running: %s' % pt)
-            res = run_command_with_timeout(TEST_SCRIPT + ' ' + pt, timeout=70)
+            res = run_command_with_timeout(TEST_SCRIPT + ' ' + pt, timeout=100)
             if not res:
                 print "Run failed: %s" % pt
                 print "Res: %s" % str(res)

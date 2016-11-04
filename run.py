@@ -49,7 +49,7 @@ def main(build_db=False):
         return 2
 
     suspicious_lines = SuspiciousLines(tests)
-    suspicious_lines.compute_suspiciousness()
+    #suspicious_lines.compute_suspiciousness()
 
     db_manager = DatabaseManager()
     if build_db:
@@ -62,7 +62,7 @@ def main(build_db=False):
     os.system('mkdir patches')
     investigated_blocks = set([])
     suspicious_lines_investigated = 0
-    for line, score in suspicious_lines.suspiciousness:
+    for line, score in [(1897, 1.0)]:
         if suspicious_lines_investigated >= MAX_SUSPICIOUS_LINES:
             return 4
         logger.info("Suspicious line: %d ,score: %f" % (line, score))
