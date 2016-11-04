@@ -148,7 +148,9 @@ class CodeSnippetManager:
                                     c.displayname in variables:
                                 args.add(c.displayname)
                         function_calls.add((node.displayname, node.referenced.location.file.name,
-                                            {'line': (node.extent.start.line, node.extent.end.line), 'args': args}))
+                                            {'line': (node.extent.start.line, node.extent.end.line),
+                                             'column': (node.extent.start.column, node.extent.end.column),
+                                             'args': args}))
         return list(function_calls)
 
     @staticmethod
@@ -271,14 +273,18 @@ struct s foo('''
             for var in variables:
                 variable_dictionary[var[0]] = var[1]
             for line in f:
-                if func_end: # for now we assumed no function call appears in the same line as other statements
+                if func_end:  # for now we assumed no function call appears in the same line as other statements
                     if func_end == line:
                         func_end = 0
                     code_snippet += line
                     continue
                 if i in function_lines:
+                    remove = True
                     for t1, t2, info in function_calls:
                         if info['line'][0] == i:
+                            if line[:info['column'][0]].strip():  # means the function call is sharing the line with others
+                                remove = False
+                                break
                             for name in info['args']:
                                 typ = variable_dictionary[name]
                                 if '*' not in typ:
@@ -292,8 +298,9 @@ struct s foo('''
                                     s += 'klee_make_symbolic(' + name + ', sizeof(' + typ.replace('*', '', 1) + '), "' + name + '");\n'
                             func_end = info['line'][1]
                             break
-                    code_snippet += line
-                    continue
+                    if remove:
+                        code_snippet += line
+                        continue
                 if i == blocks[0].extent.start.line:
                     if line[blocks[0].extent.start.column-1:].strip().startswith('else'):  # Solo else
                         s += 'if(0);\n'
