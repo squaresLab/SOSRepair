@@ -148,7 +148,7 @@ class CodeSnippetManager:
                                     c.displayname in variables:
                                 args.add(c.displayname)
                         function_calls.add((node.displayname, node.referenced.location.file.name,
-                                            {'line': node.extent.end.line, 'args': args}))
+                                            {'line': (node.extent.start.line, node.extent.end.line), 'args': args}))
         return list(function_calls)
 
     @staticmethod
@@ -265,11 +265,35 @@ struct s foo('''
         code_snippet = ''
         with open(self.filename, 'r') as f:
             i = 1
-            function_lines = [func[3]['line'] for func in function_calls]
+            function_lines = [func[3]['line'][0] for func in function_calls]
+            func_end = 0
             variable_dictionary = {}
             for var in variables:
                 variable_dictionary[var[0]] = var[1]
             for line in f:
+                if func_end: # for now we assumed no function call appears in the same line as other statements
+                    if func_end == line:
+                        func_end = 0
+                    code_snippet += line
+                    continue
+                if i in function_lines:
+                    for t1, t2, info in function_calls:
+                        if info['line'][0] == i:
+                            for name in info['args']:
+                                typ = variable_dictionary[name]
+                                if '*' not in typ:
+                                    s += typ + " " + name + ";\n"
+                                    s += 'klee_make_symbolic(&' + name + ', sizeof(' + name + '), "' + name + '");\n'
+                                elif typ.replace('*', '').strip() in VALID_TYPES:
+                                    s += typ + " " + name + " = malloc( 20 * sizeof(" + typ.replace('*', '', 1) + " ));\n"
+                                    s += 'klee_make_symbolic(' + name + ', 20 * sizeof(' + typ.replace('*', '', 1) + '), "' + name + '");\n'
+                                else:
+                                    s += typ + " " + name + " = malloc( sizeof(" + typ.replace('*', '', 1) + " ));\n"
+                                    s += 'klee_make_symbolic(' + name + ', sizeof(' + typ.replace('*', '', 1) + '), "' + name + '");\n'
+                            func_end = info['line'][1]
+                            break
+                    code_snippet += line
+                    continue
                 if i == blocks[0].extent.start.line:
                     if line[blocks[0].extent.start.column-1:].strip().startswith('else'):  # Solo else
                         s += 'if(0);\n'
@@ -288,20 +312,6 @@ struct s foo('''
                             code_snippet = '(' + code_snippet
                         else:
                             break
-                    if i in function_lines:
-                        for t1, t2, info in function_calls:
-                            if info['line'] == i:
-                                for name in info['args']:
-                                    typ = variable_dictionary[name]
-                                    if '*' not in typ:
-                                        s += typ + " " + name + ";\n"
-                                        s += 'klee_make_symbolic(&' + name + ', sizeof(' + name + '), "' + name + '");\n'
-                                    elif typ.replace('*', '').strip() in VALID_TYPES:
-                                        s += typ + " " + name + " = malloc( 20 * sizeof(" + typ.replace('*', '', 1) + " ));\n"
-                                        s += 'klee_make_symbolic(' + name + ', 20 * sizeof(' + typ.replace('*', '', 1) + '), "' + name + '");\n'
-                                    else:
-                                        s += typ + " " + name + " = malloc( sizeof(" + typ.replace('*', '', 1) + " ));\n"
-                                        s += 'klee_make_symbolic(' + name + ', sizeof(' + typ.replace('*', '', 1) + '), "' + name + '");\n'
                 elif blocks[0].extent.start.line < i < blocks[-1].extent.end.line:
                     s += line
                     code_snippet += line
