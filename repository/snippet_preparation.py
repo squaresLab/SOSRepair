@@ -64,7 +64,7 @@ class CodeSnippetManager:
                     outputs = self.find_outputs(blocks)
                     logger.debug("Vars and outputs: %s and %s" % (str(vars), str(outputs)))
                     if (vars != -1 and outputs != -1) and (len(vars) != 0 or len(outputs) != 0):
-                        func_calls = self.find_function_calls(blocks)
+                        func_calls = self.find_function_calls(blocks, vars)
                         source = self.write_file(blocks, vars, outputs, func_calls, labels)
                         logger.debug("Source, line, from_line: %s, %d, %d" % (str(source), line, from_line)) 
                         code_snippet = CodeSnippet(source, vars, outputs, self.filename, func_calls)
@@ -135,13 +135,20 @@ class CodeSnippetManager:
         return outputs
 
     @staticmethod
-    def find_function_calls(snippet_blocks):
+    def find_function_calls(snippet_blocks, variables):
+        variables = [i[0] for i in variables]
         function_calls = set([])
         for block in snippet_blocks:
             for node in block.walk_preorder():
                 if node.kind == CursorKind.CALL_EXPR:
                     if node.referenced:
-                        function_calls.add((node.displayname, node.referenced.location.file.name))
+                        args = set({})
+                        for c in node.get_children():
+                            if (c.kind == CursorKind.UNEXPOSED_EXPR or c.kind == CursorKind.DECL_REF_EXPR) and \
+                                    c.displayname in variables:
+                                args.add(c.displayname)
+                        function_calls.add((node.displayname, node.referenced.location.file.name,
+                                            {'line': (node.extent.start.line, node.extent.end.line), 'args': args}))
         return list(function_calls)
 
     @staticmethod
@@ -218,7 +225,7 @@ class CodeSnippetManager:
 #include "/home/afsoon/ManyBugs/AutomatedRepairBenchmarks.c-master/many-bugs/python/python-original/python/Include/object.h"
 '''
         includes = ['/home/afsoon/ManyBugs/AutomatedRepairBenchmarks.c-master/many-bugs/python/python-original/python/Include/object.h', '/home/afsoon/ManyBugs/AutomatedRepairBenchmarks.c-master/many-bugs/python/python-original/python/Include/pyport.h']
-        for temp, func in function_calls:
+        for temp, func, args in function_calls:
             if func in includes:
                 continue
             s += '#include "' + func + '"\n'
@@ -260,7 +267,35 @@ struct s foo('''
         code_snippet = ''
         with open(self.filename, 'r') as f:
             i = 1
+            function_lines = [func[3]['line'][0] for func in function_calls]
+            func_end = 0
+            variable_dictionary = {}
+            for var in variables:
+                variable_dictionary[var[0]] = var[1]
             for line in f:
+                if func_end: # for now we assumed no function call appears in the same line as other statements
+                    if func_end == line:
+                        func_end = 0
+                    code_snippet += line
+                    continue
+                if i in function_lines:
+                    for t1, t2, info in function_calls:
+                        if info['line'][0] == i:
+                            for name in info['args']:
+                                typ = variable_dictionary[name]
+                                if '*' not in typ:
+                                    s += typ + " " + name + ";\n"
+                                    s += 'klee_make_symbolic(&' + name + ', sizeof(' + name + '), "' + name + '");\n'
+                                elif typ.replace('*', '').strip() in VALID_TYPES:
+                                    s += typ + " " + name + " = malloc( 20 * sizeof(" + typ.replace('*', '', 1) + " ));\n"
+                                    s += 'klee_make_symbolic(' + name + ', 20 * sizeof(' + typ.replace('*', '', 1) + '), "' + name + '");\n'
+                                else:
+                                    s += typ + " " + name + " = malloc( sizeof(" + typ.replace('*', '', 1) + " ));\n"
+                                    s += 'klee_make_symbolic(' + name + ', sizeof(' + typ.replace('*', '', 1) + '), "' + name + '");\n'
+                            func_end = info['line'][1]
+                            break
+                    code_snippet += line
+                    continue
                 if i == blocks[0].extent.start.line:
                     if line[blocks[0].extent.start.column-1:].strip().startswith('else'):  # Solo else
                         s += 'if(0);\n'
