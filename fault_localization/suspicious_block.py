@@ -15,13 +15,12 @@ class SuspiciousBlock():
     def __init__(self, line_number, line_range, blocks, vars, outputs, functions, filename):
         self.line_number = line_number
         self.line_range = line_range
-        self.column_range = (blocks[0].extent.start.column-1, blocks[-1].extent.end.column)
+        self.column_range = (blocks[0].extent.start.column-1, blocks[-1].extent.end.column) if blocks else (0, -1)
         self.blocks = blocks
         self.vars = vars
         self.outputs = outputs
         self.functions = functions
         self.filename = filename
-        self.live_vars = vars
 
     def get_output_names(self):
         if isinstance(self.outputs, dict):
@@ -79,7 +78,7 @@ class FaultLocalization():
 
         return SuspiciousBlock(line_number, block, current, function)
 
-    def traverse_tree_suspicious_block(self, ast, end_of_file, line_number, function=None):
+    def traverse_tree_suspicious_block(self, ast, end_of_file, line_number):
         assert (isinstance(ast, Cursor))
         from_line = -1
         blocks = []
@@ -91,8 +90,6 @@ class FaultLocalization():
                 cursor = True
             if cursor and (str(child.location.file) != self.filename or child.kind == CursorKind.DECL_STMT):
                 continue
-            if not function and child.kind == CursorKind.FUNCTION_DECL:
-                function = child
             line = child.location.line if cursor else child
             # print line
             if from_line < 0:
@@ -109,7 +106,7 @@ class FaultLocalization():
                     logger.debug("line: %d, from_line: %d" % (line, from_line))
                     logger.debug("block0: %s" % str(blocks[0].kind))
                     if len(blocks) == 1:  # means it's a large block
-                        return self.traverse_tree_suspicious_block(blocks[0], line, line_number, function)
+                        return self.traverse_tree_suspicious_block(blocks[0], line, line_number)
                     else:
                         if len(blocks) > 1 and blocks[1].location.line <= line_number:
                             blocks.pop(0)
@@ -133,6 +130,40 @@ class FaultLocalization():
                 blocks.append(child)
                 from_line = blocks[0].location.line
         return None
+
+    def line_to_insert(self, line_number):
+        function = self.find_function_of_this_line(line_number)
+        live_vars = self.find_live_variables(function, line_number)
+        outputs = {}
+        for v in live_vars:
+            if len(v) == 2:
+                outputs[v[0]] = {'type': v[1]}
+            else:
+                outputs[v[0]] = {'type': v[1], 'declaration': v[2]}
+        return SuspiciousBlock(line_number, (line_number, line_number+1), [], list(live_vars), outputs, [], self.filename)
+
+    def find_function_of_this_line(self, line_number):
+        if not self.root:
+            index = Index.create()
+            self.root = index.parse(self.filename)
+        ast = self.root.cursor
+        current = ast
+        children = ast.get_children()
+        function = None
+        cond = True
+        while cond:
+            for child in children:
+                cond = True
+                if str(child.location.file) != self.filename:
+                    continue
+                if child.location.line > line_number:
+                    break
+                current = child
+                if child.kind == CursorKind.FUNCTION_DECL:
+                    function = child
+                    return function
+            children = current.get_children()
+        return function
 
     @staticmethod
     def find_live_variables(function, line):

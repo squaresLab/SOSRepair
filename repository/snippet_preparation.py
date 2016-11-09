@@ -137,7 +137,7 @@ class CodeSnippetManager:
     @staticmethod
     def find_function_calls(snippet_blocks, variables):
         variables = [i[0] for i in variables]
-        function_calls = set([])
+        function_calls = []
         for block in snippet_blocks:
             for node in block.walk_preorder():
                 if node.kind == CursorKind.CALL_EXPR:
@@ -147,11 +147,11 @@ class CodeSnippetManager:
                             if (c.kind == CursorKind.UNEXPOSED_EXPR or c.kind == CursorKind.DECL_REF_EXPR) and \
                                     c.displayname in variables:
                                 args.add(c.displayname)
-                        function_calls.add((node.displayname, node.referenced.location.file.name,
+                        function_calls.append((node.displayname, node.referenced.location.file.name,
                                             {'line': (node.extent.start.line, node.extent.end.line),
                                              'column': (node.extent.start.column, node.extent.end.column),
                                              'args': args}))
-        return list(function_calls)
+        return function_calls
 
     @staticmethod
     def find_vars(blocks):
@@ -206,7 +206,7 @@ class CodeSnippetManager:
         else:
             final_type = i.type
             while True:
-                if final_type.kind == TypeKind.INCOMPLETEARRAY:
+                if final_type.kind == TypeKind.INCOMPLETEARRAY or final_type.kind == TypeKind.CONSTANTARRAY:
                     final_type = final_type.element_type
                     continue
                 if final_type.kind == TypeKind.POINTER:
@@ -269,13 +269,15 @@ struct s foo('''
         code_snippet = ''
         with open(self.filename, 'r') as f:
             i = 1
-            function_lines = [func[3]['line'][0] for func in function_calls]
+            function_lines = [func[2]['line'][0] for func in function_calls]
             func_end = 0
             variable_dictionary = {}
             for var in variables:
                 variable_dictionary[var[0]] = var[1]
             for line in f:
-                if func_end:  # for now we assumed no function call appears in the same line as other statements
+                if func_end > line:
+                    func_end = 0
+                elif func_end:  # for now we assumed no function call appears in the same line as other statements
                     if func_end == line:
                         func_end = 0
                     code_snippet += line
@@ -284,19 +286,16 @@ struct s foo('''
                     remove = True
                     for t1, t2, info in function_calls:
                         if info['line'][0] == i:
-                            if line[:info['column'][0]].strip():  # means the function call is sharing the line with others
+                            if line[:info['column'][0]-1].strip():  # means the function call is sharing the line with others
                                 remove = False
                                 break
                             for name in info['args']:
                                 typ = variable_dictionary[name]
                                 if '*' not in typ:
-                                    s += typ + " " + name + ";\n"
                                     s += 'klee_make_symbolic(&' + name + ', sizeof(' + name + '), "' + name + '");\n'
                                 elif typ.replace('*', '').strip() in VALID_TYPES:
-                                    s += typ + " " + name + " = malloc( 20 * sizeof(" + typ.replace('*', '', 1) + " ));\n"
                                     s += 'klee_make_symbolic(' + name + ', 20 * sizeof(' + typ.replace('*', '', 1) + '), "' + name + '");\n'
                                 else:
-                                    s += typ + " " + name + " = malloc( sizeof(" + typ.replace('*', '', 1) + " ));\n"
                                     s += 'klee_make_symbolic(' + name + ', sizeof(' + typ.replace('*', '', 1) + '), "' + name + '");\n'
                             func_end = info['line'][1]
                             break
