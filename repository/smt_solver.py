@@ -356,6 +356,6 @@ class Z3:
             replaced = replaced.replace(' %s ' % v, ' %s_%d ' % (v, num))
             replaced = replaced.replace('(%s)' % v, '(%s_%d)' % (v, num))
         for o in outputs:
-            replaced = replaced.replace(' %s_ret ' % o, ' %s_ret_%d ' % (v, num))
-            replaced = replaced.replace('(%s_ret)' % o, '(%s_ret_%d)' % (v, num))
+            replaced = replaced.replace(' %s_ret ' % o, ' %s_ret_%d ' % (o, num))
+            replaced = replaced.replace('(%s_ret)' % o, '(%s_ret_%d)' % (o, num))
         return replaced
