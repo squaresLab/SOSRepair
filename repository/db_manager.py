@@ -141,14 +141,17 @@ class DatabaseManager():
             else:
                 output_types = [outputs]
             for id, v, o in rows:
+                logger.debug("id: %d, o: %s, v: %s" %(id, str(o), str(v)))
                 v_types = [i[1] for i in eval(v)]
                 try:
                     out = eval(o)
+                    if not isinstance(out, dict):
+                        out = [out]
                 except:
-                    continue
-                if (isinstance(out, dict) and not isinstance(outputs, dict)) or \
-                        (not isinstance(out, dict) and isinstance(outputs, dict)):
-                    continue
+                    out = [o]
+                #if (isinstance(out, dict) and not isinstance(outputs, dict)) or \
+                #        (not isinstance(out, dict) and isinstance(outputs, dict)):
+                #    continue
                 logger.debug("id: %d, o: %s, out: %s, is: %s" %(id, str(o), str(out), str(isinstance(out, dict))))
                 if isinstance(out, dict):
                     o_types = [out[i]['type'] for i in out.keys()]

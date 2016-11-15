@@ -113,9 +113,9 @@ def main(build_db=False):
                 elif len(profile.input_list) == 0:
                     profile.update_profile(patch_test, original_copy)
                     logger.debug('Updated profile: ' + str(profile.negative_input_list))
-                    run_command('cp ' + original_copy + ' ' + FAULTY_CODE)
+                run_command('cp ' + original_copy + ' ' + FAULTY_CODE)
             i = z3.fetch_valid_snippets()
-    for line, score in suspicious_lines.suspiciousness: # Try insertion
+    for line, score in [(237, 1.0)]: # Try insertion
         logger.info("Insertion: Suspicious line: %d ,score: %f" % (line, score))
         sb = fl.line_to_insert(line)
         if not sb or sb.line_range[0] > line or sb.line_range[1] < line:
@@ -162,7 +162,7 @@ def main(build_db=False):
                 elif len(profile.input_list) == 0:
                     profile.update_profile(patch_test, original_copy)
                     logger.debug('Updated profile: ' + str(profile.negative_input_list))
-                    run_command('cp ' + original_copy + ' ' + FAULTY_CODE)
+                run_command('cp ' + original_copy + ' ' + FAULTY_CODE)
             i = z3.fetch_valid_snippets()
     return 3
 

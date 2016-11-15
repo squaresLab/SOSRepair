@@ -104,7 +104,7 @@ class Profile:
                     out.write('unsigned char *buffer_afs;\nint i_afs;\n')
                     out.write(state)
                     out.write("fflush(fp);\n")
-                elif i == self.suspicious_block.line_range[1]:
+                if i == self.suspicious_block.line_range[1]:
                     out.write('fprintf(fp, "output\\n");\n')
                     out.write(state)
                     out.write("fclose(fp);\n")

@@ -159,6 +159,7 @@ class CodeSnippetManager:
         labels = set({})
         for block in blocks:
             logger.debug("Block: %s, %s, %s" % (str(block.displayname), str(block.kind), str(block.type.kind)))
+            logger.debug("Block extent: %s" % str(block.extent))
             for i in block.walk_preorder():
                 logger.debug("Just for debug: %s, %s, %s" % (str(i.displayname), str(i.kind), str(i.type.kind)))
                 if i.kind == CursorKind.LABEL_REF and i.displayname != '':
@@ -195,7 +196,7 @@ class CodeSnippetManager:
         logger.debug('Type: %s' % str(i.type.spelling))
         temp = temp.replace('const', '')
         temp = temp.replace('unsigned', '')
-        if temp == 'char' or temp.find('int') != -1:
+        if temp == 'char' or temp.find('int') != -1 or temp == 'double':
             variables.add((i.displayname, 'int'))
         elif str(temp).replace('*', '').strip() in VALID_TYPES:
             variables.add((i.displayname, temp.strip()))
@@ -223,6 +224,7 @@ class CodeSnippetManager:
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
+#include "/home/afsoon/ManyBugs/AutomatedRepairBenchmarks.c-master/many-bugs/python/python-original/python/Include/Python.h"
 #include "/home/afsoon/ManyBugs/AutomatedRepairBenchmarks.c-master/many-bugs/python/python-original/python/Include/pyport.h"
 #include "/home/afsoon/ManyBugs/AutomatedRepairBenchmarks.c-master/many-bugs/python/python-original/python/Include/object.h"
 '''
@@ -275,12 +277,13 @@ struct s foo('''
             for var in variables:
                 variable_dictionary[var[0]] = var[1]
             for line in f:
-                if func_end > line:
+                if func_end < i:
                     func_end = 0
                 elif func_end:  # for now we assumed no function call appears in the same line as other statements
-                    if func_end == line:
+                    if func_end == i:
                         func_end = 0
                     code_snippet += line
+                    i += 1
                     continue
                 if i in function_lines:
                     remove = True
@@ -301,6 +304,7 @@ struct s foo('''
                             break
                     if remove:
                         code_snippet += line
+                        i += 1
                         continue
                 if i == blocks[0].extent.start.line:
                     if line[blocks[0].extent.start.column-1:].strip().startswith('else'):  # Solo else
