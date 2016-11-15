@@ -23,7 +23,7 @@ class CodeSnippetManager:
     def detach_snippets(self):
         logger.debug('Snippet file: ' + self.filename)
         index = Index.create()
-        self.root = index.parse(self.filename)
+        self.root = index.parse(self.filename, ['-I/home/afsoon/ManyBugs/AutomatedRepairBenchmarks.c-master/many-bugs/python/python-original/python/Include', '-I/usr/include/x86_64-linux-gnu', '-I/usr/local/include', '-I/home/afsoon/ManyBugs/AutomatedRepairBenchmarks.c-master/many-bugs/python/python-original/python'])
         return self.traverse_tree(self.root.cursor, self.number_of_lines)
 
     def traverse_tree(self, ast, end_of_file):
@@ -63,7 +63,7 @@ class CodeSnippetManager:
                     vars, labels = self.find_vars(blocks)
                     outputs = self.find_outputs(blocks)
                     logger.debug("Vars and outputs: %s and %s" % (str(vars), str(outputs)))
-                    if (vars != -1 and outputs != -1):
+                    if (vars != -1 and outputs != -1) and (len(vars) != 0 or len(outputs) != 0):
                         func_calls = self.find_function_calls(blocks, vars)
                         source = self.write_file(blocks, vars, outputs, func_calls, labels)
                         logger.debug("Source, line, from_line: %s, %d, %d" % (str(source), line, from_line)) 
@@ -159,6 +159,7 @@ class CodeSnippetManager:
         labels = set({})
         for block in blocks:
             logger.debug("Block: %s, %s, %s" % (str(block.displayname), str(block.kind), str(block.type.kind)))
+            logger.debug("Block extent: %s" % str(block.extent))
             for i in block.walk_preorder():
                 logger.debug("Just for debug: %s, %s, %s" % (str(i.displayname), str(i.kind), str(i.type.kind)))
                 if i.kind == CursorKind.LABEL_REF and i.displayname != '':
@@ -195,7 +196,7 @@ class CodeSnippetManager:
         logger.debug('Type: %s' % str(i.type.spelling))
         temp = temp.replace('const', '')
         temp = temp.replace('unsigned', '')
-        if temp == 'char' or temp.find('int') != -1:
+        if temp == 'char' or temp.find('int') != -1 or temp == 'double':
             variables.add((i.displayname, 'int'))
         elif str(temp).replace('*', '').strip() in VALID_TYPES:
             variables.add((i.displayname, temp.strip()))
@@ -223,8 +224,11 @@ class CodeSnippetManager:
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
+#include "/home/afsoon/ManyBugs/AutomatedRepairBenchmarks.c-master/many-bugs/python/python-original/python/Include/Python.h"
+#include "/home/afsoon/ManyBugs/AutomatedRepairBenchmarks.c-master/many-bugs/python/python-original/python/Include/pyport.h"
+#include "/home/afsoon/ManyBugs/AutomatedRepairBenchmarks.c-master/many-bugs/python/python-original/python/Include/object.h"
 '''
-        includes = []
+        includes = ['/home/afsoon/ManyBugs/AutomatedRepairBenchmarks.c-master/many-bugs/python/python-original/python/Include/object.h', '/home/afsoon/ManyBugs/AutomatedRepairBenchmarks.c-master/many-bugs/python/python-original/python/Include/pyport.h']
         for temp, func, args in function_calls:
             if func in includes:
                 continue
@@ -273,12 +277,13 @@ struct s foo('''
             for var in variables:
                 variable_dictionary[var[0]] = var[1]
             for line in f:
-                if func_end > line:
+                if func_end < i:
                     func_end = 0
                 elif func_end:  # for now we assumed no function call appears in the same line as other statements
-                    if func_end == line:
+                    if func_end == i:
                         func_end = 0
                     code_snippet += line
+                    i += 1
                     continue
                 if i in function_lines:
                     remove = True
@@ -299,6 +304,7 @@ struct s foo('''
                             break
                     if remove:
                         code_snippet += line
+                        i += 1
                         continue
                 if i == blocks[0].extent.start.line:
                     if line[blocks[0].extent.start.column-1:].strip().startswith('else'):  # Solo else
@@ -445,6 +451,7 @@ class CodeSnippet():
         self.constraints = []
 
     def add_constraint(self, constraint):
+        logger.debug("Constraint %s" % str(constraint))
         self.constraints.append(constraint)
 
     def seperate_declarations(self, constraint):

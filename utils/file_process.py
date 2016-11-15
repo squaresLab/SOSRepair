@@ -27,8 +27,8 @@ def compare_files(file1, file2):
 
 def transform_file(filename):
     transformed_file = filename + '_trans.c'
-    run_command("./remccoms3.sed < " + filename + ' >  tempfile')
-    with open('tempfile', 'r') as f:
+#    run_command("./remccoms3.sed < " + filename + ' >  tempfile')
+    with open(filename, 'r') as f:
         with open(transformed_file, 'w') as tf:
             for l in f:
                 if l.isspace():

@@ -67,7 +67,7 @@ class Profile:
                 invalid_vars.append((v, t))
                 continue
             state += v
-            if t.find('int') != -1 or t == 'char':
+            if t.find('int') != -1 or t == 'char' or t == 'long':
                 state += ':%d'
             elif t == 'float' or t == 'double':
                 state += ':%f'
@@ -104,7 +104,7 @@ class Profile:
                     out.write('unsigned char *buffer_afs;\nint i_afs;\n')
                     out.write(state)
                     out.write("fflush(fp);\n")
-                elif i == self.suspicious_block.line_range[1]:
+                if i == self.suspicious_block.line_range[1]:
                     out.write('fprintf(fp, "output\\n");\n')
                     out.write(state)
                     out.write("fclose(fp);\n")
@@ -120,7 +120,7 @@ class Profile:
         for pt in tests:
             run_command('rm ' + self.output_file)
             logger.debug('Test running: %s' % pt)
-            res = run_command_with_timeout(TEST_SCRIPT + ' ' + pt, timeout=70)
+            res = run_command_with_timeout(TEST_SCRIPT + ' ' + pt, timeout=100)
             if not res:
                 print "Run failed: %s" % pt
                 print "Res: %s" % str(res)
@@ -148,8 +148,10 @@ class Profile:
                 parts2 = lines[1][i].split(':')
                 if len(parts1) < 3 or len(parts2) < 3 or parts1[0] != parts2[0]:
                     logger.error("something is wrong in profile generation")
+                    raise Exception
                     return False
                 profile_dict[parts1[0]] = (''.join(parts1[1:-1]), ''.join(parts2[1:-1]))
+                logger.debug("Profile generated from this test: %s" % pt)
             input_list.append(profile_dict)
         logger.debug(self.input_list)
         return True

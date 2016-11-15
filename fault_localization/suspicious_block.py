@@ -15,7 +15,7 @@ class SuspiciousBlock():
     def __init__(self, line_number, line_range, blocks, vars, outputs, functions, filename):
         self.line_number = line_number
         self.line_range = line_range
-        self.column_range = (blocks[0].extent.start.column-1, blocks[-1].extent.end.column) if blocks else (0, -1)
+        self.column_range = (blocks[0].extent.start.column-1, blocks[-1].extent.end.column) if blocks else (0, 1)
         self.blocks = blocks
         self.vars = vars
         self.outputs = outputs
@@ -41,7 +41,7 @@ class FaultLocalization():
     def line_to_block(self, line_number):
         index = Index.create()
         logger.info("parsing")
-        self.root = index.parse(self.filename)
+        self.root = index.parse(self.filename, ['-I/home/afsoon/ManyBugs/AutomatedRepairBenchmarks.c-master/many-bugs/python/python-original/python/Include', '-I/usr/include/x86_64-linux-gnu', '-I/usr/local/include', '-I/home/afsoon/ManyBugs/AutomatedRepairBenchmarks.c-master/many-bugs/python/python-original/python'])
         logger.info("parsing root")
         return self.traverse_tree_suspicious_block(self.root.cursor, self.number_of_lines, line_number)
 
@@ -145,13 +145,14 @@ class FaultLocalization():
     def find_function_of_this_line(self, line_number):
         if not self.root:
             index = Index.create()
-            self.root = index.parse(self.filename)
+            self.root = index.parse(self.filename, ['-I/home/afsoon/ManyBugs/AutomatedRepairBenchmarks.c-master/many-bugs/python/python-original/python/Include', '-I/usr/include/x86_64-linux-gnu', '-I/usr/local/include', '-I/home/afsoon/ManyBugs/AutomatedRepairBenchmarks.c-master/many-bugs/python/python-original/python'])
         ast = self.root.cursor
         current = ast
         children = ast.get_children()
         function = None
         cond = True
         while cond:
+            cond = False
             for child in children:
                 cond = True
                 if str(child.location.file) != self.filename:
@@ -161,7 +162,6 @@ class FaultLocalization():
                 current = child
                 if child.kind == CursorKind.FUNCTION_DECL:
                     function = child
-                    return function
             children = current.get_children()
         return function
 

@@ -49,7 +49,7 @@ def main(build_db=False):
         return 2
 
     suspicious_lines = SuspiciousLines(tests)
-    suspicious_lines.compute_suspiciousness()
+    #suspicious_lines.compute_suspiciousness()
 
     db_manager = DatabaseManager()
     if build_db:
@@ -62,7 +62,7 @@ def main(build_db=False):
     os.system('mkdir patches')
     investigated_blocks = set([])
     suspicious_lines_investigated = 0
-    for line, score in suspicious_lines.suspiciousness:
+    for line, score in [(1897, 1.0)]:
         if suspicious_lines_investigated >= MAX_SUSPICIOUS_LINES:
             return 4
         logger.info("Suspicious line: %d ,score: %f" % (line, score))
@@ -80,12 +80,11 @@ def main(build_db=False):
         # success = profile.generate_gdb_script(tests.positives)
         success = profile.generate_printing_profile(tests, original_copy)
         logger.debug('Profile: ' + str(profile.input_list))
-        if not success:
-            success = profile.generate_gdb_script(tests.negatives, profile.negative_input_list)
-            logger.debug('Profile with gdb: ' + str(profile.input_list))
+        #if not success:
+            #success = profile.generate_gdb_script(tests.negatives, profile.negative_input_list)
+            #logger.debug('Profile with gdb: ' + str(profile.input_list))
         if not success or (not profile.input_list and not profile.negative_input_list):
             continue
-
         z3 = Z3(sb, profile, db_manager)
         i = z3.fetch_valid_snippets()
         suspicious_lines_investigated += 1
@@ -114,9 +113,9 @@ def main(build_db=False):
                 elif len(profile.input_list) == 0:
                     profile.update_profile(patch_test, original_copy)
                     logger.debug('Updated profile: ' + str(profile.negative_input_list))
-                    run_command('cp ' + original_copy + ' ' + FAULTY_CODE)
+                run_command('cp ' + original_copy + ' ' + FAULTY_CODE)
             i = z3.fetch_valid_snippets()
-    for line, score in suspicious_lines.suspiciousness: # Try insertion
+    for line, score in [(237, 1.0)]: # Try insertion
         logger.info("Insertion: Suspicious line: %d ,score: %f" % (line, score))
         sb = fl.line_to_insert(line)
         if not sb or sb.line_range[0] > line or sb.line_range[1] < line:
@@ -163,7 +162,7 @@ def main(build_db=False):
                 elif len(profile.input_list) == 0:
                     profile.update_profile(patch_test, original_copy)
                     logger.debug('Updated profile: ' + str(profile.negative_input_list))
-                    run_command('cp ' + original_copy + ' ' + FAULTY_CODE)
+                run_command('cp ' + original_copy + ' ' + FAULTY_CODE)
             i = z3.fetch_valid_snippets()
     return 3
 
@@ -213,3 +212,5 @@ def main2():
 
 if __name__ == "__main__":
     main()
+    #db_manager = DatabaseManager()
+    #re_build_database(db_manager)

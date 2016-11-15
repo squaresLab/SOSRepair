@@ -80,6 +80,9 @@ class PatchGeneration():
                         patch.write(l[:suspicious_block.column_range[0]])
                         snippet_written = True
                         patch.write(snippet)
+                        if i == suspicious_block.line_range[1]-1:
+                            patch.write(l[suspicious_block.column_range[1]-1:])
+                        logger.debug("Patch: %s" % s)
                     elif i == suspicious_block.line_range[1]-1:
                         patch.write(l[suspicious_block.column_range[1]-1:])
                     elif snippet_written:

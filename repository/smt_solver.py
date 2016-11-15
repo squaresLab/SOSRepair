@@ -30,19 +30,23 @@ class Z3:
         if len(constraints) < 1 or not snippet:
             logger.error("ERROR no constraints or snippet for this id %d" % index)
             return None
-        snippet_variables = [i[0] for i in eval(snippet[2])]
-        snippet_outputs = eval(snippet[3])
+        snippet_variables = eval(snippet[2])
+        try:
+            snippet_outputs = eval(snippet[3])
+        except Exception:
+            snippet_outputs = snippet[3]
         consts = '(assert ' + self.prepare_constraints(constraints) + ')\n'
         if isinstance(snippet_outputs, dict):
             snippet_outputs = [i for i in snippet_outputs.keys()]
         else:
-            snippet_outputs = []
+            snippet_outputs = ['return_value']
         positive = True
         if len(self.profile.input_list) == 0:
             positive = False
         query, get_value, program_mapping = self.prepare_declarations_new_version(snippet_variables, snippet_outputs,
                                                                                   len(self.profile.input_list) if
                                                                                   positive else len(self.profile.negative_input_list))
+        snippet_variables = [i[0] for i in snippet_variables]
         num = 0
         if positive:
             for profile in self.profile.input_list:
@@ -202,7 +206,8 @@ class Z3:
         decls = '\n'.join(list(constraint_declarations)) + '\n' + '\n'.join(list(code_declarations))
         return decls
 
-    def prepare_declarations_new_version(self, snippet_vars, snippet_outputs, number_of_profiles):
+    def prepare_declarations_new_version(self, snippet_vars_input, snippet_outputs, number_of_profiles):
+        snippet_vars = [i[0] for i in snippet_vars_input]
         declarations = ''
         constraints = ''
         for i in range(number_of_profiles):
@@ -222,37 +227,53 @@ class Z3:
         # well-formed
         snippet_variables = list(set(snippet_vars) - set(snippet_outputs))
         code_variables = list(set(self.suspicious_block.get_var_names()) - set(self.suspicious_block.get_output_names()))
-        # types = {}
-        # code_vars_dict = dict(self.suspicious_block.get_var_names())
+        types = {}
+        code_vars_dict = {}
+        for v in self.suspicious_block.vars:
+            code_vars_dict[v[0]] = v[1] 
         # print "Vars: %s" % str(snippet_vars)
-        # snippet_vars_dict = dict(snippet_vars)
+        snippet_vars_dict = {}
+        for v in snippet_vars_input:
+            snippet_vars_dict[v[0]] = v[1]
         constraints += '(assert (and '
         i = 0
+        logger.debug("code_vars %s, snippet vars: %s" % (str(code_vars_dict), str(snippet_vars_dict)))
         for v in code_variables:
             declarations += '(declare-const l_%s_in Int)\n' % v
             constraints += '(= l_%s_in %d) ' % (v, i)
             mapping[i] = v
-            #if code_vars_dict[v] in types:
-            #    types[code_vars_dict[v]] = [i, ]
-            #else:
-            #    types[code_vars_dict[v]].append(i)
+            if not code_vars_dict[v].strip() in types:
+                types[code_vars_dict[v].strip()] = [i, ]
+            else:
+                types[code_vars_dict[v].strip()].append(i)
             i += 1
-        for v in snippet_variables:
-            declarations += '(declare-const l_%s Int)\n' % v
-            #if len(types[snippet_vars_dict[v]]) == 1:
-            #    constraints += '(= %d l_%s)' % (types[snippet_vars_dict[v]][0], v)
-            #else:
-            #    constraints += '(or ' + ' '.join(['(= %d l_%s)' % (i, v) for i in types[snippet_vars_dict[v]]]) + ')'
-            constraints += '(<= 0 l_%s) (< l_%s %d) ' % (v, v, len(snippet_variables))
-            get_value.append('l_%s' % v)
         for v in self.suspicious_block.get_output_names():
             declarations += '(declare-const l_%s_out Int)\n' % v
             constraints += '(= l_%s_out %d) ' % (v, i)
             mapping[i] = v
+            if not code_vars_dict[v].strip() in types:
+                types[code_vars_dict[v].strip()] = [i, ]
+            else:
+                types[code_vars_dict[v].strip()].append(i)
             i += 1
+        logger.debug('Types %s' % str(types))
+        for v in snippet_variables:
+            declarations += '(declare-const l_%s Int)\n' % v
+            if len(types[snippet_vars_dict[v].strip()]) == 1:
+                constraints += '(= %d l_%s)' % (types[snippet_vars_dict[v].strip()][0], v)
+            else:
+                constraints += '(or ' + ' '.join(['(= %d l_%s)' % (i, v) for i in types[snippet_vars_dict[v].strip()]]) + ')'
+            #constraints += '(<= 0 l_%s) (< l_%s %d) ' % (v, v, len(snippet_variables))
+            get_value.append('l_%s' % v)
         for v in snippet_outputs:
             declarations += '(declare-const l_%s Int)\n' % v
-            constraints += '(<= %d l_%s) (< l_%s %d) ' % (len(snippet_variables), v, v, len(snippet_variables)+len(snippet_outputs))
+            if not v in snippet_vars_dict:
+                constraints += '(<= %d l_%s) (< l_%s %d) ' % (len(snippet_variables), v, v, len(snippet_variables)+len(snippet_outputs))
+            elif len(types[snippet_vars_dict[v].strip()]) == 1:
+                constraints += '(= %d l_%s)' % (types[snippet_vars_dict[v].strip()][0], v)
+            else:
+                constraints += '(or ' + ' '.join(['(= %d l_%s)' % (i, v) for i in types[snippet_vars_dict[v].strip()]]) + ')'
+            #constraints += '(<= %d l_%s) (< l_%s %d) ' % (len(snippet_variables), v, v, len(snippet_variables)+len(snippet_outputs))
             get_value.append('l_%s' % v)
         constraints += '))\n(assert (and '
         for v in code_variables:
@@ -356,6 +377,10 @@ class Z3:
             replaced = replaced.replace(' %s ' % v, ' %s_%d ' % (v, num))
             replaced = replaced.replace('(%s)' % v, '(%s_%d)' % (v, num))
         for o in outputs:
+            if o == 'return_value':
+                replaced = replaced.replace(' %s ' % o, ' %s_ret_%d ' % (o, num))
+                replaced = replaced.replace('(%s)' % o, '(%s_ret_%d)' % (o, num))
+                continue
             replaced = replaced.replace(' %s_ret ' % o, ' %s_ret_%d ' % (o, num))
             replaced = replaced.replace('(%s_ret)' % o, '(%s_ret_%d)' % (o, num))
         return replaced
