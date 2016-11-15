@@ -62,7 +62,7 @@ def main(build_db=False):
     os.system('mkdir patches')
     investigated_blocks = set([])
     suspicious_lines_investigated = 0
-    for line, score in [(1897, 1.0)]:
+    for line, score in suspicious_lines.suspiciousness:
         if suspicious_lines_investigated >= MAX_SUSPICIOUS_LINES:
             return 4
         logger.info("Suspicious line: %d ,score: %f" % (line, score))
@@ -115,7 +115,7 @@ def main(build_db=False):
                     logger.debug('Updated profile: ' + str(profile.negative_input_list))
                 run_command('cp ' + original_copy + ' ' + FAULTY_CODE)
             i = z3.fetch_valid_snippets()
-    for line, score in [(237, 1.0)]: # Try insertion
+    for line, score in suspicious_lines.suspiciousness: # Try insertion
         logger.info("Insertion: Suspicious line: %d ,score: %f" % (line, score))
         sb = fl.line_to_insert(line)
         if not sb or sb.line_range[0] > line or sb.line_range[1] < line:
