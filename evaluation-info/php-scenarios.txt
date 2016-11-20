@@ -1,0 +1,213 @@
+Author: CLG
+Creation date: 11/20/16
+
+This file lists php scenarios that might be suitable to use for evaluation for
+SearchRepair as well as the tests that execute the method(s) modified by the
+human in the associate bug-fixing patches.
+
+Note that the listed tests are named as they are in the test.sh files associated
+with each ManyBug scenario (for some reason they're in reverse numerical order,
+but the order isn't important). It is possible to get from that test.sh file the
+actual associated test command, with minimal work.  Since I don't know exactly
+what you need or how you're running your experiments, I leave this to you (but
+can offer pointers if necessary).  However, please note that each test.sh should
+be assumed to be unique, so the numbers don't translate between scenarios, even
+for the same program (like php).
+
+I also did not collect the compilation flags for the modules under repair,
+assuming that this was within your power.
+
+I ran these within Docker images, taken from Chris.  They're a little bit buggy
+right now (I had to add a line to prepare.sh for each scenario, for example, but
+I think he's fixing that soon?) but overall it was very easy to do.
+
+php-bug-2011-12-10-74343ca506-52c36e60c4
+n1
+n2
+n3
+p1423
+p1447
+p1582
+p1806
+p3991
+p4242
+p4248
+
+php-bug-2012-01-01-80dd931d40-7c3177e5ab  
+n1
+p6042
+p6041
+p6040
+p6037
+p6033
+p6031
+p6026
+p6022
+p6021
+p6020
+p6018
+p6017
+p6015
+p6012
+p6011
+p6010
+p6005
+p6004
+p6003
+p5997
+p1434
+p1401
+p1286
+p1263
+p1254
+p1253
+p1245
+p1221
+p1200
+p1195
+p1146
+p1140
+p1139
+p1134
+p1129
+
+php-bug-2011-04-07-77ed819430-efcb9a71cd 
+n1
+p5727
+p2545
+p1987
+p1724
+p1703
+p1699
+p1671
+p1613
+p1579
+p1557
+p1429
+p1353
+p1255
+p1232
+p1106
+p1104
+p1099
+p1088
+p968
+p833
+p831
+p826
+p784
+p725
+p721
+
+php-bug-2011-05-13-db0c957f02-8ba00176f1 
+n3
+n2
+n1
+p7042
+p7041
+p7040
+p7036
+p7034
+p7033
+p7031
+p7030
+p7029
+p7028
+p7027
+p7026
+p7023
+p7022
+p7021
+p7020
+p7019
+p7017
+p7015
+p7012
+p7010
+p7009
+p7007
+p7005
+p7003
+p7002
+p7001
+p7000
+p6999
+p6998
+p6996
+p6995
+p6994
+p6993
+p6991
+p6989
+p6988
+p6987
+p6986
+p6985
+p6984
+p6983
+p6982
+p6980
+p6979
+p6976
+p6975
+p6531
+p4530
+
+php-bug-2011-03-11-d890ece3fc-6e74d95f34 
+n1
+p4814
+p4764
+p4743
+p4255
+p4220
+p4218
+p4216
+p4214
+p4209
+p4204
+p4200
+p4193
+p4191
+p4190
+p4187
+p4186
+p3871
+p2978
+p1891
+p1675
+p1359
+p1341
+p1298
+
+php-bug-2011-04-02-70075bc84c-5a8c917c37
+Implicated tests:
+n2
+n1
+p3336
+p3280
+
+php-bug-2011-01-30-5bb0a44e06-1e91069eb4
+implicated tests: 
+n1
+p2414
+p2378
+p2327
+p2315
+p2298
+p2256
+p2156
+p2102
+p2087
+p2071
+p2069
+p2054
+p2042
+p2031
+
+php-bug-2011-03-23-63673a533f-2adf58cfcf
+n1
+p498
+p488
+p307
+p160
+p87
