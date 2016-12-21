@@ -542,6 +542,10 @@ p1609
 p1298
 p59
 
+php-bug-2011-11-02-c1d520d19d-9b86852d6e
+All tests appear to touch the implicated function, and so you can presumably
+just start with a small number of them. 
+
 php-bug-2011-11-19-51a4ae6576-bc810a443d
 All tests appear to touch the implicated function, and so you can presumably
 just start with a small number of them. 
