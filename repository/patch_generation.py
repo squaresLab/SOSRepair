@@ -14,11 +14,13 @@ class PatchGeneration():
         self.variables = variables
         self.mapping = mapping
         self.temporary_file = temporary_file
-        self.extra_lines = 1+len(variables)
+        self.extra_lines = 1+len(variables )
         assert isinstance(self.mapping, dict)
 
     def prepare_snippet_to_parse(self):
         with open(self.temporary_file, 'w') as f:
+            #f.write("#include <stddef.h>\n")
+            #f.write("#define break  \n")
             f.write("void foo(){\n")
             for var in self.variables:
                 v, t = var[0], var[1]
@@ -32,7 +34,7 @@ class PatchGeneration():
 
     def parse_snippet(self):
         index = Index.create()
-        root = index.parse(self.temporary_file)
+        root = index.parse(self.temporary_file, ["-I/home/afsoon/llvm/build/lib/clang/3.9.0/include"])
         return root.cursor
 
     def replace_vars(self, ast):
@@ -44,7 +46,7 @@ class PatchGeneration():
         line, column = 0, 0
         var_list = [i[0] for i in self.variables]
         for i in ast.walk_preorder():
-            print str(i.location.line) + ":" + str(i.location.column) + " " + str(i.kind) + " " + i.displayname + " " + str(i.type.kind)
+            logger.debug("AST walk: " + str(i.location.line) + ":" + str(i.location.column) + " " + str(i.kind) + " " + i.displayname + " " + str(i.type.kind))
             if str(i.location.file) != self.temporary_file or i.location.line <= self.extra_lines or\
                     (i.location.line - (1+self.extra_lines) == line and column + 1 > i.location.column):
                 continue
@@ -82,7 +84,6 @@ class PatchGeneration():
                         patch.write(snippet)
                         if i == suspicious_block.line_range[1]-1:
                             patch.write(l[suspicious_block.column_range[1]-1:])
-                        logger.debug("Patch: %s" % s)
                     elif i == suspicious_block.line_range[1]-1:
                         patch.write(l[suspicious_block.column_range[1]-1:])
                     elif snippet_written:

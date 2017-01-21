@@ -41,7 +41,7 @@ class FaultLocalization():
     def line_to_block(self, line_number):
         index = Index.create()
         logger.info("parsing")
-        self.root = index.parse(self.filename)
+        self.root = index.parse(self.filename, ["-I/home/afsoon/ManyBugs/AutomatedRepairBenchmarks.c-master/many-bugs/php/php-original/php/ext/standard/", "-DPHP_ATOM_INC", "-I/home/afsoon/ManyBugs/AutomatedRepairBenchmarks.c-master/many-bugs/php/php-original/php/include", "-I/home/afsoon/ManyBugs/AutomatedRepairBenchmarks.c-master/many-bugs/php/php-original/php/main", "-I/home/afsoon/ManyBugs/AutomatedRepairBenchmarks.c-master/many-bugs/php/php-original/php", "-I/home/afsoon/ManyBugs/AutomatedRepairBenchmarks.c-master/many-bugs/php/php-original/php/ext/date/lib", "-I/home/afsoon/ManyBugs/AutomatedRepairBenchmarks.c-master/many-bugs/php/php-original/php/ext/ereg/regex", "-I/usr/include/libxml2", "-I/home/afsoon/ManyBugs/AutomatedRepairBenchmarks.c-master/many-bugs/php/php-original/php/ext/sqlite3/libsqlite", "-I/home/afsoon/ManyBugs/AutomatedRepairBenchmarks.c-master/many-bugs/php/php-original/php/TSRM", "-I/home/afsoon/ManyBugs/AutomatedRepairBenchmarks.c-master/many-bugs/php/php-original/php/Zend", "-I/usr/include", "-std=gnu99", "-L/usr/lib/x86_64-linux-gnu", "-fvisibility=hidden", "-DZEND_SIGNALS", "-I/home/afsoon/llvm/build/lib/clang/3.9.0/include"]) 
         logger.info("parsing root")
         return self.traverse_tree_suspicious_block(self.root.cursor, self.number_of_lines, line_number)
 
@@ -123,7 +123,7 @@ class FaultLocalization():
                 outputs = CodeSnippetManager.find_outputs(blocks)
                 if vars != -1 and outputs != -1:
                     func_calls = CodeSnippetManager.find_function_calls(blocks, vars)
-                    sb = SuspiciousBlock(line_number, (from_line, line), blocks, vars, outputs, func_calls, self.filename)
+                    sb = SuspiciousBlock(line_number, (blocks[0].extent.start.line, blocks[-1].extent.end.line+1), blocks, vars, outputs, func_calls, self.filename)
                     return sb
                 return None
             if cursor:
@@ -145,7 +145,7 @@ class FaultLocalization():
     def find_function_of_this_line(self, line_number):
         if not self.root:
             index = Index.create()
-            self.root = index.parse(self.filename)
+            self.root = index.parse(self.filename, ["-I/home/afsoon/ManyBugs/AutomatedRepairBenchmarks.c-master/many-bugs/php/php-original/php/main/streams/", "-I/home/afsoon/ManyBugs/AutomatedRepairBenchmarks.c-master/many-bugs/php/php-original/php/main/streams/", "-DPHP_ATOM_INC", "-I/home/afsoon/ManyBugs/AutomatedRepairBenchmarks.c-master/many-bugs/php/php-original/php/include", "-I/home/afsoon/ManyBugs/AutomatedRepairBenchmarks.c-master/many-bugs/php/php-original/php/main", "-I/home/afsoon/ManyBugs/AutomatedRepairBenchmarks.c-master/many-bugs/php/php-original/php", "-I/home/afsoon/ManyBugs/AutomatedRepairBenchmarks.c-master/many-bugs/php/php-original/php/ext/date/lib", "-I/home/afsoon/ManyBugs/AutomatedRepairBenchmarks.c-master/many-bugs/php/php-original/php/ext/ereg/regex", "-I/usr/include/libxml2", "-I/home/afsoon/ManyBugs/AutomatedRepairBenchmarks.c-master/many-bugs/php/php-original/php/ext/sqlite3/libsqlite", "-I/home/afsoon/ManyBugs/AutomatedRepairBenchmarks.c-master/many-bugs/php/php-original/php/TSRM", "-I/home/afsoon/ManyBugs/AutomatedRepairBenchmarks.c-master/many-bugs/php/php-original/php/Zend", "-I/usr/include", "-std=gnu99", "-L/usr/lib/x86_64-linux-gnu", "-fvisibility=hidden", "-DZEND_SIGNALS", "-I/home/afsoon/llvm/build/lib/clang/3.9.0/include"])
         ast = self.root.cursor
         current = ast
         children = ast.get_children()
@@ -174,6 +174,8 @@ class FaultLocalization():
         for cursor in function.walk_preorder():
             if cursor.location.line < line and cursor.kind == CursorKind.PARM_DECL or cursor.kind == CursorKind.VAR_DECL:
                 all_vars.add(str(cursor.displayname))
+            if cursor.location.line >= line and (cursor.kind == CursorKind.PARM_DECL or cursor.kind == CursorKind.VAR_DECL) and str(cursor.displayname) in all_vars:
+                all_vars.remove(str(cursor.displayname))
             if cursor.location.line >= line and (cursor.kind == CursorKind.DECL_REF_EXPR or cursor.kind == CursorKind.UNEXPOSED_EXPR) \
                     and str(cursor.displayname) not in dead_vars and str(cursor.displayname) in all_vars:
                 live_vars.add(str(cursor.displayname))
@@ -200,7 +202,12 @@ class FaultLocalization():
                                 left_side = str(inner.displayname)
                 if left_side not in live_vars and left_side in all_vars:
                     dead_vars.add(left_side)
-        return final_list
+        final_list2 = []
+        for v in final_list:
+            if not 'zend_encoding' in v[1]:
+                final_list2.append(v)
+        return final_list2
+        #return final_list
 
 
 if __name__ == "__main__":

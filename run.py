@@ -24,7 +24,7 @@ def re_build_database(db_manager):
     db_manager.insert_snippet(deletion_snippet)
     del deletion_snippet
     for root, dirs, files in os.walk(INTROCLASS_PATH):
-        for items in fnmatch.filter(files, "*.c"):
+        for items in fnmatch.filter(files, "*zend_compile.c"):
             ff = os.path.join(root, items)
             ff = transform_file(ff)
             fl = CodeSnippetManager(ff)
@@ -62,7 +62,7 @@ def main(build_db=False):
     os.system('mkdir patches')
     investigated_blocks = set([])
     suspicious_lines_investigated = 0
-    for line, score in suspicious_lines.suspiciousness:
+    for line, score in [(5256, 1)]:
         if suspicious_lines_investigated >= MAX_SUSPICIOUS_LINES:
             return 4
         logger.info("Suspicious line: %d ,score: %f" % (line, score))
@@ -115,7 +115,8 @@ def main(build_db=False):
                     logger.debug('Updated profile: ' + str(profile.negative_input_list))
                 run_command('cp ' + original_copy + ' ' + FAULTY_CODE)
             i = z3.fetch_valid_snippets()
-    for line, score in suspicious_lines.suspiciousness: # Try insertion
+    return 4
+    for line, score in [(319, 1)]: # Try insertion
         logger.info("Insertion: Suspicious line: %d ,score: %f" % (line, score))
         sb = fl.line_to_insert(line)
         if not sb or sb.line_range[0] > line or sb.line_range[1] < line:
@@ -211,6 +212,6 @@ def main2():
     exception.close()
 
 if __name__ == "__main__":
-    main()
-    #db_manager = DatabaseManager()
-    #re_build_database(db_manager)
+    #main(True)
+    db_manager = DatabaseManager()
+    re_build_database(db_manager)

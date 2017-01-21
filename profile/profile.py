@@ -41,7 +41,7 @@ class Profile:
             res = self.generate_profile(tests.negatives, self.negative_input_list)
             logger.debug("Negative profile: %s" % str(self.negative_input_list))
         run_command('cp ' + original + ' ' + self.filename)
-        run_command('rm ' + self.marked_file)
+#        run_command('rm ' + self.marked_file)
         return res
 
     def update_profile(self, tests,  original=FAULTY_CODE+'_orig.c'):
@@ -67,7 +67,7 @@ class Profile:
                 invalid_vars.append((v, t))
                 continue
             state += v
-            if t.find('int') != -1 or t == 'char' or t == 'long':
+            if t.find('int') != -1 or t == 'char' or t == 'long' or t == 'size_t':
                 state += ':%d'
             elif t == 'float' or t == 'double':
                 state += ':%f'

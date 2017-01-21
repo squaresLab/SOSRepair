@@ -282,6 +282,8 @@ class Z3:
                 constraints += ''.join(['(= %s_in_%d %s_%d) ' % (v, i, sv, i) for i in range(number_of_profiles)])
                 constraints += ') ) '
         for v in snippet_outputs:
+            if not isinstance(self.suspicious_block.outputs, dict):
+                break
             for pv in self.suspicious_block.outputs.keys():
                 constraints += '(=> (= l_%s_out l_%s) (and ' % (pv, v)
                 constraints += ''.join(['(= %(pv)s_out_%(i)d %(v)s_ret_%(i)d) (= %(pv)s_in_%(i)d %(v)s_%(i)d) '

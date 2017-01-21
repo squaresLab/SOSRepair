@@ -23,7 +23,7 @@ class CodeSnippetManager:
     def detach_snippets(self):
         logger.debug('Snippet file: ' + self.filename)
         index = Index.create()
-        self.root = index.parse(self.filename, ['-I/home/afsoon/ManyBugs/AutomatedRepairBenchmarks.c-master/many-bugs/python/python-original/python/Include', '-I/usr/include/x86_64-linux-gnu', '-I/usr/local/include', '-I/home/afsoon/ManyBugs/AutomatedRepairBenchmarks.c-master/many-bugs/python/python-original/python'])
+        self.root = index.parse(self.filename, ["-I/home/afsoon/ManyBugs/AutomatedRepairBenchmarks.c-master/many-bugs/php/php-original/php/ext/standard/", "-DPHP_ATOM_INC", "-I/home/afsoon/ManyBugs/AutomatedRepairBenchmarks.c-master/many-bugs/php/php-original/php/include", "-I/home/afsoon/ManyBugs/AutomatedRepairBenchmarks.c-master/many-bugs/php/php-original/php/main", "-I/home/afsoon/ManyBugs/AutomatedRepairBenchmarks.c-master/many-bugs/php/php-original/php", "-I/home/afsoon/ManyBugs/AutomatedRepairBenchmarks.c-master/many-bugs/php/php-original/php/ext/date/lib", "-I/home/afsoon/ManyBugs/AutomatedRepairBenchmarks.c-master/many-bugs/php/php-original/php/ext/ereg/regex", "-I/usr/include/libxml2", "-I/home/afsoon/ManyBugs/AutomatedRepairBenchmarks.c-master/many-bugs/php/php-original/php/ext/sqlite3/libsqlite", "-I/home/afsoon/ManyBugs/AutomatedRepairBenchmarks.c-master/many-bugs/php/php-original/php/TSRM", "-I/home/afsoon/ManyBugs/AutomatedRepairBenchmarks.c-master/many-bugs/php/php-original/php/Zend", "-I/usr/include", "-std=gnu99", "-L/usr/lib/x86_64-linux-gnu", "-fvisibility=hidden", "-DZEND_SIGNALS", "-I/home/afsoon/llvm/build/lib/clang/3.9.0/include"])
         return self.traverse_tree(self.root.cursor, self.number_of_lines)
 
     def traverse_tree(self, ast, end_of_file):
@@ -74,6 +74,8 @@ class CodeSnippetManager:
                         del code_snippet
                 except Exception as e:
                     logger.error("Something wrong in snippet preparation: %s" % str(e))
+                if len(blocks) == 1:
+                    self.traverse_tree(blocks[0], line)
                 blocks.pop(0)
                 if len(blocks) > 0:
                     from_line = blocks[0].location.line
@@ -143,10 +145,12 @@ class CodeSnippetManager:
                 if node.kind == CursorKind.CALL_EXPR:
                     if node.referenced:
                         args = set({})
-                        for c in node.get_children():
-                            if (c.kind == CursorKind.UNEXPOSED_EXPR or c.kind == CursorKind.DECL_REF_EXPR) and \
+                        for c in node.walk_preorder():
+                            logger.debug("Function just for debug: %s, %s, %s" % (str(c.displayname), str(c.kind), str(c.type.kind)))
+                            if (c.kind == CursorKind.UNEXPOSED_EXPR or c.kind == CursorKind.DECL_REF_EXPR or c.kind == CursorKind.MEMBER_REF_EXPR) and \
                                     c.displayname in variables:
                                 args.add(c.displayname)
+                        logger.debug("Function args %s %s" % (str(args), str(variables)))
                         function_calls.append((node.displayname, node.referenced.location.file.name,
                                             {'line': (node.extent.start.line, node.extent.end.line),
                                              'column': (node.extent.start.column, node.extent.end.column),
@@ -196,7 +200,9 @@ class CodeSnippetManager:
         logger.debug('Type: %s' % str(i.type.spelling))
         temp = temp.replace('const', '')
         temp = temp.replace('unsigned', '')
-        if temp == 'char' or temp.find('int') != -1 or temp == 'double':
+        if str(temp).replace('*', '').strip() in ['double', 'long', 'size_t', 'short']:
+            temp = str(temp).replace(str(temp).replace('*', '').strip(), 'int')
+        if temp == 'char' or temp.find('int') != -1:
             variables.add((i.displayname, 'int'))
         elif str(temp).replace('*', '').strip() in VALID_TYPES:
             variables.add((i.displayname, temp.strip()))
@@ -224,6 +230,7 @@ class CodeSnippetManager:
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
+#define break  
 '''
         includes = []
         for temp, func, args in function_calls:
@@ -286,6 +293,7 @@ struct s foo('''
                     remove = True
                     for t1, t2, info in function_calls:
                         if info['line'][0] == i:
+                            logger.debug("Args: %s" % str(info['args']))
                             if line[:info['column'][0]-1].strip():  # means the function call is sharing the line with others
                                 remove = False
                                 break
