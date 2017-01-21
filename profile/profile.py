@@ -41,7 +41,7 @@ class Profile:
             res = self.generate_profile(tests.negatives, self.negative_input_list)
             logger.debug("Negative profile: %s" % str(self.negative_input_list))
         run_command('cp ' + original + ' ' + self.filename)
-#        run_command('rm ' + self.marked_file)
+        run_command('rm ' + self.marked_file)
         return res
 
     def update_profile(self, tests,  original=FAULTY_CODE+'_orig.c'):

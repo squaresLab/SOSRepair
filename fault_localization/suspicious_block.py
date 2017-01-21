@@ -41,7 +41,7 @@ class FaultLocalization():
     def line_to_block(self, line_number):
         index = Index.create()
         logger.info("parsing")
-        self.root = index.parse(self.filename, ["-I/home/afsoon/ManyBugs/AutomatedRepairBenchmarks.c-master/many-bugs/php/php-original/php/ext/standard/", "-DPHP_ATOM_INC", "-I/home/afsoon/ManyBugs/AutomatedRepairBenchmarks.c-master/many-bugs/php/php-original/php/include", "-I/home/afsoon/ManyBugs/AutomatedRepairBenchmarks.c-master/many-bugs/php/php-original/php/main", "-I/home/afsoon/ManyBugs/AutomatedRepairBenchmarks.c-master/many-bugs/php/php-original/php", "-I/home/afsoon/ManyBugs/AutomatedRepairBenchmarks.c-master/many-bugs/php/php-original/php/ext/date/lib", "-I/home/afsoon/ManyBugs/AutomatedRepairBenchmarks.c-master/many-bugs/php/php-original/php/ext/ereg/regex", "-I/usr/include/libxml2", "-I/home/afsoon/ManyBugs/AutomatedRepairBenchmarks.c-master/many-bugs/php/php-original/php/ext/sqlite3/libsqlite", "-I/home/afsoon/ManyBugs/AutomatedRepairBenchmarks.c-master/many-bugs/php/php-original/php/TSRM", "-I/home/afsoon/ManyBugs/AutomatedRepairBenchmarks.c-master/many-bugs/php/php-original/php/Zend", "-I/usr/include", "-std=gnu99", "-L/usr/lib/x86_64-linux-gnu", "-fvisibility=hidden", "-DZEND_SIGNALS", "-I/home/afsoon/llvm/build/lib/clang/3.9.0/include"]) 
+        self.root = index.parse(self.filename, COMPILE_EXTRA_ARGS)
         logger.info("parsing root")
         return self.traverse_tree_suspicious_block(self.root.cursor, self.number_of_lines, line_number)
 
@@ -145,7 +145,7 @@ class FaultLocalization():
     def find_function_of_this_line(self, line_number):
         if not self.root:
             index = Index.create()
-            self.root = index.parse(self.filename, ["-I/home/afsoon/ManyBugs/AutomatedRepairBenchmarks.c-master/many-bugs/php/php-original/php/main/streams/", "-I/home/afsoon/ManyBugs/AutomatedRepairBenchmarks.c-master/many-bugs/php/php-original/php/main/streams/", "-DPHP_ATOM_INC", "-I/home/afsoon/ManyBugs/AutomatedRepairBenchmarks.c-master/many-bugs/php/php-original/php/include", "-I/home/afsoon/ManyBugs/AutomatedRepairBenchmarks.c-master/many-bugs/php/php-original/php/main", "-I/home/afsoon/ManyBugs/AutomatedRepairBenchmarks.c-master/many-bugs/php/php-original/php", "-I/home/afsoon/ManyBugs/AutomatedRepairBenchmarks.c-master/many-bugs/php/php-original/php/ext/date/lib", "-I/home/afsoon/ManyBugs/AutomatedRepairBenchmarks.c-master/many-bugs/php/php-original/php/ext/ereg/regex", "-I/usr/include/libxml2", "-I/home/afsoon/ManyBugs/AutomatedRepairBenchmarks.c-master/many-bugs/php/php-original/php/ext/sqlite3/libsqlite", "-I/home/afsoon/ManyBugs/AutomatedRepairBenchmarks.c-master/many-bugs/php/php-original/php/TSRM", "-I/home/afsoon/ManyBugs/AutomatedRepairBenchmarks.c-master/many-bugs/php/php-original/php/Zend", "-I/usr/include", "-std=gnu99", "-L/usr/lib/x86_64-linux-gnu", "-fvisibility=hidden", "-DZEND_SIGNALS", "-I/home/afsoon/llvm/build/lib/clang/3.9.0/include"])
+            self.root = index.parse(self.filename, COMPILE_EXTRA_ARGS)
         ast = self.root.cursor
         current = ast
         children = ast.get_children()

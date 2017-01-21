@@ -34,7 +34,7 @@ class SuspiciousLines():
                 #TODO
                 logger.error("Coverage failed on this test %s" % test)
                 self.use_gdb_for_gcov(test)
-            run_command_with_timeout('gcov -o /home/afsoon/ManyBugs/AutomatedRepairBenchmarks.c-master/many-bugs/python/python-original/python/build/temp.linux-x86_64-3.3/home/afsoon/ManyBugs/AutomatedRepairBenchmarks.c-master/many-bugs/python/python-original/python/Modules ' + FAULTY_CODE)
+            run_command_with_timeout('gcov ' + FAULTY_CODE)
 
             try:
                 self.parse_gcov_file(get_name_without_directory(FAULTY_CODE) + '.gcov', pos_or_neg)
