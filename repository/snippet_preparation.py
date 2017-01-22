@@ -4,7 +4,7 @@ import logging
 from os import path
 from clang.cindex import *
 from clang.cindex import BinaryOperator
-from settings import LIBCLANG_PATH, LARGEST_SNIPPET, SMALLEST_SNIPPET, VALID_TYPES
+from settings import LIBCLANG_PATH, LARGEST_SNIPPET, SMALLEST_SNIPPET, VALID_TYPES, COMPILE_EXTRA_ARGS
 from utils.file_process import number_of_lines
 from utils.klee import *
 from repository.db_manager import DatabaseManager
@@ -23,7 +23,7 @@ class CodeSnippetManager:
     def detach_snippets(self):
         logger.debug('Snippet file: ' + self.filename)
         index = Index.create()
-        self.root = index.parse(self.filename, ["-I/home/afsoon/ManyBugs/AutomatedRepairBenchmarks.c-master/many-bugs/php/php-original/php/ext/standard/", "-DPHP_ATOM_INC", "-I/home/afsoon/ManyBugs/AutomatedRepairBenchmarks.c-master/many-bugs/php/php-original/php/include", "-I/home/afsoon/ManyBugs/AutomatedRepairBenchmarks.c-master/many-bugs/php/php-original/php/main", "-I/home/afsoon/ManyBugs/AutomatedRepairBenchmarks.c-master/many-bugs/php/php-original/php", "-I/home/afsoon/ManyBugs/AutomatedRepairBenchmarks.c-master/many-bugs/php/php-original/php/ext/date/lib", "-I/home/afsoon/ManyBugs/AutomatedRepairBenchmarks.c-master/many-bugs/php/php-original/php/ext/ereg/regex", "-I/usr/include/libxml2", "-I/home/afsoon/ManyBugs/AutomatedRepairBenchmarks.c-master/many-bugs/php/php-original/php/ext/sqlite3/libsqlite", "-I/home/afsoon/ManyBugs/AutomatedRepairBenchmarks.c-master/many-bugs/php/php-original/php/TSRM", "-I/home/afsoon/ManyBugs/AutomatedRepairBenchmarks.c-master/many-bugs/php/php-original/php/Zend", "-I/usr/include", "-std=gnu99", "-L/usr/lib/x86_64-linux-gnu", "-fvisibility=hidden", "-DZEND_SIGNALS", "-I/home/afsoon/llvm/build/lib/clang/3.9.0/include"])
+        self.root = index.parse(self.filename, COMPILE_EXTRA_ARGS)
         return self.traverse_tree(self.root.cursor, self.number_of_lines)
 
     def traverse_tree(self, ast, end_of_file):
