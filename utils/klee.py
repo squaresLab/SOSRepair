@@ -3,10 +3,11 @@ __author__ = 'Afsoon Afzal'
 import os
 import subprocess
 from utils.c_run import run_command
+from settings import COMPILE_EXTRA_ARGS
 
 
 def compile_clang(filename):
-    command = "clang-3.4 -I/home/afsoon/ManyBugs/AutomatedRepairBenchmarks.c-master/many-bugs/php/php-original/php/include -I/home/afsoon/ManyBugs/AutomatedRepairBenchmarks.c-master/many-bugs/php/php-original/php/main -I/home/afsoon/ManyBugs/AutomatedRepairBenchmarks.c-master/many-bugs/php/php-original/php -I/home/afsoon/ManyBugs/AutomatedRepairBenchmarks.c-master/many-bugs/php/php-original/php/ext/date/lib -I/home/afsoon/ManyBugs/AutomatedRepairBenchmarks.c-master/many-bugs/php/php-original/php/ext/ereg/regex -I/usr/include/libxml2 -I/home/afsoon/ManyBugs/AutomatedRepairBenchmarks.c-master/many-bugs/php/php-original/php/ext/sqlite3/libsqlite -I/home/afsoon/ManyBugs/AutomatedRepairBenchmarks.c-master/many-bugs/php/php-original/php/TSRM -I/home/afsoon/ManyBugs/AutomatedRepairBenchmarks.c-master/many-bugs/php/php-original/php/Zend -I/usr/include -L/usr/lib/x86_64-linux-gnu -emit-llvm -c -g " + filename
+    command = "clang-3.4 " + " ".join(COMPILE_EXTRA_ARGS) + " -emit-llvm -c -g " + filename
     res = run_command(command)
     if not res:
         return False
