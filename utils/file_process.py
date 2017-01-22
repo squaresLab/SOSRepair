@@ -36,3 +36,16 @@ def transform_file(filename):
                 tf.write(l)
     run_command('rm tempfile')
     return transformed_file
+
+
+def find_extra_compile_args(output_file, compiled_file):
+    with open(output_file, "r") as f:
+        for l in f:
+            if compiled_file in l:
+                splits = l.split(" ")
+                extra_args = []
+                for s in splits:
+                    if s.startswith("-I"):
+                        extra_args.append(s)
+                return extra_args
+    return []

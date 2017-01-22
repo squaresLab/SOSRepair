@@ -3,11 +3,10 @@ __author__ = 'Afsoon Afzal'
 import os
 import subprocess
 from utils.c_run import run_command
-from settings import COMPILE_EXTRA_ARGS
 
 
-def compile_clang(filename):
-    command = "clang-3.4 " + " ".join(COMPILE_EXTRA_ARGS) + " -emit-llvm -c -g " + filename
+def compile_clang(filename, extra_args):
+    command = "clang-3.4 " + " ".join(extra_args) + " -emit-llvm -c -g " + filename
     res = run_command(command)
     if not res:
         return False
