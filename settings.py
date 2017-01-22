@@ -7,7 +7,7 @@ LIBCLANG_PATH = '/home/afsoon/llvm/build/lib/libclang.so'
 # LIBCLANG_PATH = '/Users/afsoona/llvm/build/lib/libclang.dylib'
 
 TESTS_DIRECTORY = '/home/afsoon/Documents/workspace/SCS/IntroClass/median/tests/blackbox'
-INTROCLASS_PATH = '/home/afsoon/ManyBugs/AutomatedRepairBenchmarks.c-master/many-bugs/php/php-original/php'
+INTROCLASS_PATH = '/home/afsoon/ManyBugs/AutomatedRepairBenchmarks.c/many-bugs/php/php-bug-2011-01-30-5bb0a44e06-1e91069eb4/src'
 
 Z3_COMMAND = '/home/afsoon/z3/build/z3'
 

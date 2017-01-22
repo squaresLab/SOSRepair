@@ -230,7 +230,8 @@ class CodeSnippetManager:
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
-#define break  
+#define break
+#include "/home/afsoon/ManyBugs/AutomatedRepairBenchmarks.c/many-bugs/php/php-bug-2011-01-30-5bb0a44e06-1e91069eb4/src/Zend/zend.h"
 '''
         includes = []
         for temp, func, args in function_calls:
