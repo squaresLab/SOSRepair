@@ -50,3 +50,12 @@ def find_extra_compile_args(output_file, compiled_file):
                         extra_args.append(s)
                 return extra_args
     return COMPILE_EXTRA_ARGS
+
+
+def find_includes(filename):
+    includes = ''
+    with open(filename, "r") as f:
+        for l in f:
+            if l.startswith("#include"):
+                includes += l
+    return includes

@@ -5,7 +5,7 @@ from os import path
 from clang.cindex import *
 from clang.cindex import BinaryOperator
 from settings import LIBCLANG_PATH, LARGEST_SNIPPET, SMALLEST_SNIPPET, VALID_TYPES, MAKE_OUTPUT
-from utils.file_process import number_of_lines, find_extra_compile_args
+from utils.file_process import number_of_lines, find_extra_compile_args, find_includes
 from utils.klee import *
 from repository.db_manager import DatabaseManager
 
@@ -20,12 +20,14 @@ class CodeSnippetManager:
         self.number_of_lines = number_of_lines(filename)
         self.db_manager = DatabaseManager()
         self.extra_args = []
+        self.includes = ''
 
     def detach_snippets(self):
         logger.debug('Snippet file: ' + self.filename)
         index = Index.create()
         self.extra_args = find_extra_compile_args(MAKE_OUTPUT, self.filename[:-8])  # Removing _trans.c
         logger.debug("Extra args: %s" % str(self.extra_args))
+        self.includes = find_includes(self.filename)
         self.root = index.parse(self.filename, self.extra_args)
         return self.traverse_tree(self.root.cursor, self.number_of_lines)
 
@@ -235,20 +237,20 @@ class CodeSnippetManager:
 #include <stdlib.h>
 #include <string.h>
 #define break
-#include "/home/afsoon/ManyBugs/AutomatedRepairBenchmarks.c/many-bugs/php/php-bug-2011-01-30-5bb0a44e06-1e91069eb4/src/Zend/zend.h"
 '''
-        includes = ['/home/afsoon/ManyBugs/AutomatedRepairBenchmarks.c/many-bugs/php/php-bug-2011-01-30-5bb0a44e06-1e91069eb4/src/Zend/zend.h']
-        for temp, func, args in function_calls:
-            if func in includes:
-                continue
-            s += '#include "' + func + '"\n'
-            includes.append(func)
-        for var in variables:
-            if len(var) == 3:
-                if var[2] in includes:
-                    continue
-                s += '#include "' + var[2] + '"\n'
-                includes.append(var[2])
+        s += self.includes
+        # includes = ['/home/afsoon/ManyBugs/AutomatedRepairBenchmarks.c/many-bugs/php/php-bug-2011-01-30-5bb0a44e06-1e91069eb4/src/Zend/zend.h']
+        # for temp, func, args in function_calls:
+        #     if func in includes:
+        #         continue
+        #     s += '#include "' + func + '"\n'
+        #     includes.append(func)
+        # for var in variables:
+        #     if len(var) == 3:
+        #         if var[2] in includes:
+        #             continue
+        #         s += '#include "' + var[2] + '"\n'
+        #         includes.append(var[2])
         if isinstance(outputs, str):
             s += outputs + ' foo('
         elif len(outputs) == 1:
