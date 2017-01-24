@@ -24,7 +24,8 @@ class CodeSnippetManager:
     def detach_snippets(self):
         logger.debug('Snippet file: ' + self.filename)
         index = Index.create()
-        self.extra_args = find_extra_compile_args(MAKE_OUTPUT, self.filename[:-8] + ".c")  # Removing _trans.c
+        self.extra_args = find_extra_compile_args(MAKE_OUTPUT, self.filename[:-8])  # Removing _trans.c
+        logger.debug("Extra args: %s" % str(self.extra_args))
         self.root = index.parse(self.filename, self.extra_args)
         return self.traverse_tree(self.root.cursor, self.number_of_lines)
 
@@ -67,6 +68,7 @@ class CodeSnippetManager:
                     logger.debug("Vars and outputs: %s and %s" % (str(vars), str(outputs)))
                     if (vars != -1 and outputs != -1) and (len(vars) != 0 or len(outputs) != 0):
                         func_calls = self.find_function_calls(blocks, vars)
+                        logger.debug("Functions: %s" % str(func_calls))
                         source = self.write_file(blocks, vars, outputs, func_calls, labels)
                         logger.debug("Source, line, from_line: %s, %d, %d" % (str(source), line, from_line)) 
                         code_snippet = CodeSnippet(source, vars, outputs, self.filename, func_calls)
@@ -235,7 +237,7 @@ class CodeSnippetManager:
 #define break
 #include "/home/afsoon/ManyBugs/AutomatedRepairBenchmarks.c/many-bugs/php/php-bug-2011-01-30-5bb0a44e06-1e91069eb4/src/Zend/zend.h"
 '''
-        includes = []
+        includes = ['/home/afsoon/ManyBugs/AutomatedRepairBenchmarks.c/many-bugs/php/php-bug-2011-01-30-5bb0a44e06-1e91069eb4/src/Zend/zend.h']
         for temp, func, args in function_calls:
             if func in includes:
                 continue
@@ -317,21 +319,22 @@ struct s foo('''
                 if i == blocks[0].extent.start.line:
                     if line[blocks[0].extent.start.column-1:].strip().startswith('else'):  # Solo else
                         s += 'if(0);\n'
+                        continue
+                    temp = ''
                     if i == blocks[-1].extent.end.line:
-                        s += line[blocks[0].extent.start.column-1:blocks[-1].extent.end.column]
-                        code_snippet += line[blocks[0].extent.start.column-1:blocks[-1].extent.end.column]
+                        temp += line[blocks[0].extent.start.column-1:blocks[-1].extent.end.column]
                     else:
-                        s += line[blocks[0].extent.start.column-1:]
-                        code_snippet += line[blocks[0].extent.start.column-1:]
+                        temp += line[blocks[0].extent.start.column-1:]
                     for letter in line[blocks[0].extent.start.column-2::-1]:
                         logger.debug('Letter: %s' % letter)
                         if letter == ' ':
                             continue
                         elif letter == '(':
-                            s = '(' + s
-                            code_snippet = '(' + code_snippet
+                            temp = '(' + temp
                         else:
                             break
+                    s += temp
+                    code_snippet += temp
                 elif blocks[0].extent.start.line < i < blocks[-1].extent.end.line:
                     s += line
                     code_snippet += line

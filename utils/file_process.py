@@ -3,6 +3,7 @@ __author__ = 'afsoona'
 import difflib
 import subprocess
 from utils.c_run import run_command
+from settings import COMPILE_EXTRA_ARGS
 
 
 def number_of_lines(filename):
@@ -48,4 +49,4 @@ def find_extra_compile_args(output_file, compiled_file):
                     if s.startswith("-I"):
                         extra_args.append(s)
                 return extra_args
-    return []
+    return COMPILE_EXTRA_ARGS
