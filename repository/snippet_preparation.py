@@ -27,8 +27,11 @@ class CodeSnippetManager:
         index = Index.create()
         self.extra_args = find_extra_compile_args(MAKE_OUTPUT, self.filename[:-8])  # Removing _trans.c
         logger.debug("Extra args: %s" % str(self.extra_args))
-        self.includes = find_includes(self.filename)
+        #self.includes = find_includes(self.filename)
         self.root = index.parse(self.filename, self.extra_args)
+        for i in self.root.get_includes():
+            if i.depth == 1:
+                self.includes += '#include "' + str(i.include) + '"\n'
         return self.traverse_tree(self.root.cursor, self.number_of_lines)
 
     def traverse_tree(self, ast, end_of_file):

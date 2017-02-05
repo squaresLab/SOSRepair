@@ -100,12 +100,12 @@ class Profile:
                 i += 1
                 if i == self.suspicious_block.line_range[0]:
                     out.write('FILE *fp = fopen("' + self.output_file + '", "w");\n')
-                    out.write('fprintf(fp, "input\\n");\n')
+                    #out.write('fprintf(fp, "input\\n");\n')
                     out.write('unsigned char *buffer_afs;\nint i_afs;\n')
                     out.write(state)
                     out.write("fflush(fp);\n")
                 if i == self.suspicious_block.line_range[1]:
-                    out.write('fprintf(fp, "output\\n");\n')
+                    #out.write('fprintf(fp, "output\\n");\n')
                     out.write(state)
                     out.write("fclose(fp);\n")
                 out.write(line)
@@ -128,10 +128,17 @@ class Profile:
             lines = []
             try:
                 with open(self.output_file, 'r') as f:
+                    ll = ''
                     for l in f:
                         index = l.find('input start:')
                         if index != -1:
-                            lines.append(l[index+12:].split('_afs_'))
+                            if ll:
+                                lines.append(ll.split('_afs_'))
+                            ll = l[index+12:]
+                        else:
+                            ll += l
+                    if ll:
+                        lines.append(ll.split('_afs_'))
             except IOError:
                 logger.warning("This test probabely does not pass the faulty code %s" % pt)
                 continue

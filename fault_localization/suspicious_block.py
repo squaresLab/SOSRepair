@@ -4,7 +4,7 @@ import logging
 from clang.cindex import *
 from clang.cindex import BinaryOperator
 from settings import *
-from utils.file_process import number_of_lines
+from utils.file_process import number_of_lines, find_extra_compile_args
 from repository.snippet_preparation import CodeSnippetManager
 
 Config.set_library_file(LIBCLANG_PATH)
@@ -41,7 +41,9 @@ class FaultLocalization():
     def line_to_block(self, line_number):
         index = Index.create()
         logger.info("parsing")
-        self.root = index.parse(self.filename, COMPILE_EXTRA_ARGS)
+        extra_args = find_extra_compile_args(MAKE_OUTPUT, self.filename)  # Removing _trans.c
+        logger.debug("Extra args: %s" % str(extra_args))
+        self.root = index.parse(self.filename, extra_args)
         logger.info("parsing root")
         return self.traverse_tree_suspicious_block(self.root.cursor, self.number_of_lines, line_number)
 

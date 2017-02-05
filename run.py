@@ -17,19 +17,29 @@ logger = logging.getLogger(__name__)
 
 
 def re_build_database(db_manager):
-    db_manager.drop_tables()
-    db_manager.initialize_tables()
-    deletion_snippet = CodeSnippet('', [], {}, '', [])
-    deletion_snippet.add_constraint('(assert true)')
-    db_manager.insert_snippet(deletion_snippet)
-    del deletion_snippet
-    for root, dirs, files in os.walk(INTROCLASS_PATH):
-        for items in fnmatch.filter(files, "*.c"):
-            ff = os.path.join(root, items)
-            ff = transform_file(ff)
-            fl = CodeSnippetManager(ff)
-            fl.detach_snippets()
-            os.system('rm ' + ff)
+#    db_manager.drop_tables()
+#    db_manager.initialize_tables()
+#    deletion_snippet = CodeSnippet('', [], {}, '', [])
+#    deletion_snippet.add_constraint('(assert true)')
+#    db_manager.insert_snippet(deletion_snippet)
+#    del deletion_snippet
+    already_done = []
+    with open("done.txt", "r") as f:
+        for l in f:
+            if not l.startswith("Finished"):
+                already_done.append(l[7:].strip())
+    with open("processed.txt", "w") as f:
+        for root, dirs, files in os.walk(INTROCLASS_PATH):
+            for items in fnmatch.filter(files, "*.c"):
+                ff = os.path.join(root, items)
+                if str(ff) in already_done:
+                    continue
+                f.write("Start: %s\n" % str(ff))
+                ff = transform_file(ff)
+                fl = CodeSnippetManager(ff)
+                fl.detach_snippets()
+                os.system('rm ' + ff)
+                f.write("Finished\n")
 
 
 def main(build_db=False):
@@ -51,6 +61,7 @@ def main(build_db=False):
     suspicious_lines = SuspiciousLines(tests)
     suspicious_lines.compute_suspiciousness()
 
+    logger.debug("Suspicious lines : %s" % str(suspicious_lines.suspiciousness))
     db_manager = DatabaseManager()
     if build_db:
         re_build_database(db_manager)
@@ -63,6 +74,8 @@ def main(build_db=False):
     investigated_blocks = set([])
     suspicious_lines_investigated = 0
     for line, score in suspicious_lines.suspiciousness:
+        if not (METHOD_RANGE[0] <= line <= METHOD_RANGE[1]):
+            continue
         if suspicious_lines_investigated >= MAX_SUSPICIOUS_LINES:
             return 4
         logger.info("Suspicious line: %d ,score: %f" % (line, score))
@@ -211,6 +224,6 @@ def main2():
     exception.close()
 
 if __name__ == "__main__":
-    #main(True)
-    db_manager = DatabaseManager()
-    re_build_database(db_manager)
+    main()
+    #db_manager = DatabaseManager()
+    #re_build_database(db_manager)
