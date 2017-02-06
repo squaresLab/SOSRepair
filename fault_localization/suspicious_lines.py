@@ -4,48 +4,44 @@ import os
 import logging
 from math import sqrt
 from utils.c_run import *
-from settings import TESTS_DIRECTORY
+from settings import *
 
 logger = logging.getLogger(__name__)
 
 
 class SuspiciousLines():
 
-    def __init__(self, filename, directory, tests):
+    def __init__(self, tests):
         self.suspiciousness = []
         self.counts = {}
-        self.filename = filename
-        self.directory = directory
-        self.program = os.path.join(self.directory, self.filename)
-        self.plain_name = get_plain_name(filename)
         self.tests = tests
 
     def compute_suspiciousness(self):
-        res = compile_c(self.program, self.plain_name, ' -fprofile-arcs -ftest-coverage ')
-        if not res:
-            raise Exception
         self.compute_coverage(self.tests.positives, '+')
         self.compute_coverage(self.tests.negatives, '-')
-        run_command('rm ' + self.plain_name + ' ' + self.plain_name + '.gcno')
         self.suspicious_formula()
         self.suspiciousness.sort(key=lambda tuple: tuple[1], reverse=True)
         return
 
     def compute_coverage(self, test_list, pos_or_neg):
         for test in test_list:
-            run_command('rm ' + get_plain_name_without_directory(self.plain_name) + '.gcda')
-            res = run_c_with_input_provided(self.plain_name, test)
+            run_command('rm ' + get_plain_name(FAULTY_CODE) + '.gcda')
+            run_command('rm ' + get_name_without_directory(FAULTY_CODE) + '.gcov')
+            res = run_command_with_timeout(TEST_SCRIPT + ' ' + test, 50)
             if not res:
+                logger.debug("test %s" %str(test))
+                raise Exception
+                #TODO
                 logger.error("Coverage failed on this test %s" % test)
-                self.use_gdb_for_gcov(self.plain_name, test)
-            run_command_with_timeout('gcov --object-directory ./ ' + self.program)
+                self.use_gdb_for_gcov(test)
+            run_command_with_timeout('gcov ' + FAULTY_CODE)
 
             try:
-                self.parse_gcov_file(get_plain_name_without_directory(self.filename) + '.gcov', pos_or_neg)
+                self.parse_gcov_file(get_name_without_directory(FAULTY_CODE) + '.gcov', pos_or_neg)
             except IOError:
                 logger.error("No gcov file found")
                 continue
-        run_command('rm ' + get_plain_name_without_directory(self.filename) + '.* ')
+        run_command('rm ' + get_name_without_directory(FAULTY_CODE) + '.* ')
 
     def parse_gcov_file(self, gcov_file, pos_or_neg):
         with open(gcov_file, 'r') as f:
@@ -82,11 +78,24 @@ class SuspiciousLines():
                 self.suspiciousness.append((line_number, sqrt(left * right)))
 
     @staticmethod
-    def use_gdb_for_gcov(filename, test):
+    def use_gdb_for_gcov(test):
         with open('gdb_script.txt', 'w') as f:
-            f.write('file ' + filename + '\n')
-            f.write('run ' + test + '\n')
-            f.write('call exit()\nquit\n')
-        run_command_with_timeout_interrupt('gdb < gdb_script.txt')
-        run_command('rm gdb_script.txt')
+            f.write('file ' + TEST_SCRIPT_TYPE + '\n')
+            f.write('''
+set detach-on-fork off
+set non-stop on
+set pagination on
+set target-async on
+set confirm off
+''')
+            f.write('set args ' + TEST_SCRIPT + ' ' + test + '\n')
+            f.write('run\n')
+            #f.write('''
+#interrupt -a
+#thread apply all call exit()
+#thread all apply kill
+#quit
+#''')
+        run_command_with_timeout_interrupt('gdb --command=gdb_script.txt', 30)
+        #run_command('rm gdb_script.txt')
 

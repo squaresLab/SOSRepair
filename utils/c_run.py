@@ -12,7 +12,7 @@ def get_plain_name(filename):
     return plain_name
 
 
-def get_plain_name_without_directory(filename):
+def get_name_without_directory(filename):
     parts = filename.split('/')
     plain_name = parts[-1]
     return plain_name
@@ -31,10 +31,23 @@ def run_command_with_timeout(command, timeout=5):
     t.start()
     (out, err) = proc.communicate()
     t.cancel()
-    if err or kill_check.isSet():
+    print "return code %d" % int(proc.returncode) 
+    if err or kill_check.isSet() or proc.returncode:
         kill_check.clear()
         return False
     return True
+
+
+def run_command_with_timeout_get_output(command, timeout=5):
+    proc = subprocess.Popen(command, shell=True, stdout=subprocess.PIPE, preexec_fn=os.setsid)
+    t = threading.Timer(timeout, timeout_function, [proc])
+    t.start()
+    (out, err) = proc.communicate()
+    t.cancel()
+    if err or kill_check.isSet() or proc.returncode:
+        kill_check.clear()
+        return None
+    return out
 
 
 def compile_c(program, run_file_name, options=None):

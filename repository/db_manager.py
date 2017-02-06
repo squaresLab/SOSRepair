@@ -1,10 +1,10 @@
 __author__ = 'afsoona'
 
 
-import collections
 import logging
 import psycopg2
 from settings import DATABASE
+from utils import counter_subset
 
 logger = logging.getLogger(__name__)
 
@@ -82,6 +82,8 @@ class DatabaseManager():
                                  str(snippet.outputs), str(snippet.function_calls), snippet.path))
             self.connect().commit()
             id = cursor.fetchone()[0]
+            print "ID %d" % id
+            logger.debug("ID: %d" % id)
             self.insert_constraint(snippet, id)
         except psycopg2.DatabaseError, e:
             logger.error('%s' % str(e))
@@ -127,6 +129,7 @@ class DatabaseManager():
             cursor = self.connect().cursor()
             sql = """
             SELECT ID,VARIABLES,OUTPUTS FROM snippets WHERE ID>%d
+            ORDER BY ID
             """ % index
             cursor.execute(sql)
             rows = cursor.fetchall()  # TODO are you sure?
@@ -137,22 +140,25 @@ class DatabaseManager():
                 output_types = [outputs[i]['type'] for i in outputs.keys()]
             else:
                 output_types = [outputs]
-            compare = lambda x, y: collections.Counter(x) == collections.Counter(y)
             for id, v, o in rows:
+                logger.debug("id: %d, o: %s, v: %s" %(id, str(o), str(v)))
                 v_types = [i[1] for i in eval(v)]
                 try:
                     out = eval(o)
+                    if not isinstance(out, dict):
+                        out = [out]
                 except:
-                    continue
-                if (isinstance(out, dict) and not isinstance(outputs, dict)) or \
-                        (not isinstance(out, dict) and isinstance(outputs, dict)):
-                    continue
+                    out = [o]
+                #if (isinstance(out, dict) and not isinstance(outputs, dict)) or \
+                #        (not isinstance(out, dict) and isinstance(outputs, dict)):
+                #    continue
+                logger.debug("id: %d, o: %s, out: %s, is: %s" %(id, str(o), str(out), str(isinstance(out, dict))))
                 if isinstance(out, dict):
                     o_types = [out[i]['type'] for i in out.keys()]
                 else:
-                    o_types = [out]
-                logger.debug("var: %s, v: %s, out: %s, o: %s" % (str(var_types), str(v_types), str(output_types), str(o_types)))
-                if compare(var_types, v_types) and compare(output_types, o_types):
+                    o_types = [str(o)]
+                logger.debug("var: %s, v: %s, subset: %s, out: %s, o: %s, subset: %s" % (str(var_types), str(v_types), str(counter_subset(var_types, v_types)), str(output_types), str(o_types), str(counter_subset(output_types, o_types))))
+                if counter_subset(var_types, v_types) and counter_subset(output_types, o_types):
                     return id
         except psycopg2.DatabaseError, e:
             logger.error('%s' % str(e))

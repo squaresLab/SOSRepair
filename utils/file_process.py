@@ -2,6 +2,8 @@ __author__ = 'afsoona'
 
 import difflib
 import subprocess
+from utils.c_run import run_command
+from settings import COMPILE_EXTRA_ARGS
 
 
 def number_of_lines(filename):
@@ -26,10 +28,37 @@ def compare_files(file1, file2):
 
 def transform_file(filename):
     transformed_file = filename + '_trans.c'
+#    run_command("./remccoms3.sed < " + filename + ' >  tempfile')
     with open(filename, 'r') as f:
         with open(transformed_file, 'w') as tf:
             for l in f:
-                if l.isspace() or l.strip().startswith('//') or l.strip().startswith('#'):
+                if l.isspace():
                     continue
                 tf.write(l)
+    run_command('rm tempfile')
     return transformed_file
+
+
+def find_extra_compile_args(output_file, compiled_file):
+    with open(output_file, "r") as f:
+        for l in f:
+            if compiled_file in l:
+                splits = l.split(" ")
+                extra_args = []
+                for s in splits:
+                    if s.startswith("-I"):
+                        if s.startswith("-I/usr/include"):
+                            extra_args.append("-I/home/afsoon/llvm/build/lib/clang/3.9.0/include")
+                        else:
+                            extra_args.append(s)
+                return extra_args
+    return COMPILE_EXTRA_ARGS
+
+
+def find_includes(filename):
+    includes = ''
+    with open(filename, "r") as f:
+        for l in f:
+            if l.startswith("#include"):
+                includes += l
+    return includes

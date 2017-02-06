@@ -5,8 +5,8 @@ import subprocess
 from utils.c_run import run_command
 
 
-def compile_clang(filename):
-    command = "clang-3.4 -emit-llvm -c -g " + filename
+def compile_clang(filename, extra_args):
+    command = "clang-3.4 " + " ".join(extra_args) + " -emit-llvm -c -g " + filename
     res = run_command(command)
     if not res:
         return False
@@ -41,5 +41,4 @@ def read_smt_files(path_number, klee_dir='klee-out'):
     file_name = klee_dir + '/test' + ('0'*(6-len(str(path_number)))) + str(path_number) + '.smt2'
     with open(file_name, 'r') as file:
         return file.read()
-    return None
 
