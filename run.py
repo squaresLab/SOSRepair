@@ -1,6 +1,7 @@
 __author__ = 'afsoona'
 
 import os
+import time
 import fnmatch
 import logging
 from settings import *
@@ -114,9 +115,8 @@ def main(build_db=False):
                 patch_file = os.path.join(os.path.dirname(os.path.abspath(__file__)), 'patches/patch'+str(len(passing_patches))+'.c')
                 patch_file = patch_generation.create_patch(sb, patch_snippet, patch_file=patch_file)
                 run_command('cp ' + patch_file + ' ' + FAULTY_CODE)
-                patch_test = Tests()
-                success = patch_test.initialize_script_testing()
-                if success and len(patch_test.negatives) == 0:
+                success = tests.rerun_tests()
+                if success:
                     print "Found a patch!!! YAY"
                     run_command('cp ' + original_copy + ' ' + FAULTY_CODE)
                     passing_patches.append(patch_file)
@@ -124,7 +124,7 @@ def main(build_db=False):
                         return 0
                     break
                 elif len(profile.input_list) == 0:
-                    profile.update_profile(patch_test, original_copy)
+                    profile.update_profile(tests, original_copy)
                     logger.debug('Updated profile: ' + str(profile.negative_input_list))
                 run_command('cp ' + original_copy + ' ' + FAULTY_CODE)
             i = z3.fetch_valid_snippets()
@@ -163,9 +163,8 @@ def main(build_db=False):
                 patch_file = os.path.join(os.path.dirname(os.path.abspath(__file__)), 'patches/patch'+str(len(passing_patches))+'.c')
                 patch_file = patch_generation.create_patch(sb, patch_snippet, patch_file=patch_file)
                 run_command('cp ' + patch_file + ' ' + FAULTY_CODE)
-                patch_test = Tests()
-                success = patch_test.initialize_script_testing()
-                if success and len(patch_test.negatives) == 0:
+                success = tests.rerun_tests()
+                if success:
                     print "Found a patch!!! YAY"
                     run_command('cp ' + original_copy + ' ' + FAULTY_CODE)
                     passing_patches.append(patch_file)
@@ -173,7 +172,7 @@ def main(build_db=False):
                         return 0
                     break
                 elif len(profile.input_list) == 0:
-                    profile.update_profile(patch_test, original_copy)
+                    profile.update_profile(tests, original_copy)
                     logger.debug('Updated profile: ' + str(profile.negative_input_list))
                 run_command('cp ' + original_copy + ' ' + FAULTY_CODE)
             i = z3.fetch_valid_snippets()
@@ -224,6 +223,9 @@ def main2():
     exception.close()
 
 if __name__ == "__main__":
+    start_time = time.time()
+    logger.info("Start time %s" % str(start_time))
     main()
+    logger.info("Total time %s" % str((time.time() - start_time)))
     #db_manager = DatabaseManager()
     #re_build_database(db_manager)

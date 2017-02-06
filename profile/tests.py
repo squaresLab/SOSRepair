@@ -65,6 +65,26 @@ class Tests():
                     break
         return True
 
+    def rerun_tests(self):
+        res = run_command_with_timeout(COMPILE_SCRIPT, timeout=70)
+        print "RES %s" % str(res)
+        if not res:
+            return False
+        all_tests = self.negatives[:]
+        all_tests.extend(self.positives[:])
+        for test in all_tests:
+            print "running test %s" %test
+            res = run_command_with_timeout_get_output(TEST_SCRIPT + ' ' + test, timeout=70)
+            if not res:
+                logger.error("Test failed!") # Fix me
+                return False
+            for l in res.splitlines():
+                if l.startswith("PASS"):
+                    break
+                elif l.startswith("FAIL"):
+                    return False
+        return True
+
     def __str__(self):
         return "Positives: " + str(self.positives) + "\nNegative: " + str(self.negatives)
 
