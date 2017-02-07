@@ -18,23 +18,16 @@ logger = logging.getLogger(__name__)
 
 
 def re_build_database(db_manager):
-#    db_manager.drop_tables()
-#    db_manager.initialize_tables()
-#    deletion_snippet = CodeSnippet('', [], {}, '', [])
-#    deletion_snippet.add_constraint('(assert true)')
-#    db_manager.insert_snippet(deletion_snippet)
-#    del deletion_snippet
-    already_done = []
-    with open("done.txt", "r") as f:
-        for l in f:
-            if not l.startswith("Finished"):
-                already_done.append(l[7:].strip())
+    db_manager.drop_tables()
+    db_manager.initialize_tables()
+    deletion_snippet = CodeSnippet('', [], {}, '', [])
+    deletion_snippet.add_constraint('(assert true)')
+    db_manager.insert_snippet(deletion_snippet)
+    del deletion_snippet
     with open("processed.txt", "w") as f:
         for root, dirs, files in os.walk(INTROCLASS_PATH):
             for items in fnmatch.filter(files, "*.c"):
                 ff = os.path.join(root, items)
-                if str(ff) in already_done:
-                    continue
                 f.write("Start: %s\n" % str(ff))
                 ff = transform_file(ff)
                 fl = CodeSnippetManager(ff)

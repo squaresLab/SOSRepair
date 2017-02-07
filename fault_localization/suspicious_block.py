@@ -203,13 +203,8 @@ class FaultLocalization():
                             if inner.kind == CursorKind.DECL_REF_EXPR or inner.kind == CursorKind.UNEXPOSED_EXPR:
                                 left_side = str(inner.displayname)
                 if left_side not in live_vars and left_side in all_vars:
-                    dead_vars.add(left_side)
-        final_list2 = []
-        for v in final_list:
-            if not 'zend_encoding' in v[1]:
-                final_list2.append(v)
-        return final_list2
-        #return final_list
+                    dead_vars.add(left_side
+        return final_list
 
 
 if __name__ == "__main__":

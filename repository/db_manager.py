@@ -3,6 +3,7 @@ __author__ = 'afsoona'
 
 import logging
 import psycopg2
+import re
 from settings import DATABASE
 from utils import counter_subset
 
@@ -190,6 +191,24 @@ class DatabaseManager():
             cursor.execute(sql)
             rows = cursor.fetchall()
             return rows
+        except psycopg2.DatabaseError, e:
+            logger.error('%s' % str(e))
+            if self.connect():
+                self.connect().rollback()
+            self.close()
+
+    def is_syntactically_redundant(self, snippet):
+        sql = "SELECT ID,SOURCE FROM snippets ORDER BY ID"
+        try:
+            cursor = self.connect().cursor()
+            cursor.execute(sql %i)
+            rows = cursor.fetchall()
+            m_s = re.sub('[\s+]', '', snippet)
+            for id, source in rows:
+                s = re.sub('[\s+]', '', source)
+                if m_s == s:
+                    return True
+            return False
         except psycopg2.DatabaseError, e:
             logger.error('%s' % str(e))
             if self.connect():

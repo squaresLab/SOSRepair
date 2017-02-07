@@ -105,6 +105,8 @@ class Z3:
             return None
         final_map = {}
         for v, m in mappings:
+            if v == "return_value":  # For a bug, should fix it later
+                continue
             final_map[v] = program_mapping[m]
         print final_map
         return [(snippet[1], eval(snippet[2]), final_map)]
