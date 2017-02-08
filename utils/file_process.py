@@ -62,3 +62,14 @@ def find_includes(filename):
             if l.startswith("#include"):
                 includes += l
     return includes
+
+
+def get_file_name_and_module_re(filename=''):
+    index = filename.find('src')
+    if index != -1:
+        filename = filename[index+4:]  # removing src/ and before
+    index = filename.rfind('/')
+    module = filename
+    if index != -1:
+        module = module[:index+1] + ".*"
+    return filename, module

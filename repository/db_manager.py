@@ -214,3 +214,79 @@ class DatabaseManager():
             if self.connect():
                 self.connect().rollback()
             self.close()
+
+    def fetch_all_valid_snippets(self, phase, filename, module_name, vars, outputs):
+        if phase == 'in_file':
+            rows = self.get_snippets_in_file(filename)
+        elif phase == 'in_module':
+            rows = self.get_snippets_in_module(filename, module_name)
+        else:
+            rows = self.get_snippets_all(filename, module_name)
+        candidate_rows = []
+        if len(rows) == 0:
+                return []
+        var_types = [i[1] for i in vars]
+        if isinstance(outputs, dict):
+            output_types = [outputs[i]['type'] for i in outputs.keys()]
+        else:
+            output_types = [outputs]
+        for id, v, o in rows:
+            logger.debug("id: %d, o: %s, v: %s" %(id, str(o), str(v)))
+            v_types = [i[1] for i in eval(v)]
+            try:
+                out = eval(o)
+                if not isinstance(out, dict):
+                    out = [out]
+            except:
+                out = [o]
+            #if (isinstance(out, dict) and not isinstance(outputs, dict)) or \
+            #        (not isinstance(out, dict) and isinstance(outputs, dict)):
+            #    continue
+            logger.debug("id: %d, o: %s, out: %s, is: %s" %(id, str(o), str(out), str(isinstance(out, dict))))
+            if isinstance(out, dict):
+                o_types = [out[i]['type'] for i in out.keys()]
+            else:
+                o_types = [str(o)]
+            logger.debug("var: %s, v: %s, subset: %s, out: %s, o: %s, subset: %s" % (str(var_types), str(v_types), str(counter_subset(var_types, v_types)), str(output_types), str(o_types), str(counter_subset(output_types, o_types))))
+            if counter_subset(var_types, v_types) and counter_subset(output_types, o_types):
+                candidate_rows.append(id)
+        return candidate_rows
+
+    def get_snippets_in_file(self, filename):
+        sql = "SELECT ID,VARIABLES,OUTPUTS FROM snippets WHERE PATH = '%s'" % filename
+        try:
+            cursor = self.connect().cursor()
+            cursor.execute(sql)
+            rows = cursor.fetchall()
+            return rows
+        except psycopg2.DatabaseError, e:
+            logger.error('%s' % str(e))
+            if self.connect():
+                self.connect().rollback()
+            self.close()
+
+    def get_snippets_in_module(self, filename, module):
+        sql = "SELECT ID,VARIABLES,OUTPUTS FROM snippets WHERE PATH != '%s' AND PATH ~ '%s'" % (filename, module)
+        try:
+            cursor = self.connect().cursor()
+            cursor.execute(sql)
+            rows = cursor.fetchall()
+            return rows
+        except psycopg2.DatabaseError, e:
+            logger.error('%s' % str(e))
+            if self.connect():
+                self.connect().rollback()
+            self.close()
+
+    def get_snippets_all(self, filename, module):
+        sql = "SELECT ID,VARIABLES,OUTPUTS FROM snippets WHERE PATH != '%s' AND NOT PATH ~ '%s'" % (filename, module)
+        try:
+            cursor = self.connect().cursor()
+            cursor.execute(sql)
+            rows = cursor.fetchall()
+            return rows
+        except psycopg2.DatabaseError, e:
+            logger.error('%s' % str(e))
+            if self.connect():
+                self.connect().rollback()
+            self.close()
