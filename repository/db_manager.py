@@ -201,7 +201,7 @@ class DatabaseManager():
         sql = "SELECT ID,SOURCE FROM snippets ORDER BY ID"
         try:
             cursor = self.connect().cursor()
-            cursor.execute(sql %i)
+            cursor.execute(sql)
             rows = cursor.fetchall()
             m_s = re.sub('[\s+]', '', snippet)
             for id, source in rows:

@@ -2,6 +2,7 @@ __author__ = 'Afsoon Afzal'
 
 import logging
 from os import path
+import re
 from clang.cindex import *
 from clang.cindex import BinaryOperator
 from settings import LIBCLANG_PATH, LARGEST_SNIPPET, SMALLEST_SNIPPET, VALID_TYPES, MAKE_OUTPUT
@@ -209,12 +210,12 @@ class CodeSnippetManager:
         logger.debug('Type: %s' % str(i.type.spelling))
         temp = temp.replace('const', '')
         temp = temp.replace('unsigned', '')
-        if str(temp).replace('*', '').strip() in ['double', 'long', 'size_t', 'short']:
-            temp = str(temp).replace(str(temp).replace('*', '').strip(), 'int')
+        if str(temp).replace('*', '').strip() in ['double', 'long', 'size_t', 'short', 'float']:
+            temp = str(temp).replace(re.sub('[\s+]', '', str(temp).replace('*', '').strip()), 'int')
         if temp == 'char' or temp.find('int') != -1:
             variables.add((i.displayname, 'int'))
         elif str(temp).replace('*', '').strip() in VALID_TYPES:
-            variables.add((i.displayname, temp.strip()))
+            variables.add((i.displayname, re.sub('[\s+]', '', temp.strip())))
         elif str(temp).replace('*', '').strip() == 'void':
             if i.displayname in [t[0] for t in variables]:
                 return True  # continue
@@ -231,7 +232,7 @@ class CodeSnippetManager:
                 break
             print str(i.type.get_declaration().extent) + " " + str(final_type.spelling)
             print final_type.get_declaration().extent
-            variables.add((i.displayname, temp.strip(), final_type.get_declaration().extent.start.file.name))
+            variables.add((i.displayname, re.sub('[\s+]', '', temp.strip()), final_type.get_declaration().extent.start.file.name))
         return True
 
     def write_file(self, blocks, variables, outputs, function_calls, labels=None):
