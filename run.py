@@ -27,7 +27,7 @@ def re_build_database(db_manager):
     db_manager.insert_snippet(deletion_snippet)
     del deletion_snippet
     with open("processed.txt", "w") as f:
-        for root, dirs, files in os.walk(INTROCLASS_PATH):
+        for root, dirs, files in os.walk(GENERATE_DB_PATH):
             for items in fnmatch.filter(files, "*.c"):
                 ff = os.path.join(root, items)
                 f.write("Start: %s\n" % str(ff))
@@ -69,35 +69,45 @@ def main(build_db=False):
     os.system('mkdir patches')
 
     filename, module_name = get_file_name_and_module_re(FAULTY_CODE)
+    stored_data = {}
+    unsuccessful_lines = []
     for phase in ['deletion', 'in_file', 'in_module', 'all']:
         logger.debug("Beginning of phase %s" % phase)
         investigated_blocks = set([])
         suspicious_lines_investigated = 0
         for line, score in suspicious_lines.suspiciousness:
-            if not (METHOD_RANGE[0] <= line <= METHOD_RANGE[1]):
+            if not (METHOD_RANGE[0] <= line <= METHOD_RANGE[1]) or line in unsuccessful_lines:
                 continue
             if suspicious_lines_investigated >= MAX_SUSPICIOUS_LINES:
                 break
             logger.info("Suspicious line: %d ,score: %f" % (line, score))
-            sb = fl.line_to_block(line)
-            if not sb or sb.line_range[0] > line or sb.line_range[1] < line:
-                logger.warning("No block found for line: %d" %line)
-                continue
-            if sb.line_range in investigated_blocks:
-                continue
-            investigated_blocks.add(sb.line_range)
-            logger.info("Suspicious block range %s" % str(sb.line_range))
-            profile = Profile(sb)
-            # profile.generate_file()
-            # success = profile.generate_profile(tests.positives)
-            # success = profile.generate_gdb_script(tests.positives)
-            success = profile.generate_printing_profile(tests, original_copy)
-            logger.debug('Profile: ' + str(profile.input_list))
-            #if not success:
-                #success = profile.generate_gdb_script(tests.negatives, profile.negative_input_list)
-                #logger.debug('Profile with gdb: ' + str(profile.input_list))
-            if not success or (not profile.input_list and not profile.negative_input_list):
-                continue
+            if line in stored_data:
+                sb = stored_data[line]['sb']
+                profile = stored_data[line]['profile']
+            else:
+                sb = fl.line_to_block(line)
+                if not sb or sb.line_range[0] > line or sb.line_range[1] < line:
+                    logger.warning("No block found for line: %d" %line)
+                    unsuccessful_lines.append(line)
+                    continue
+                if sb.line_range in investigated_blocks:
+                    unsuccessful_lines.append(line)
+                    continue
+                investigated_blocks.add(sb.line_range)
+                logger.info("Suspicious block range %s" % str(sb.line_range))
+                profile = Profile(sb)
+                # profile.generate_file()
+                # success = profile.generate_profile(tests.positives)
+                # success = profile.generate_gdb_script(tests.positives)
+                success = profile.generate_printing_profile(tests, original_copy)
+                logger.debug('Profile: ' + str(profile.input_list))
+                #if not success:
+                    #success = profile.generate_gdb_script(tests.negatives, profile.negative_input_list)
+                    #logger.debug('Profile with gdb: ' + str(profile.input_list))
+                if not success or (not profile.input_list and not profile.negative_input_list):
+                    unsuccessful_lines.append(line)
+                    continue
+                stored_data[line] = {'sb': sb, 'profile': profile}
             suspicious_lines_investigated += 1
             candidate_snippets_ids = db_manager.fetch_all_valid_snippets(phase, filename, module_name, sb.vars, sb.outputs)
             logger.debug("Candidate snippets len %d" % len(candidate_snippets_ids))
@@ -136,35 +146,49 @@ def main(build_db=False):
                         logger.debug('Updated profile: ' + str(profile.negative_input_list))
                     run_command('cp ' + original_copy + ' ' + FAULTY_CODE)
             logger.debug("total %d were unsatisfiable from %d" % (unsat, len(candidate_snippets_ids)))
+    for phase in ['in_file', 'in_module', 'all']:
+        investigated_blocks = set([])
         suspicious_lines_investigated = 0
+        stored_data = {}
+        unsuccessful_lines = []
         for line, score in suspicious_lines.suspiciousness:  # Try insertion
-            if not (METHOD_RANGE[0] <= line <= METHOD_RANGE[1]):
+            if not (METHOD_RANGE[0] <= line <= METHOD_RANGE[1]) or line in unsuccessful_lines:
                 continue
             if suspicious_lines_investigated >= MAX_SUSPICIOUS_LINES:
                 break
-            logger.info("Insertion: Suspicious line: %d ,score: %f" % (line, score))
-            sb = fl.line_to_insert(line)
-            if not sb or sb.line_range[0] > line or sb.line_range[1] < line:
-                logger.warning("No block found for line: %d" % line)
-                continue
-            logger.info("Suspicious block range %s" % str(sb.line_range))
-            profile = Profile(sb)
-            # profile.generate_file()
-            # success = profile.generate_profile(tests.positives)
-            # success = profile.generate_gdb_script(tests.positives)
-            success = profile.generate_printing_profile(tests, original_copy)
-            logger.debug('Profile: ' + str(profile.input_list))
-            if not success:
-                success = profile.generate_gdb_script(tests.negatives, profile.negative_input_list)
-                logger.debug('Profile with gdb: ' + str(profile.input_list))
-            if not success or (not profile.input_list and not profile.negative_input_list):
-                continue
-
+            logger.info("Suspicious line: %d ,score: %f" % (line, score))
+            if line in stored_data:
+                sb = stored_data[line]['sb']
+                profile = stored_data[line]['profile']
+            else:
+                sb = fl.line_to_insert(line)
+                if not sb or sb.line_range[0] > line or sb.line_range[1] < line:
+                    logger.warning("No block found for line: %d" %line)
+                    unsuccessful_lines.append(line)
+                    continue
+                if sb.line_range in investigated_blocks:
+                    unsuccessful_lines.append(line)
+                    continue
+                investigated_blocks.add(sb.line_range)
+                logger.info("Suspicious block range %s" % str(sb.line_range))
+                profile = Profile(sb)
+                # profile.generate_file()
+                # success = profile.generate_profile(tests.positives)
+                # success = profile.generate_gdb_script(tests.positives)
+                success = profile.generate_printing_profile(tests, original_copy)
+                logger.debug('Profile: ' + str(profile.input_list))
+                #if not success:
+                    #success = profile.generate_gdb_script(tests.negatives, profile.negative_input_list)
+                    #logger.debug('Profile with gdb: ' + str(profile.input_list))
+                if not success or (not profile.input_list and not profile.negative_input_list):
+                    unsuccessful_lines.append(line)
+                    continue
+                stored_data[line] = {'sb': sb, 'profile': profile}
+            suspicious_lines_investigated += 1
             candidate_snippets_ids = db_manager.fetch_all_valid_snippets(phase, filename, module_name, sb.vars, sb.outputs)
             random.shuffle(candidate_snippets_ids)
             tried_snippets = []
             z3 = Z3(sb, profile, db_manager)
-            suspicious_lines_investigated += 1
             for snippet_id in candidate_snippets_ids:
                 res = z3.prepare_smt_query_new_version(snippet_id)
                 if not res:
@@ -206,7 +230,7 @@ def main2():
     #with open('success1.txt', 'r') as f:
     #    for l in f:
     #        s.append(l)
-    for root, dirs, files in os.walk(INTROCLASS_PATH):
+    for root, dirs, files in os.walk(GENERATE_DB_PATH):
         for items in fnmatch.filter(files, "*.c"):
             ff = os.path.join(root, items)
             logger.info("File: " + ff)
