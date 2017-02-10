@@ -216,7 +216,9 @@ class DatabaseManager():
             self.close()
 
     def fetch_all_valid_snippets(self, phase, filename, module_name, vars, outputs):
-        if phase == 'in_file':
+        if phase == 'deletion':
+            rows = self.get_snippets_deletion()
+        elif phase == 'in_file':
             rows = self.get_snippets_in_file(filename)
         elif phase == 'in_module':
             rows = self.get_snippets_in_module(filename, module_name)
@@ -224,7 +226,7 @@ class DatabaseManager():
             rows = self.get_snippets_all(filename, module_name)
         candidate_rows = []
         if len(rows) == 0:
-                return []
+            return []
         var_types = [i[1] for i in vars]
         if isinstance(outputs, dict):
             output_types = [outputs[i]['type'] for i in outputs.keys()]
@@ -252,12 +254,29 @@ class DatabaseManager():
                 candidate_rows.append(id)
         return candidate_rows
 
-    def get_snippets_in_file(self, filename):
-        sql = "SELECT ID,VARIABLES,OUTPUTS FROM snippets WHERE PATH = '%s'" % filename
+    def get_snippets_deletion(self):
+        sql = "SELECT ID,VARIABLES,OUTPUTS FROM snippets WHERE PATH = ''"
+        logger.debug("Run this 0: %s" %sql)
         try:
             cursor = self.connect().cursor()
             cursor.execute(sql)
             rows = cursor.fetchall()
+            logger.debug("Length 0: %d" %len(rows))
+            return rows
+        except psycopg2.DatabaseError, e:
+            logger.error('%s' % str(e))
+            if self.connect():
+                self.connect().rollback()
+            self.close()
+
+    def get_snippets_in_file(self, filename):
+        sql = "SELECT ID,VARIABLES,OUTPUTS FROM snippets WHERE PATH = '%s'" % filename
+        logger.debug("Run this 1: %s" %sql)
+        try:
+            cursor = self.connect().cursor()
+            cursor.execute(sql)
+            rows = cursor.fetchall()
+            logger.debug("Length 1: %d" %len(rows))
             return rows
         except psycopg2.DatabaseError, e:
             logger.error('%s' % str(e))
@@ -267,10 +286,12 @@ class DatabaseManager():
 
     def get_snippets_in_module(self, filename, module):
         sql = "SELECT ID,VARIABLES,OUTPUTS FROM snippets WHERE PATH != '%s' AND PATH ~ '%s'" % (filename, module)
+        logger.debug("Run this 2: %s" %sql)
         try:
             cursor = self.connect().cursor()
             cursor.execute(sql)
             rows = cursor.fetchall()
+            logger.debug("Length 2: %d" %len(rows))
             return rows
         except psycopg2.DatabaseError, e:
             logger.error('%s' % str(e))
@@ -279,11 +300,13 @@ class DatabaseManager():
             self.close()
 
     def get_snippets_all(self, filename, module):
-        sql = "SELECT ID,VARIABLES,OUTPUTS FROM snippets WHERE PATH != '%s' AND NOT PATH ~ '%s'" % (filename, module)
+        sql = "SELECT ID,VARIABLES,OUTPUTS FROM snippets WHERE PATH != '%s' AND NOT PATH ~ '%s' AND PATH != ''" % (filename, module)
+        logger.debug("Run this 3: %s" %sql)
         try:
             cursor = self.connect().cursor()
             cursor.execute(sql)
             rows = cursor.fetchall()
+            logger.debug("Length 3: %d" %len(rows))
             return rows
         except psycopg2.DatabaseError, e:
             logger.error('%s' % str(e))

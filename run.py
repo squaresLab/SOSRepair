@@ -69,7 +69,8 @@ def main(build_db=False):
     os.system('mkdir patches')
 
     filename, module_name = get_file_name_and_module_re(FAULTY_CODE)
-    for phase in ['in_file', 'in_module', 'all']:
+    for phase in ['deletion', 'in_file', 'in_module', 'all']:
+        logger.debug("Beginning of phase %s" % phase)
         investigated_blocks = set([])
         suspicious_lines_investigated = 0
         for line, score in suspicious_lines.suspiciousness:
@@ -99,12 +100,15 @@ def main(build_db=False):
                 continue
             suspicious_lines_investigated += 1
             candidate_snippets_ids = db_manager.fetch_all_valid_snippets(phase, filename, module_name, sb.vars, sb.outputs)
+            logger.debug("Candidate snippets len %d" % len(candidate_snippets_ids))
             random.shuffle(candidate_snippets_ids)
             tried_snippets = []
             z3 = Z3(sb, profile, db_manager)
+            unsat = 0
             for snippet_id in candidate_snippets_ids:
                 res = z3.prepare_smt_query_new_version(snippet_id)
                 if not res:
+                    unsat += 1
                     continue
                 for source, variables, mapping in res:
                     hash_object = hashlib.sha1(source)
@@ -131,7 +135,7 @@ def main(build_db=False):
                         profile.update_profile(tests, original_copy)
                         logger.debug('Updated profile: ' + str(profile.negative_input_list))
                     run_command('cp ' + original_copy + ' ' + FAULTY_CODE)
-
+            logger.debug("total %d were unsatisfiable from %d" % (unsat, len(candidate_snippets_ids)))
         suspicious_lines_investigated = 0
         for line, score in suspicious_lines.suspiciousness:  # Try insertion
             if not (METHOD_RANGE[0] <= line <= METHOD_RANGE[1]):
