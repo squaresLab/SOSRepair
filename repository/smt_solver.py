@@ -43,9 +43,14 @@ class Z3:
         positive = True
         if len(self.profile.input_list) == 0:
             positive = False
-        query, get_value, program_mapping = self.prepare_declarations_new_version(snippet_variables, snippet_outputs,
+        try:
+            query, get_value, program_mapping = self.prepare_declarations_new_version(snippet_variables, snippet_outputs,
                                                                                   len(self.profile.input_list) if
                                                                                   positive else len(self.profile.negative_input_list))
+        except:
+            return None
+        if not query:
+            return None
         snippet_variables = [i[0] for i in snippet_variables]
         num = 0
         if positive:
@@ -253,6 +258,9 @@ class Z3:
             declarations += '(declare-const l_%s_out Int)\n' % v
             constraints += '(= l_%s_out %d) ' % (v, i)
             mapping[i] = v
+            if not v in code_vars_dict:
+                logger.error("FIXME!!! %s %s" %(str(self.suspicious_block.vars),str(self.suspicious_block.get_output_names())))
+                return None, None, None 
             if not code_vars_dict[v].strip() in types:
                 types[code_vars_dict[v].strip()] = [i, ]
             else:

@@ -123,7 +123,7 @@ class CodeSnippetManager:
                                     if final_type.kind == TypeKind.POINTER:
                                         final_type = final_type.get_pointee()
                                         continue
-                                    if final_type.kind == TypeKind.INCOMPLETEARRAY:
+                                    if final_type.kind == TypeKind.INCOMPLETEARRAY or final_type.kind == TypeKind.CONSTANTARRAY:
                                         final_type = final_type.element_type
                                         continue
                                     break
@@ -143,6 +143,9 @@ class CodeSnippetManager:
                             break
                 elif node.kind == CursorKind.DECL_REF_EXPR or node.kind == CursorKind.UNEXPOSED_EXPR:
                     if node.displayname in outputs and node.location.line > outputs[node.displayname]['line']:
+                        outputs.pop(node.displayname)
+                elif node.kind == CursorKind.MEMBER_REF_EXPR and node.displayname != '':
+                    if node.displayname in outputs and node.location.line == outputs[node.displayname]['line']:
                         outputs.pop(node.displayname)
         return outputs
 

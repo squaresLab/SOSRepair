@@ -146,11 +146,12 @@ def main(build_db=False):
                         logger.debug('Updated profile: ' + str(profile.negative_input_list))
                     run_command('cp ' + original_copy + ' ' + FAULTY_CODE)
             logger.debug("total %d were unsatisfiable from %d" % (unsat, len(candidate_snippets_ids)))
+    logger.info("Entering insertion")
+    stored_data = {}
+    unsuccessful_lines = []
     for phase in ['in_file', 'in_module', 'all']:
         investigated_blocks = set([])
         suspicious_lines_investigated = 0
-        stored_data = {}
-        unsuccessful_lines = []
         for line, score in suspicious_lines.suspiciousness:  # Try insertion
             if not (METHOD_RANGE[0] <= line <= METHOD_RANGE[1]) or line in unsuccessful_lines:
                 continue
@@ -218,6 +219,8 @@ def main(build_db=False):
                         profile.update_profile(tests, original_copy)
                         logger.debug('Updated profile: ' + str(profile.negative_input_list))
                     run_command('cp ' + original_copy + ' ' + FAULTY_CODE)
+            logger.debug("BBBB")
+        logger.debug("CCCCC")
     return 3
 
 

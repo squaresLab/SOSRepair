@@ -147,13 +147,15 @@ class FaultLocalization():
     def find_function_of_this_line(self, line_number):
         if not self.root:
             index = Index.create()
-            self.root = index.parse(self.filename, COMPILE_EXTRA_ARGS)
+            extra_args = find_extra_compile_args(MAKE_OUTPUT, self.filename)
+            self.root = index.parse(self.filename, extra_args)
         ast = self.root.cursor
         current = ast
         children = ast.get_children()
         function = None
         cond = True
-        while cond:
+        temp_fix = 0
+        while cond and temp_fix < 500:
             cond = False
             for child in children:
                 cond = True
@@ -165,6 +167,7 @@ class FaultLocalization():
                 if child.kind == CursorKind.FUNCTION_DECL:
                     function = child
             children = current.get_children()
+            temp_fix += 1
         return function
 
     @staticmethod

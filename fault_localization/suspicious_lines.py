@@ -30,7 +30,7 @@ class SuspiciousLines():
             res = run_command_with_timeout(TEST_SCRIPT + ' ' + test, 50)
             if not res:
                 logger.debug("test %s" %str(test))
-                raise Exception
+                continue
                 #TODO
                 logger.error("Coverage failed on this test %s" % test)
                 self.use_gdb_for_gcov(test)
