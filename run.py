@@ -1,6 +1,7 @@
 __author__ = 'afsoona'
 
 import os
+import re
 import time
 import fnmatch
 import random
@@ -121,7 +122,7 @@ def main(build_db=False):
                     unsat += 1
                     continue
                 for source, variables, mapping in res:
-                    hash_object = hashlib.sha1(source)
+                    hash_object = hashlib.sha1(re.sub('[\s+]', '', source))
                     hex_dig = hash_object.hexdigest()
                     if hex_dig in tried_snippets:
                         continue
@@ -195,7 +196,7 @@ def main(build_db=False):
                 if not res:
                     continue
                 for source, variables, mapping in res:
-                    hash_object = hashlib.sha1(source)
+                    hash_object = hashlib.sha1(re.sub('[\s+]', '', source))
                     hex_dig = hash_object.hexdigest()
                     if hex_dig in tried_snippets:
                         continue
