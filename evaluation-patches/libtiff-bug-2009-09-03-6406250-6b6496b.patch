@@ -1,0 +1,20 @@
+--- tools/tiffcrop.c	2017-02-19 00:35:51.886012085 -0500
++++ /home/afsoon/results/libtiff-final/libtiff-bug-2009-09-03-6406250-6b6496b/tools.tiffcrop.c	2017-02-20 09:08:21.455866898 -0500
+@@ -3960,12 +3960,11 @@
+ 
+   bytes_per_sample = (bps + 7) / 8; 
+   bytes_per_pixel  = ((bps * spp) + 7) / 8;
+-  if (bytes_per_pixel < (bytes_per_sample + 1))
+-    shift_width = bytes_per_pixel;
+-  else
+-    shift_width = bytes_per_sample + 1;
+-
+-  src_rowsize = ((bps * width) + 7) / 8;
++  {
++			fprintf(stderr, "Input file too small.\n");
++		return -1;
++		}
++;
+   dst_rowsize = ((bps * width * spp) + 7) / 8;
+   dst = obuf;
+ 

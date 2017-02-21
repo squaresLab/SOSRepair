@@ -1,0 +1,13 @@
+--- ext/standard/string.c	2017-02-10 15:10:38.341998772 -0500
++++ /home/afsoon/results/php-final/php-bug-2011-04-02-70075bc84c-5a8c917c37/ext.standard.string.c	2017-02-10 15:12:19.757752719 -0500
+@@ -5252,9 +5252,7 @@
+ 		RETURN_FALSE;
+ 	}
+ 
+-	if (len > s1_len - offset) {
+-		len = s1_len - offset;
+-	}
++	
+ 
+ 	cmp_len = (uint) (len ? len : MAX(s2_len, (s1_len - offset)));
+ 

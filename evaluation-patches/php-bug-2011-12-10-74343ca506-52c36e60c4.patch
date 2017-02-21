@@ -1,0 +1,17 @@
+--- main/streams/streams.c	2017-02-10 06:07:21.225193480 -0500
++++ /home/afsoon/results/php-final/php-bug-2011-12-10-74343ca506-52c36e60c4/main.streams.streams.c	2017-02-10 14:04:07.691313956 -0500
+@@ -991,9 +991,11 @@
+ 
+ 		/* read operation have less data than request; assume the stream is
+ 		 * temporarily or permanently out of data */
+-		if (just_read < toread) {
+-			break;
+-		}
++		if (just_read > 0UL) {
++      } else {
++        break;
++      }
++
+ 	}
+ 
+ 	if (delim_len == 0 || !delim) {
