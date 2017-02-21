@@ -17,7 +17,7 @@ def run_z3(query):
     t.start()
     (out, err) = proc.communicate()
     t.cancel()
-    if kill_check.isSet() or proc.returncode:
+    if kill_check.isSet():
         kill_check.clear()
         return False, []
     print "**** " + out
