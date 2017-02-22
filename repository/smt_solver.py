@@ -1,6 +1,7 @@
 __author__ = 'Afsoon Afzal'
 
 import logging
+import re
 from itertools import permutations, product
 from utils.z3 import run_z3, twos_comp
 from settings import VALID_TYPES
@@ -58,20 +59,20 @@ class Z3:
                 query += self.replace_variable_names(num, consts, snippet_variables, snippet_outputs)
                 for var in self.suspicious_block.vars:
                     v, t = var[0], var[1]
-                    if t != 'char *' and t in VALID_TYPES:
+                    if t != 'char*' and t in VALID_TYPES:
                         query += '(assert (let ' + self.get_let_statement(v + '_in_' + str(num)) + '(= ?A1 (_ bv' + self.proper_value(profile[v][0], t) + \
                                     ' 32) ) ) ) \n'
-                    elif t == 'char *':
+                    elif t == 'char*':
                         query += '(assert ' + self.get_string_mapping(profile[v][0], v + '_in_' + str(num)) + ')\n'
                     else:
                         query += '(assert ' + self.get_struct_mapping(profile[v][0], v + '_in_' + str(num)) + ')\n'
                 if isinstance(self.suspicious_block.outputs, dict):
                     for v in self.suspicious_block.outputs.keys():
                         t = self.suspicious_block.outputs[v]['type']
-                        if t != 'char *' and t in VALID_TYPES:
+                        if t != 'char*' and t in VALID_TYPES:
                             query += '(assert (let ' + self.get_let_statement(v + '_out_' + str(num)) + '(= ?A1 (_ bv' + self.proper_value(profile[v][1], t) + \
                                         ' 32) ) ) ) \n'
-                        elif t == 'char *':
+                        elif t == 'char*':
                             query += '(assert ' + self.get_string_mapping(profile[v][1], v + '_out_' + str(num)) + ')\n'
                         else:
                             query += '(assert ' + self.get_struct_mapping(profile[v][0], v + '_out_' + str(num)) + ')\n'
@@ -80,23 +81,27 @@ class Z3:
             logger.debug("We only have negative tests!")
             for profile in self.profile.negative_input_list:
                 query += self.replace_variable_names(num, consts, snippet_variables, snippet_outputs)
-                query += '(assert (not (and '
+                query += '(assert (and '
                 for var in self.suspicious_block.vars:
                     v, t = var[0], var[1]
-                    if t != 'char *':
+                    if t != 'char*' and t in VALID_TYPES:
                         query += '(let ' + self.get_let_statement(v + '_in_' + str(num)) + '(= ?A1 (_ bv' + self.proper_value(profile[v][0], t) + \
                                     ' 32) ) ) '
-                    else:
+                    elif t == 'char*':
                         query += self.get_string_mapping(profile[v][0], v + '_in_' + str(num)) + ' '
+                    else:
+                        query += self.get_struct_mapping(profile[v][0], v + '_in_' + str(num)) + ' '
                 if isinstance(self.suspicious_block.outputs, dict):
                     for v in self.suspicious_block.outputs.keys():
                         t = self.suspicious_block.outputs[v]['type']
-                        if t != 'char *':
-                            query += '(let ' + self.get_let_statement(v + '_out_' + str(num)) + '(= ?A1 (_ bv' + self.proper_value(profile[v][1], t) + \
-                                        ' 32) ) ) '
+                        if t != 'char*' and t in VALID_TYPES:
+                            query += '(not (let ' + self.get_let_statement(v + '_out_' + str(num)) + '(= ?A1 (_ bv' + self.proper_value(profile[v][1], t) + \
+                                        ' 32) ) ) ) '
+                        elif t == 'char*':
+                            query += '(not ' + self.get_string_mapping(profile[v][1], v + '_out_' + str(num)) + ' ) '
                         else:
-                            query += self.get_string_mapping(profile[v][1], v + '_out_' + str(num)) + ' '
-                query += ') ) )\n'
+                            query += '(not ' + self.get_struct_mapping(profile[v][1], v + '_out_' + str(num)) + ' ) '
+                query += ') )\n'
                 num += 1
         query += '(check-sat)\n'
         for s in get_value:
@@ -362,7 +367,7 @@ class Z3:
             return ''
         query = ''
         for i in range(len(string)):
-            query += '(and (= (select %s (_ bv%d 32) ) (_ bv%d 32) ) ' % (variable, i, ord(string[i]))
+            query += '(and (= (select %s (_ bv%d 32) ) (_ bv%d 8) ) ' % (variable, i, ord(string[i]))
         query += ') '*(len(string))
         return query
 
@@ -376,7 +381,7 @@ class Z3:
         for i in range(len(parts)):
             if parts[i]:
                 try:
-                    query += '(= (select %s (_ bv%d 32) ) (_ bv%d 32) ) ' % (variable, i, int(parts[i]))
+                    query += '(= (select %s (_ bv%d 32) ) (_ bv%d 8) ) ' % (variable, i, int(parts[i]))
                 except Exception as e:
                     logger.error("The output of struct profile doesn't seem right: %s" % str(e))
                     raise e
