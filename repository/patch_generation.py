@@ -21,6 +21,10 @@ class PatchGeneration():
         with open(self.temporary_file, 'w') as f:
             #f.write("#include <stddef.h>\n")
             #f.write("#define break  \n")
+            for var in self.variables:
+                if len(var) == 3:
+                    f.write('#include "' + var[2] + '"\n')
+                    self.extra_lines += 1
             f.write("void foo(){\n")
             for var in self.variables:
                 v, t = var[0], var[1]

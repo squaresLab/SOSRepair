@@ -242,11 +242,11 @@ class Z3:
         types = {}
         code_vars_dict = {}
         for v in self.suspicious_block.vars:
-            code_vars_dict[v[0]] = v[1] 
+            code_vars_dict[v[0]] = re.sub('[\s+]', '', v[1])
         # print "Vars: %s" % str(snippet_vars)
         snippet_vars_dict = {}
         for v in snippet_vars_input:
-            snippet_vars_dict[v[0]] = v[1]
+            snippet_vars_dict[v[0]] = re.sub('[\s+]', '', v[1])
         constraints += '(assert (and '
         i = 0
         logger.debug("code_vars %s, snippet vars: %s" % (str(code_vars_dict), str(snippet_vars_dict)))
@@ -254,10 +254,10 @@ class Z3:
             declarations += '(declare-const l_%s_in Int)\n' % v
             constraints += '(= l_%s_in %d) ' % (v, i)
             mapping[i] = v
-            if not code_vars_dict[v].strip() in types:
-                types[code_vars_dict[v].strip()] = [i, ]
+            if not re.sub('[\s+]', '', code_vars_dict[v]) in types:
+                types[re.sub('[\s+]', '', code_vars_dict[v])] = [i, ]
             else:
-                types[code_vars_dict[v].strip()].append(i)
+                types[re.sub('[\s+]', '', code_vars_dict[v])].append(i)
             i += 1
         for v in self.suspicious_block.get_output_names():
             declarations += '(declare-const l_%s_out Int)\n' % v
@@ -265,29 +265,29 @@ class Z3:
             mapping[i] = v
             if not v in code_vars_dict:
                 logger.error("FIXME!!! %s %s" %(str(self.suspicious_block.vars),str(self.suspicious_block.get_output_names())))
-                return None, None, None 
-            if not code_vars_dict[v].strip() in types:
-                types[code_vars_dict[v].strip()] = [i, ]
+                return None, None, None
+            if not re.sub('[\s+]', '', code_vars_dict[v]) in types:
+                types[re.sub('[\s+]', '', code_vars_dict[v])] = [i, ]
             else:
-                types[code_vars_dict[v].strip()].append(i)
+                types[re.sub('[\s+]', '', code_vars_dict[v])].append(i)
             i += 1
         logger.debug('Types %s' % str(types))
         for v in snippet_variables:
             declarations += '(declare-const l_%s Int)\n' % v
-            if len(types[snippet_vars_dict[v].strip()]) == 1:
-                constraints += '(= %d l_%s)' % (types[snippet_vars_dict[v].strip()][0], v)
+            if len(types[re.sub('[\s+]', '', snippet_vars_dict[v])]) == 1:
+                constraints += '(= %d l_%s)' % (types[re.sub('[\s+]', '', snippet_vars_dict[v])][0], v)
             else:
-                constraints += '(or ' + ' '.join(['(= %d l_%s)' % (i, v) for i in types[snippet_vars_dict[v].strip()]]) + ')'
+                constraints += '(or ' + ' '.join(['(= %d l_%s)' % (i, v) for i in types[re.sub('[\s+]', '', snippet_vars_dict[v])]]) + ')'
             #constraints += '(<= 0 l_%s) (< l_%s %d) ' % (v, v, len(snippet_variables))
             get_value.append('l_%s' % v)
         for v in snippet_outputs:
             declarations += '(declare-const l_%s Int)\n' % v
             if not v in snippet_vars_dict:
                 constraints += '(<= %d l_%s) (< l_%s %d) ' % (len(snippet_variables), v, v, len(snippet_variables)+len(snippet_outputs))
-            elif len(types[snippet_vars_dict[v].strip()]) == 1:
-                constraints += '(= %d l_%s)' % (types[snippet_vars_dict[v].strip()][0], v)
+            elif len(types[re.sub('[\s+]', '',snippet_vars_dict[v])]) == 1:
+                constraints += '(= %d l_%s)' % (types[re.sub('[\s+]', '', snippet_vars_dict[v])][0], v)
             else:
-                constraints += '(or ' + ' '.join(['(= %d l_%s)' % (i, v) for i in types[snippet_vars_dict[v].strip()]]) + ')'
+                constraints += '(or ' + ' '.join(['(= %d l_%s)' % (i, v) for i in types[re.sub('[\s+]', '', snippet_vars_dict[v])]]) + ')'
             #constraints += '(<= %d l_%s) (< l_%s %d) ' % (len(snippet_variables), v, v, len(snippet_variables)+len(snippet_outputs))
             get_value.append('l_%s' % v)
         constraints += '))\n(assert (and '
