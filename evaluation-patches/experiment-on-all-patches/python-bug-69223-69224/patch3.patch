@@ -1,0 +1,16 @@
+--- Modules/selectmodule.c	2017-02-22 20:29:21.379117663 -0500
++++ /home/afsoon/searchrepair/patches/patch3.c	2017-02-22 02:37:25.341438744 -0500
+@@ -226,9 +226,10 @@
+         return NULL;
+     }
+     else {
+-        timeout = PyFloat_AsDouble(tout);
+-        if (timeout == -1 && PyErr_Occurred())
+-            return NULL;
++        {
++    exit(timeout);
++}
++;
+         if (timeout > (double)LONG_MAX) {
+             PyErr_SetString(PyExc_OverflowError,
+                             "timeout period too long");
