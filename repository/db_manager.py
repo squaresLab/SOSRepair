@@ -227,14 +227,14 @@ class DatabaseManager():
         candidate_rows = []
         if len(rows) == 0:
             return []
-        var_types = [i[1] for i in vars]
+        var_types = [re.sub('[\s+]', '', i[1]) for i in vars]
         if isinstance(outputs, dict):
-            output_types = [outputs[i]['type'] for i in outputs.keys()]
+            output_types = [re.sub('[\s+]', '',outputs[i]['type']) for i in outputs.keys()]
         else:
-            output_types = [outputs]
+            output_types = [re.sub('[\s+]', '',outputs)]
         for id, v, o in rows:
             logger.debug("id: %d, o: %s, v: %s" %(id, str(o), str(v)))
-            v_types = [i[1] for i in eval(v)]
+            v_types = [re.sub('[\s+]', '',i[1]) for i in eval(v)]
             try:
                 out = eval(o)
                 if not isinstance(out, dict):
@@ -246,9 +246,9 @@ class DatabaseManager():
             #    continue
             logger.debug("id: %d, o: %s, out: %s, is: %s" %(id, str(o), str(out), str(isinstance(out, dict))))
             if isinstance(out, dict):
-                o_types = [out[i]['type'] for i in out.keys()]
+                o_types = [re.sub('[\s+]', '',out[i]['type']) for i in out.keys()]
             else:
-                o_types = [str(o)]
+                o_types = [re.sub('[\s+]', '',str(o))]
             logger.debug("var: %s, v: %s, subset: %s, out: %s, o: %s, subset: %s" % (str(var_types), str(v_types), str(counter_subset(var_types, v_types)), str(output_types), str(o_types), str(counter_subset(output_types, o_types))))
             if counter_subset(var_types, v_types) and counter_subset(output_types, o_types):
                 candidate_rows.append(id)

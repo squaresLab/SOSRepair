@@ -150,6 +150,7 @@ def main(build_db=False):
     logger.info("Entering insertion")
     stored_data = {}
     unsuccessful_lines = []
+    run_command('cp ' + original_copy + ' ' + original_copy+'_copy')
     for phase in ['in_file', 'in_module', 'all']:
         investigated_blocks = set([])
         suspicious_lines_investigated = 0
@@ -158,6 +159,15 @@ def main(build_db=False):
                 continue
             if suspicious_lines_investigated >= MAX_SUSPICIOUS_LINES:
                 break
+            with open(original_copy+'_copy', 'r') as AA:
+                i = 1
+                with open(original_copy, 'w') as BB:
+                    for LL in AA:
+                        if i == line:
+                            BB.write('\n')
+                        BB.write(LL)
+                        i += 1
+            run_command('cp ' + original_copy + ' ' + FAULTY_CODE)
             logger.info("Suspicious line: %d ,score: %f" % (line, score))
             if line in stored_data:
                 sb = stored_data[line]['sb']
