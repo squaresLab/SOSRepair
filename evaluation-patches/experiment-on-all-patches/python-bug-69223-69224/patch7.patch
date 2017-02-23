@@ -1,0 +1,10 @@
+--- Modules/selectmodule.c	2017-02-22 20:29:21.379117663 -0500
++++ /home/afsoon/searchrepair/patches/patch7.c	2017-02-22 18:37:06.206765132 -0500
+@@ -237,6 +237,7 @@
+         seconds = (long)timeout;
+         timeout = timeout - (double)seconds;
+         tv.tv_sec = seconds;
++exit(timeout);
+         tv.tv_usec = (long)(timeout * 1E6);
+         tvp = &tv;
+     }
