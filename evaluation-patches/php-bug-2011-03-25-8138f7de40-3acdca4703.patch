@@ -1,0 +1,10 @@
+--- ext/phar/phar_object.c	2017-02-24 16:06:45.756424775 -0500
++++ /home/afsoon/results/php-final/php-bug-2011-03-25-8138f7de40-3acdca4703/ext.phar.phar_object.c	2017-02-24 16:05:35.792603263 -0500
+@@ -575,6 +575,7 @@
+ 		return;
+ 	}
+ 
++		phar_request_initialize(TSRMLS_C);
+ 	fname = zend_get_executed_filename(TSRMLS_C);
+ 	fname_len = strlen(fname);
+ 
