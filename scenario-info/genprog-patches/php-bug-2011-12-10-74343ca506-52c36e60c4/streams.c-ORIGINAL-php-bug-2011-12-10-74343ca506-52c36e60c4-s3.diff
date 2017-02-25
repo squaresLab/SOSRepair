@@ -1,0 +1,12 @@
+755,760d754
+< 	/* use the configured timeout when checking eof */
+< 	if (!stream->eof && PHP_STREAM_OPTION_RETURN_ERR ==
+< 		   	php_stream_set_option(stream, PHP_STREAM_OPTION_CHECK_LIVENESS,
+< 		   	0, NULL)) {
+< 		stream->eof = 1;
+< 	}
+2128a2123
+> 
+2129a2125,2126
+>     context->rsrc_id = zend_register_resource((zval *)((void *)0), (void *)context, 0);
+> 
