@@ -1,0 +1,3 @@
+976,977d975
+< 	if (!dir->tdir_count || !w || (tsize_t)dir->tdir_count / w != cc)
+< 		goto bad;

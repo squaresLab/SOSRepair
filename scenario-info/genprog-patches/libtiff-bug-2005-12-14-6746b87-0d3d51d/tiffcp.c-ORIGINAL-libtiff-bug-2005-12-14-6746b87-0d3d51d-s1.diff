@@ -1,0 +1,4 @@
+862c862
+< 			if (TIFFReadEncodedStrip(in, s, buf, cc) < 0 && !ignore)
+---
+> 			if (!ignore)

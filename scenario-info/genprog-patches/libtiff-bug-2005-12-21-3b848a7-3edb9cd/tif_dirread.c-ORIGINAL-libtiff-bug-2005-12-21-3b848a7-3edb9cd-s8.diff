@@ -1,0 +1,11 @@
+591c591
+< 		   && td->td_stripbytecount[0] != td->td_stripbytecount[1]) {
+---
+>         ) {
+597,602d596
+< 		TIFFWarning(module,
+< 	"%s: Wrong \"%s\" field, ignoring and calculating from imagelength",
+<                             tif->tif_name,
+< 		            _TIFFFieldWithTag(tif,TIFFTAG_STRIPBYTECOUNTS)->field_name);
+< 		if (EstimateStripByteCounts(tif, dir, dircount) < 0)
+< 		    goto bad;
