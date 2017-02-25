@@ -1,0 +1,15 @@
+--- Modules/selectmodule.c	2017-02-25 18:08:19.521003864 -0500
++++ /home/afsoon/results/python-final/python-bug-69223-69224/patches/patch8.patch	2017-02-25 18:08:03.769042095 -0500
+@@ -234,6 +234,12 @@
+                             "timeout period too long");
+             return NULL;
+         }
++if (timeout < 0) {
++        PyErr_SetString(PyExc_ValueError,
++                        "read length must be positive");
++        return NULL;
++    }
++
+         seconds = (long)timeout;
+         timeout = timeout - (double)seconds;
+         tv.tv_sec = seconds;
