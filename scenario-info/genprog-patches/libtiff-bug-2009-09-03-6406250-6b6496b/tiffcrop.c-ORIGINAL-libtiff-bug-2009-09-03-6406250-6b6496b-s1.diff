@@ -1,0 +1,5 @@
+4005,4006c4005
+<       if (TIFFReadScanline(in, buff, row, s) < 0
+< 	    && !ignore)
+---
+>       if (!ignore)
