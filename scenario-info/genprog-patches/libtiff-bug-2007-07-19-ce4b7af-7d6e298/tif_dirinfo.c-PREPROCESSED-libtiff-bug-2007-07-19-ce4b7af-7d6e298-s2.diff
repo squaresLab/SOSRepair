@@ -1,0 +1,6 @@
+2506,2508c2506
+<   if (! tif->tif_fields) {
+<     return ((TIFFField const   *)((void *)0));
+<   } else {
+---
+>   {

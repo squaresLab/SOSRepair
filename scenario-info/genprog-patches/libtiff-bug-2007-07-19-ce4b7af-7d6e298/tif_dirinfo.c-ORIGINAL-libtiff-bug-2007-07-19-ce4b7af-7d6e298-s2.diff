@@ -1,0 +1,3 @@
+476,477d475
+< 	if (!tif->tif_fields)
+< 		return NULL;
