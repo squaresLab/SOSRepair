@@ -240,6 +240,7 @@ class Z3:
         snippet_variables = list(set(snippet_vars) - set(snippet_outputs))
         code_variables = list(set(self.suspicious_block.get_var_names()) - set(self.suspicious_block.get_output_names()))
         types = {}
+        types_out = {}
         code_vars_dict = {}
         for v in self.suspicious_block.vars:
             code_vars_dict[v[0]] = re.sub('[\s+]', '', v[1])
@@ -266,10 +267,10 @@ class Z3:
             if not v in code_vars_dict:
                 logger.error("FIXME!!! %s %s" %(str(self.suspicious_block.vars),str(self.suspicious_block.get_output_names())))
                 return None, None, None
-            if not re.sub('[\s+]', '', code_vars_dict[v]) in types:
-                types[re.sub('[\s+]', '', code_vars_dict[v])] = [i, ]
+            if not re.sub('[\s+]', '', code_vars_dict[v]) in types_out:
+                types_out[re.sub('[\s+]', '', code_vars_dict[v])] = [i, ]
             else:
-                types[re.sub('[\s+]', '', code_vars_dict[v])].append(i)
+                types_out[re.sub('[\s+]', '', code_vars_dict[v])].append(i)
             i += 1
         logger.debug('Types %s' % str(types))
         for v in snippet_variables:
@@ -284,10 +285,10 @@ class Z3:
             declarations += '(declare-const l_%s Int)\n' % v
             if not v in snippet_vars_dict:
                 constraints += '(<= %d l_%s) (< l_%s %d) ' % (len(snippet_variables), v, v, len(snippet_variables)+len(snippet_outputs))
-            elif len(types[re.sub('[\s+]', '',snippet_vars_dict[v])]) == 1:
-                constraints += '(= %d l_%s)' % (types[re.sub('[\s+]', '', snippet_vars_dict[v])][0], v)
+            elif len(types_out[re.sub('[\s+]', '',snippet_vars_dict[v])]) == 1:
+                constraints += '(= %d l_%s)' % (types_out[re.sub('[\s+]', '', snippet_vars_dict[v])][0], v)
             else:
-                constraints += '(or ' + ' '.join(['(= %d l_%s)' % (i, v) for i in types[re.sub('[\s+]', '', snippet_vars_dict[v])]]) + ')'
+                constraints += '(or ' + ' '.join(['(= %d l_%s)' % (i, v) for i in types_out[re.sub('[\s+]', '', snippet_vars_dict[v])]]) + ')'
             #constraints += '(<= %d l_%s) (< l_%s %d) ' % (len(snippet_variables), v, v, len(snippet_variables)+len(snippet_outputs))
             get_value.append('l_%s' % v)
         constraints += '))\n(assert (and '
