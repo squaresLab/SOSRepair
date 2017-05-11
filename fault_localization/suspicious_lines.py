@@ -10,7 +10,9 @@ logger = logging.getLogger(__name__)
 
 
 class SuspiciousLines():
-
+    """
+    Generates a sorted list of program lines based on their suspiciousness.
+    """
     def __init__(self, tests):
         self.suspiciousness = []
         self.counts = {}
@@ -20,7 +22,7 @@ class SuspiciousLines():
         self.compute_coverage(self.tests.positives, '+')
         self.compute_coverage(self.tests.negatives, '-')
         self.suspicious_formula()
-        self.suspiciousness.sort(key=lambda tuple: tuple[1], reverse=True)
+        self.suspiciousness.sort(key=lambda t: t[1], reverse=True)
         return
 
     def compute_coverage(self, test_list, pos_or_neg):

@@ -8,7 +8,9 @@ logger = logging.getLogger(__name__)
 
 
 class PatchGeneration():
-
+    """
+    Generates patched file from the original buggy file, the candidate snippet and the mappings.
+    """
     def __init__(self, source, variables, mapping, temporary_file='temp_snippet.c'):
         self.source = source
         self.variables = variables
@@ -18,6 +20,10 @@ class PatchGeneration():
         assert isinstance(self.mapping, dict)
 
     def prepare_snippet_to_parse(self):
+        """
+        Writes the snippet as a C file so that clang be able to parse it.
+        :return: Name of the generated file
+        """
         with open(self.temporary_file, 'w') as f:
             #f.write("#include <stddef.h>\n")
             #f.write("#define break  \n")
@@ -42,6 +48,11 @@ class PatchGeneration():
         return root.cursor
 
     def replace_vars(self, ast):
+        """
+        Finds all variables in the snippet and replaces them with their mapped variable
+        :param ast: clang ast of the snippet
+        :return: snippet with replaced variables
+        """
         lines = self.source.splitlines()
         if len(lines) == 0:
             logger.warning("Source doesn't have any split lines: %s" % self.source)
@@ -74,6 +85,9 @@ class PatchGeneration():
 
     @staticmethod
     def create_patch(suspicious_block, snippet, patch_file='patch1.c'):
+        """
+        Generates a file with suspicious block replaced by the snippet.
+        """
         with open(patch_file, 'w') as patch:
             with open(suspicious_block.filename, 'r') as f:
                 i = 0

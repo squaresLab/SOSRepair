@@ -12,7 +12,10 @@ logger = logging.getLogger(__name__)
 
 
 class Profile:
-
+    """
+    A Profile shows values of variables in the SuspiciousBlock exactly before and after that block for all the test
+    cases that pass the region.
+    """
     def __init__(self, suspicious_block):
         self.filename = FAULTY_CODE
         self.suspicious_block = suspicious_block
@@ -21,14 +24,6 @@ class Profile:
         self.negative_input_list = []
         self.marked_file = self.filename + "_marked.c"
         self.output_file = self.filename + "_output.txt"
-
-    # def find_variables(self):
-    #     self.variables = []
-    #     for i in self.suspicious_block.function.walk_preorder():
-    #         if i.kind == CursorKind.PARM_DECL or i.kind == CursorKind.VAR_DECL:
-    #             self.variables.append(i)
-    #             print str(i.displayname) + " " + str(i.location.line) + " " + str(i.kind) + " " + str(i.type.kind) + " " + str(i.location.file)
-    #     return self.variables
 
     def generate_printing_profile(self, tests,  original=FAULTY_CODE+'_orig.c'):
         # copy original file to somewhere safe
@@ -45,6 +40,9 @@ class Profile:
         return res
 
     def update_profile(self, tests,  original=FAULTY_CODE+'_orig.c'):
+        """
+        Update negative profile with new information as incremental profile
+        """
         # copy original file to somewhere safe
         if not os.path.isfile(self.marked_file):
             self.generate_file()
@@ -52,12 +50,15 @@ class Profile:
         original_len = len(self.negative_input_list)
         res = self.generate_profile(tests.negatives, self.negative_input_list)
         if not res or len(self.negative_input_list) == original_len:
-#            res = self.generate_gdb_script(tests.negatives, self.negative_input_list)
+            # res = self.generate_gdb_script(tests.negatives, self.negative_input_list)
             logger.debug("Update negative profile: %s" % str(self.negative_input_list))
         run_command('cp ' + original + ' ' + self.filename)
         return res
 
     def generate_file(self):
+        """
+        This function generates a file that has printf statements before and after the snippet to record their values
+        """
         state = 'fprintf(fp, "input start:'
         state_vars = ''
         invalid_vars = []
@@ -113,6 +114,12 @@ class Profile:
             out.close()
 
     def generate_profile(self, tests, input_list):
+        """
+        Run the tests on the marked file and reads the output to store as profile
+        :param tests: List of tests to be executed
+        :param input_list: The list to be used as profile
+        :return: True if success, False if failed
+        """
         res = run_command_with_timeout(COMPILE_SCRIPT, timeout=70)
         if not res:
             logger.error("the profile is not compilable")
@@ -164,6 +171,12 @@ class Profile:
         return True
 
     def generate_gdb_script(self, positive_tests, input_list):
+        """
+        An effort to create profile with the help of gdb (does not work on large programs)
+        :param positive_tests:
+        :param input_list:
+        :return:
+        """
         res = run_command_with_timeout(COMPILE_SCRIPT, timeout=70)
         if not res:
             logger.error("the gdb profile is not compilable")
@@ -224,12 +237,6 @@ set confirm off
         os.system('rm gdb_script.txt gdb_out')
         return True
 
-if __name__ == "__main__":
-    fl = FaultLocalization('median.c')
-    sb = fl.line_to_block(20)
-    profile = Profile('median.c', sb)
-    # profile.find_variables()
-    profile.generate_file()
 
 
 
