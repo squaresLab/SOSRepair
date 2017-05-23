@@ -10,7 +10,10 @@ logger = logging.getLogger(__name__)
 
 
 class Z3:
-
+    """
+    This class prepares an SMT query and runs Z3 on it to check if the query is satisfiable or not and also gets
+    proper mapping between context variables and snippet variables.
+    """
     def __init__(self, suspicious_block, profile, db_manager):
         self.suspicious_block = suspicious_block
         self.profile = profile
@@ -26,6 +29,11 @@ class Z3:
         return index
 
     def prepare_smt_query_new_version(self, index):
+        """
+        This functions prepares the SMT query and runs Z3. It is using location variables to run only one query.
+        :param index: snippet id in the DB
+        :return: The snippet and mapping if satisfiable, None if not
+        """
         snippet = self.db_manager.fetch_snippet(index)
         constraints = self.db_manager.fetch_constraints(index)
         if len(constraints) < 1 or not snippet:
@@ -36,14 +44,12 @@ class Z3:
             snippet_outputs = eval(snippet[3])
         except Exception:
             snippet_outputs = snippet[3]
-        consts = '(assert ' + self.prepare_constraints(constraints) + ')\n'
         if isinstance(snippet_outputs, dict):
             snippet_outputs = [i for i in snippet_outputs.keys()]
         else:
             snippet_outputs = ['return_value']
-        positive = True
-        if len(self.profile.input_list) == 0:
-            positive = False
+        positive = True if len(self.profile.input_list) > 0 else False
+        consts = '(assert ' + self.prepare_constraints(constraints) + ')\n'
         try:
             query, get_value, program_mapping = self.prepare_declarations_new_version(snippet_variables, snippet_outputs,
                                                                                   len(self.profile.input_list) if
@@ -60,8 +66,8 @@ class Z3:
                 for var in self.suspicious_block.vars:
                     v, t = var[0], var[1]
                     if t != 'char*' and t in VALID_TYPES:
-                        query += '(assert (let ' + self.get_let_statement(v + '_in_' + str(num)) + '(= ?A1 (_ bv' + self.proper_value(profile[v][0], t) + \
-                                    ' 32) ) ) ) \n'
+                        query += '(assert (let ' + self.get_let_statement(v + '_in_' + str(num)) + '(= ?A1 (_ bv' + \
+                                 self.proper_value(profile[v][0], t) + ' 32) ) ) ) \n'
                     elif t == 'char*':
                         query += '(assert ' + self.get_string_mapping(profile[v][0], v + '_in_' + str(num)) + ')\n'
                     else:
@@ -70,8 +76,8 @@ class Z3:
                     for v in self.suspicious_block.outputs.keys():
                         t = self.suspicious_block.outputs[v]['type']
                         if t != 'char*' and t in VALID_TYPES:
-                            query += '(assert (let ' + self.get_let_statement(v + '_out_' + str(num)) + '(= ?A1 (_ bv' + self.proper_value(profile[v][1], t) + \
-                                        ' 32) ) ) ) \n'
+                            query += '(assert (let ' + self.get_let_statement(v + '_out_' + str(num)) + '(= ?A1 (_ bv' \
+                                     + self.proper_value(profile[v][1], t) + ' 32) ) ) ) \n'
                         elif t == 'char*':
                             query += '(assert ' + self.get_string_mapping(profile[v][1], v + '_out_' + str(num)) + ')\n'
                         else:
@@ -86,8 +92,8 @@ class Z3:
                 for var in self.suspicious_block.vars:
                     v, t = var[0], var[1]
                     if t != 'char*' and t in VALID_TYPES:
-                        query += '(let ' + self.get_let_statement(v + '_in_' + str(num)) + '(= ?A1 (_ bv' + self.proper_value(profile[v][0], t) + \
-                                    ' 32) ) ) '
+                        query += '(let ' + self.get_let_statement(v + '_in_' + str(num)) + '(= ?A1 (_ bv' \
+                                 + self.proper_value(profile[v][0], t) + ' 32) ) ) '
                     elif t == 'char*':
                         query += self.get_string_mapping(profile[v][0], v + '_in_' + str(num)) + ' '
                     else:
@@ -96,8 +102,8 @@ class Z3:
                     for v in self.suspicious_block.outputs.keys():
                         t = self.suspicious_block.outputs[v]['type']
                         if t != 'char*' and t in VALID_TYPES:
-                            query += '(not (let ' + self.get_let_statement(v + '_out_' + str(num)) + '(= ?A1 (_ bv' + self.proper_value(profile[v][1], t) + \
-                                        ' 32) ) ) ) '
+                            query += '(not (let ' + self.get_let_statement(v + '_out_' + str(num)) + '(= ?A1 (_ bv' \
+                                     + self.proper_value(profile[v][1], t) + ' 32) ) ) ) '
                         elif t == 'char*':
                             query += '(not ' + self.get_string_mapping(profile[v][1], v + '_out_' + str(num)) + ' ) '
                         else:
@@ -109,7 +115,7 @@ class Z3:
             query += '(get-value (%s))\n' % s
         print query
         logger.debug('Query: %s' % query)
-        satisfied, mappings = run_z3(query)
+        satisfied, mappings = run_z3(query)  # run Z3
         print satisfied
         print mappings
         if not satisfied:
@@ -123,6 +129,12 @@ class Z3:
         return [(snippet[1], eval(snippet[2]), final_map)]
 
     def prepare_smt_query(self, index):
+        """
+        This functions prepares the SMT query and runs Z3. It tries all the permutation of tests and mappings and runs
+        Z3 several times.
+        :param index: snippet id in the DB
+        :return: The snippet and mapping if satisfiable, None if not
+        """
         result = []
         snippet = self.db_manager.fetch_snippet(index)
         constraints = self.db_manager.fetch_constraints(index)
@@ -191,15 +203,12 @@ class Z3:
                 var_mappings.update(dict(r[1]))
                 logger.debug(var_mappings)
                 result.append((snippet[1], eval(snippet[2]), var_mappings))
-                # patch_generation = PatchGeneration(snippet[1], eval(snippet[2]), var_mappings)
-                # patch_generation.prepare_snippet_to_parse()
-                # ast = patch_generation.parse_snippet()
-                # patch_snippet = patch_generation.replace_vars(ast)
-                # patch_generation.create_patch(self.suspicious_block, patch_snippet)
-                # break
         return result
 
     def prepare_declarations(self, constraints):
+        """
+        Prepares declarations at the beginning of the query for the old version
+        """
         code_declarations = set([])
         constraint_declarations = set([])
         for c in constraints:
@@ -220,6 +229,10 @@ class Z3:
         return decls
 
     def prepare_declarations_new_version(self, snippet_vars_input, snippet_outputs, number_of_profiles):
+        """
+        Prepares declarations at the beginning of the query for the new version. Defines location variables and
+        expressions and declares variables once for each test (or profile element).
+        """
         snippet_vars = [i[0] for i in snippet_vars_input]
         declarations = ''
         constraints = ''
@@ -319,6 +332,9 @@ class Z3:
 
     @staticmethod
     def proper_value(value, typ):
+        """
+        Returns two's complement for negative numbers
+        """
         if typ not in ['int', 'long', 'short']:
             return value
         try:
@@ -333,6 +349,11 @@ class Z3:
 
     @staticmethod
     def prepare_constraints(constraints):
+        """
+        Disjuncts all constraints together
+        :param constraints:
+        :return:
+        """
         s = '(or ' * (len(constraints) - 1)
         first = True
         for c in constraints:
@@ -345,12 +366,18 @@ class Z3:
 
     @staticmethod
     def get_let_statement(var_name, abbreviation='A1'):
+        """
+        Let statement for a variable
+        """
         s = '( (?' + abbreviation + ' (concat  (select  ' + var_name + ' (_ bv3 32) ) (concat  (select  ' + var_name + \
             ' (_ bv2 32) ) (concat  (select  ' + var_name + ' (_ bv1 32) ) (select  ' + var_name + ' (_ bv0 32) ) ) ) ) ) )'
         return s
 
     @staticmethod
     def is_valid_mapping(mapping, snippet_vars, code_vars, snippet_outs, code_outs):
+        """
+        Is a mapping valid? (Old version)
+        """
         s_dict = dict(snippet_vars)
         c_dict = dict(code_vars)
         for a, b in mapping[0]:
@@ -365,6 +392,9 @@ class Z3:
 
     @staticmethod
     def get_string_mapping(string, variable):
+        """
+        Translate a string into smt language
+        """
         if len(string) == 0:
             return ''
         query = ''
@@ -375,6 +405,9 @@ class Z3:
 
     @staticmethod
     def get_struct_mapping(mem_array, variable):
+        """
+        Translate a struct into smt language
+        """
         parts = mem_array.split(',')
         if len(parts) <= 1:
             return ''
@@ -391,6 +424,9 @@ class Z3:
 
     @staticmethod
     def replace_variable_names(num, constraint, variables, outputs):
+        """
+        Add test number to the end of variable name
+        """
         replaced = constraint
         for v in variables:
             replaced = replaced.replace(' %s ' % v, ' %s_%d ' % (v, num))

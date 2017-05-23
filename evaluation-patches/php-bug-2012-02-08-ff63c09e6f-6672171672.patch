@@ -1,0 +1,10 @@
+104c104
+< 				closesocket(var_len);
+---
+> 	var_len = p - var;
+105a106,110
+> 	if (var_len==0) { /* empty variable name, or variable name with a space in it */
+> 		zval_dtor(val);
+> 		free_alloca(var_orig, use_heap);
+> 		return;
+> 	}

@@ -12,7 +12,21 @@ logger = logging.getLogger(__name__)
 
 
 class SuspiciousBlock():
+    """
+    A SuspiciousBlock describes characteristics of a snippet in the code that is about to be replaced.
+    """
     def __init__(self, line_number, line_range, blocks, vars, outputs, functions, filename):
+        """
+        Initializes a SuspiciousBlock.
+        :param line_number: The suspicious line
+        :param line_range: A tuple (start line, end line + 1)
+        :param blocks: AST blocks of this snippet
+        :param vars: A set of tuples (variable name, variable type, type definition file if necessary)
+        :param outputs: A string showing the return type if the snippet returns a value, otherwise a dictionary with
+        variable names as keys and dictionary of information such as type as values.
+        :param functions: A set of tuples (function name, function declaration file name, extra info)
+        :param filename: String of current file under investigation
+        """
         self.line_number = line_number
         self.line_range = line_range
         self.column_range = (blocks[0].extent.start.column-1, blocks[-1].extent.end.column) if blocks else (0, 1)
@@ -33,6 +47,9 @@ class SuspiciousBlock():
 
 
 class FaultLocalization():
+    """
+    Lifts up a suspicious line to a snippet (or a number of AST blocks)
+    """
     def __init__(self):
         self.filename = FAULTY_CODE
         self.number_of_lines = number_of_lines(FAULTY_CODE)
@@ -46,39 +63,6 @@ class FaultLocalization():
         self.root = index.parse(self.filename, extra_args)
         logger.info("parsing root")
         return self.traverse_tree_suspicious_block(self.root.cursor, self.number_of_lines, line_number)
-
-    def traverse_tree(self, line_number, ast):
-        assert (isinstance(ast, Cursor))
-        block = (1, 10000000)
-        current = ast
-        children = ast.get_children()
-        function = None
-        cond = True
-        while cond:
-            for child in children:
-                cond = True
-                if str(child.location.file) != self.filename:
-                    continue
-                # print block
-                # print str(child.spelling) + " " + str(child.location.file)
-                # print child.location.line
-                if child.location.line > line_number:
-                    temp_block = (current.location.line, child.location.line)
-                    if current.kind == CursorKind.IF_STMT:
-                        cond = False
-                    elif temp_block[1] - temp_block[0] < 4:
-                        cond = False
-                        if block[1] - block[0] > 6:
-                            block = (temp_block[1] - 6, temp_block[1])
-                        break
-                    block = temp_block
-                    break
-                current = child
-                if child.kind == CursorKind.FUNCTION_DECL:
-                    function = child
-            children = current.get_children()
-
-        return SuspiciousBlock(line_number, block, current, function)
 
     def traverse_tree_suspicious_block(self, ast, end_of_file, line_number):
         assert (isinstance(ast, Cursor))
@@ -116,16 +100,18 @@ class FaultLocalization():
                         else:
                             generate_block = True
                             break
-            if generate_block or (LARGEST_SNIPPET >= (line - from_line) >= SMALLEST_SNIPPET and line >= line_number >= from_line):
+            if generate_block or (LARGEST_SNIPPET >= (line - from_line) >= SMALLEST_SNIPPET and
+                                  line >= line_number >= from_line):
                 while len(blocks) > 1 and blocks[1].location.line < line_number and \
-                                        LARGEST_SNIPPET >= (line - blocks[1].location.line) >= SMALLEST_SNIPPET:
+                        LARGEST_SNIPPET >= (line - blocks[1].location.line) >= SMALLEST_SNIPPET:
                     blocks.pop(0)
                     from_line = blocks[0].location.line
                 vars, labels = CodeSnippetManager.find_vars(blocks)
                 outputs = CodeSnippetManager.find_outputs(blocks)
                 if vars != -1 and outputs != -1:
                     func_calls = CodeSnippetManager.find_function_calls(blocks, vars)
-                    sb = SuspiciousBlock(line_number, (blocks[0].extent.start.line, blocks[-1].extent.end.line+1), blocks, vars, outputs, func_calls, self.filename)
+                    sb = SuspiciousBlock(line_number, (blocks[0].extent.start.line, blocks[-1].extent.end.line+1),
+                                         blocks, vars, outputs, func_calls, self.filename)
                     return sb
                 return None
             if cursor:
@@ -142,7 +128,8 @@ class FaultLocalization():
                 outputs[v[0]] = {'type': v[1]}
             else:
                 outputs[v[0]] = {'type': v[1], 'declaration': v[2]}
-        return SuspiciousBlock(line_number, (line_number, line_number+1), [], list(live_vars), outputs, [], self.filename)
+        return SuspiciousBlock(line_number, (line_number, line_number+1), [], list(live_vars), outputs, [],
+                               self.filename)
 
     def find_function_of_this_line(self, line_number):
         if not self.root:
@@ -177,11 +164,15 @@ class FaultLocalization():
         live_vars = set([])
         dead_vars = set([])
         for cursor in function.walk_preorder():
-            if cursor.location.line < line and cursor.kind == CursorKind.PARM_DECL or cursor.kind == CursorKind.VAR_DECL:
+            if cursor.location.line < line and cursor.kind == CursorKind.PARM_DECL or \
+               cursor.kind == CursorKind.VAR_DECL:
                 all_vars.add(str(cursor.displayname))
-            if cursor.location.line >= line and (cursor.kind == CursorKind.PARM_DECL or cursor.kind == CursorKind.VAR_DECL) and str(cursor.displayname) in all_vars:
+            if cursor.location.line >= line and (cursor.kind == CursorKind.PARM_DECL or
+                                                 cursor.kind == CursorKind.VAR_DECL) and \
+                    str(cursor.displayname) in all_vars:
                 all_vars.remove(str(cursor.displayname))
-            if cursor.location.line >= line and (cursor.kind == CursorKind.DECL_REF_EXPR or cursor.kind == CursorKind.UNEXPOSED_EXPR) \
+            if cursor.location.line >= line and (cursor.kind == CursorKind.DECL_REF_EXPR or
+                                                 cursor.kind == CursorKind.UNEXPOSED_EXPR) \
                     and str(cursor.displayname) not in dead_vars and str(cursor.displayname) in all_vars:
                 live_vars.add(str(cursor.displayname))
                 res = CodeSnippetManager.find_type_and_add(final_list, cursor)
@@ -208,9 +199,3 @@ class FaultLocalization():
                 if left_side not in live_vars and left_side in all_vars:
                     dead_vars.add(left_side)
         return final_list
-
-
-if __name__ == "__main__":
-    fl = FaultLocalization('src/fdevent_freebsd_kqueue.c')
-    sb = fl.line_to_block(57)
-    print str(sb.block) + " " + str(sb.node.kind) + " " + str(sb.node.type.kind) + " " + str(sb.function.spelling)

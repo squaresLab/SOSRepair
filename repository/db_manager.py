@@ -1,4 +1,4 @@
-__author__ = 'afsoona'
+__author__ = 'Afsoon Afzal'
 
 
 import logging
@@ -10,6 +10,9 @@ from utils import counter_subset
 logger = logging.getLogger(__name__)
 
 class DatabaseManager():
+    """
+    Manages interactions with database
+    """
     def __init__(self):
         self.connection = None
         self.last_id = None
@@ -94,7 +97,7 @@ class DatabaseManager():
         try:
             cursor = self.connect().cursor()
             for constraint in snippet.constraints:
-                decl, smt = snippet.seperate_declarations(constraint)
+                decl, smt = snippet.separate_declarations(constraint)
                 sql = """
         INSERT INTO constraints (DECL, SMT, SNIPPET_ID)
         VALUES (%s, %s, %s)
@@ -126,6 +129,9 @@ class DatabaseManager():
         self.close()
 
     def fetch_next_valid_snippet(self, vars, outputs, index=0):
+        """
+        Checks signature of suspicious block and the snippets in the DB to find the next valid snippet
+        """
         try:
             cursor = self.connect().cursor()
             sql = """
