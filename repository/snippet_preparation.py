@@ -243,6 +243,29 @@ class CodeSnippetManager:
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
+#include <stdarg.h>
+
+char console[20];
+
+int printf ( const char * format, ... ){
+    va_list args;
+    va_start (args, format);
+    vsnprintf (console, 20, format, args);
+    va_end (args);
+    return 0;
+}
+
+int fprintf ( FILE * stream, const char * format, ... ){
+    va_list args;
+    va_start (args, format);
+    if (stream == stdout)
+        vsnprintf (console, 20, format, args);
+    else
+        vfprintf (stream, format, args);
+    va_end (args);
+    return 0;
+}
+
 #define break
 '''
         s += self.includes
@@ -418,6 +441,8 @@ struct s foo('''
                 s += typ + " " + name + " = malloc( sizeof(" + typ.replace('*', '', 1) + " ));\n"
                 s += 'klee_make_symbolic(' + name + ', sizeof(' + typ.replace('*', '', 1) + '), "' + name + '");\n'
 
+        s += 'char console_out[20];\n'
+        s += 'klee_make_symbolic(&console_out, sizeof(console_out), "console");\n'
         foo = 'foo('
         i = 0
         for var in variables:
@@ -437,6 +462,7 @@ struct s foo('''
                 s += 'klee_assume(' + name + '_ret == ret.' + name + ');\n'
 
         s += '''
+        klee_assume(strcmp(console_out, console) == 0);
         return 0;
         }
         '''

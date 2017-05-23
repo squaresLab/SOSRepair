@@ -76,6 +76,7 @@ class Z3:
                             query += '(assert ' + self.get_string_mapping(profile[v][1], v + '_out_' + str(num)) + ')\n'
                         else:
                             query += '(assert ' + self.get_struct_mapping(profile[v][0], v + '_out_' + str(num)) + ')\n'
+                query += '(assert ' + self.get_string_mapping(profile['console'][1], 'console_' + str(num)) + ')\n'
                 num += 1
         else:
             logger.debug("We only have negative tests!")
@@ -401,4 +402,6 @@ class Z3:
                 continue
             replaced = replaced.replace(' %s_ret ' % o, ' %s_ret_%d ' % (o, num))
             replaced = replaced.replace('(%s_ret)' % o, '(%s_ret_%d)' % (o, num))
+        replaced = replaced.replace(' console ', ' console_%d ' % num)
+        replaced = replaced.replace('(console)', '(console_%d)' % num)
         return replaced

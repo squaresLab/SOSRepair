@@ -103,6 +103,7 @@ class Profile:
                     #out.write('fprintf(fp, "input\\n");\n')
                     out.write('unsigned char *buffer_afs;\nint i_afs;\n')
                     out.write(state)
+                    out.write('fprintf(fp, "--------------------------------\\n");\n')
                     out.write("fflush(fp);\n")
                 if i == self.suspicious_block.line_range[1]:
                     #out.write('fprintf(fp, "output\\n");\n')
@@ -126,15 +127,25 @@ class Profile:
                 print "Res: %s" % str(res)
                 raise Exception
             lines = []
+            console_output = ''
             try:
                 with open(self.output_file, 'r') as f:
+                    console = False
                     ll = ''
                     for l in f:
                         index = l.find('input start:')
                         if index != -1:
+                            if not console and ll:
+                                lines.append(ll.split('_afs_'))
+                            elif console:
+                                console_output = ll
+                                console = False
+                            ll = l[index+12:]
+                        elif l.startswith('------------'):
                             if ll:
                                 lines.append(ll.split('_afs_'))
-                            ll = l[index+12:]
+                            ll = ''
+                            console = True
                         else:
                             ll += l
                     if ll:
@@ -159,6 +170,7 @@ class Profile:
                     return False
                 profile_dict[parts1[0]] = (''.join(parts1[1:-1]), ''.join(parts2[1:-1]))
                 logger.debug("Profile generated from this test: %s" % pt)
+            profile_dict['console'] = ('""', '"' + console_output[:20] + '"')
             input_list.append(profile_dict)
         logger.debug(self.input_list)
         return True
