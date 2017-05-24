@@ -26,12 +26,6 @@ RUN apt-get install -y build-essential curl libcap-dev \
 	 libncurses5-dev python-minimal python-pip unzip wget \
 	groff
 
-#RUN echo "deb http://llvm.org/apt/trusty/ llvm-toolchain-trusty-3.4 main" >> /etc/apt/sources.list && \
-#	echo "deb-src http://llvm.org/apt/trusty/ llvm-toolchain-trusty-3.4 main" >> /etc/apt/sources.list
-
-#RUN wget -O - http://llvm.org/apt/llvm-snapshot.gpg.key|apt-key add - && \
-#	apt-get update && \ 
-#	apt-get install -y clang-3.4 llvm-3.4 llvm-3.4-dev llvm-3.4-tools
 RUN  mkdir ~/KLEE && cd ~/KLEE && git clone https://github.com/llvm-mirror/llvm.git && \
 	cd llvm && git checkout release_34 && mkdir build && cd tools && \
 	git clone https://github.com/llvm-mirror/clang.git && cd clang && git checkout release_34 && \
@@ -57,6 +51,8 @@ RUN cd ~/KLEE && git clone https://github.com/klee/klee.git && \
 
 ENV PATH="/root/KLEE/klee/Release+Asserts/bin:${PATH}"
 
+# Z3 and Postgres
+
 RUN cd && git clone https://github.com/Z3Prover/z3.git && cd z3 && \
 	python scripts/mk_make.py && cd build && \
 	make
@@ -68,6 +64,8 @@ USER postgres
 RUN  /etc/init.d/postgresql start && \
     psql --command "CREATE USER afsoon WITH SUPERUSER PASSWORD 'aa';" &&\
     createdb -O afsoon testdb
+
+# For SOSRepair
 
 USER root
 
