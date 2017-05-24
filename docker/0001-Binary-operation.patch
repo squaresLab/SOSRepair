@@ -1,0 +1,198 @@
+--- bindings/python/clang/cindex.py
++++ bindings/python/clang/cindex.py
+@@ -1288,6 +1288,18 @@ class Cursor(Structure):
+         return StorageClass.from_id(self._storage_class)
+ 
+     @property
++    def binary_operator(self):
++        """
++        Retrieves the opcode if this cursor points to a binary operator
++        :return:
++        """
++
++        if not hasattr(self, '_binopcode'):
++            self._binopcode = conf.lib.clang_Cursor_getBinaryOpcode(self)
++
++        return BinaryOperator.from_id(self._binopcode)
++
++    @property
+     def access_specifier(self):
+         """
+         Retrieves the access specifier (if any) of the entity pointed at by the
+@@ -1563,6 +1575,60 @@ class Cursor(Structure):
+         res._tu = args[0]._tu
+         return res
+ 
++class BinaryOperator(BaseEnumeration):
++    """
++    Describes the BinaryOperator of a declaration
++    """
++
++    # The unique kind objects, index by id.
++    _kinds = []
++    _name_map = None
++
++    def __nonzero__(self):
++        """ Allows checks of the kind ```if cursor.binary_operator:```"""
++        return self.value != 0
++
++    @property
++    def is_assignment(self):
++        return BinaryOperator.Assign.value <= self.value < BinaryOperator.Comma.value
++
++    def __repr__(self):
++        return 'BinaryOperator.%s' % (self.name,)
++
++BinaryOperator.Invalid = BinaryOperator(0)
++BinaryOperator.PtrMemD = BinaryOperator(1)
++BinaryOperator.PtrMemI = BinaryOperator(2)
++BinaryOperator.Mul = BinaryOperator(3)
++BinaryOperator.Div = BinaryOperator(4)
++BinaryOperator.Rem = BinaryOperator(5)
++BinaryOperator.Add = BinaryOperator(6)
++BinaryOperator.Sub = BinaryOperator(7)
++BinaryOperator.Shl = BinaryOperator(8)
++BinaryOperator.Shr = BinaryOperator(9)
++BinaryOperator.LT = BinaryOperator(10)
++BinaryOperator.GT = BinaryOperator(11)
++BinaryOperator.LE = BinaryOperator(12)
++BinaryOperator.GE = BinaryOperator(13)
++BinaryOperator.EQ = BinaryOperator(14)
++BinaryOperator.NE = BinaryOperator(15)
++BinaryOperator.And = BinaryOperator(16)
++BinaryOperator.Xor = BinaryOperator(17)
++BinaryOperator.Or = BinaryOperator(18)
++BinaryOperator.LAnd = BinaryOperator(19)
++BinaryOperator.LOr = BinaryOperator(20)
++BinaryOperator.Assign = BinaryOperator(21)
++BinaryOperator.MulAssign = BinaryOperator(22)
++BinaryOperator.DivAssign = BinaryOperator(23)
++BinaryOperator.RemAssign = BinaryOperator(24)
++BinaryOperator.AddAssign = BinaryOperator(25)
++BinaryOperator.SubAssign = BinaryOperator(26)
++BinaryOperator.ShlAssign = BinaryOperator(27)
++BinaryOperator.ShrAssign = BinaryOperator(28)
++BinaryOperator.AndAssign = BinaryOperator(29)
++BinaryOperator.XorAssign = BinaryOperator(30)
++BinaryOperator.OrAssign = BinaryOperator(31)
++BinaryOperator.Comma = BinaryOperator(32)
++
+ class StorageClass(object):
+     """
+     Describes the storage class of a declaration
+--- include/clang-c/Index.h
++++ include/clang-c/Index.h
+@@ -3939,6 +3939,53 @@ CINDEX_LINKAGE unsigned clang_Cursor_isObjCOptional(CXCursor C);
+  */
+ CINDEX_LINKAGE unsigned clang_Cursor_isVariadic(CXCursor C);
+ 
++enum CX_BinaryOperatorKind {
++  CX_BO_Invalid = 0,
++  CX_BO_PtrMemD = 1,
++  CX_BO_PtrMemI = 2,
++  CX_BO_Mul = 3,
++  CX_BO_Div = 4,
++  CX_BO_Rem = 5,
++  CX_BO_Add = 6,
++  CX_BO_Sub = 7,
++  CX_BO_Shl = 8,
++  CX_BO_Shr = 9,
++  CX_BO_LT = 10,
++  CX_BO_GT = 11,
++  CX_BO_LE = 12,
++  CX_BO_GE = 13,
++  CX_BO_EQ = 14,
++  CX_BO_NE = 15,
++  CX_BO_And = 16,
++  CX_BO_Xor = 17,
++  CX_BO_Or = 18,
++  CX_BO_LAnd = 19,
++  CX_BO_LOr = 20,
++  CX_BO_Assign = 21,
++  CX_BO_MulAssign = 22,
++  CX_BO_DivAssign = 23,
++  CX_BO_RemAssign = 24,
++  CX_BO_AddAssign = 25,
++  CX_BO_SubAssign = 26,
++  CX_BO_ShlAssign = 27,
++  CX_BO_ShrAssign = 29,
++  CX_BO_AndAssign = 29,
++  CX_BO_XorAssign = 30,
++  CX_BO_OrAssign = 31,
++  CX_BO_Comma = 32,
++  CX_BO_LAST = CX_BO_Comma
++};
++
++/**
++ * \brief Returns the operator code for the binary operator.
++ */
++CINDEX_LINKAGE enum CX_BinaryOperatorKind clang_Cursor_getBinaryOpcode(CXCursor C);
++
++/**
++ * \brief Returns a string containing the spelling of the binary operator.
++ */
++CINDEX_LINKAGE CXString clang_Cursor_getBinaryOpcodeStr(enum CX_BinaryOperatorKind Op);
++
+ /**
+  * \brief Given a cursor that represents a declaration, return the associated
+  * comment's source range.  The range may include multiple consecutive comments
+--- tools/libclang/CIndex.cpp
++++ tools/libclang/CIndex.cpp
+@@ -4176,6 +4185,11 @@ CXString clang_getCursorSpelling(CXCursor C) {
+       return cxstring::createDup(OS.str());
+     }
+ 
++   if (C.kind == CXCursor_BinaryOperator ||
++        C.kind == CXCursor_CompoundAssignOperator) {
++      return clang_Cursor_getBinaryOpcodeStr(clang_Cursor_getBinaryOpcode(C));
++    } 
++
+     const Decl *D = getDeclFromExpr(getCursorExpr(C));
+     if (D)
+       return getDeclSpelling(D);
+@@ -7231,6 +7245,31 @@ unsigned clang_Cursor_isVariadic(CXCursor C) {
+   return 0;
+ }
+ 
++
++enum CX_BinaryOperatorKind clang_Cursor_getBinaryOpcode(CXCursor C) {
++  if (C.kind != CXCursor_BinaryOperator &&
++      C.kind != CXCursor_CompoundAssignOperator) {
++    return CX_BO_Invalid;
++  }
++
++  const Expr *D = getCursorExpr(C);
++  if (const BinaryOperator *BinOp = dyn_cast<BinaryOperator>(D)) {
++    return static_cast<CX_BinaryOperatorKind>(BinOp->getOpcode() + 1);
++  }
++
++  return CX_BO_Invalid;
++}
++
++CXString clang_Cursor_getBinaryOpcodeStr(enum CX_BinaryOperatorKind Op) {
++  if (Op > CX_BO_LAST) {
++    return cxstring::createEmpty();
++  }
++
++  return cxstring::createDup(
++      BinaryOperator::getOpcodeStr(static_cast<BinaryOperatorKind>(Op - 1)));
++}
++
++
+ CXSourceRange clang_Cursor_getCommentRange(CXCursor C) {
+   if (!clang_isDeclaration(C.kind))
+     return clang_getNullRange();
+--- tools/libclang/libclang.exports
++++ tools/libclang/libclang.exports
+@@ -14,6 +14,8 @@ clang_Cursor_getTemplateArgumentType
+ clang_Cursor_getTemplateArgumentValue
+ clang_Cursor_getTemplateArgumentUnsignedValue
+ clang_Cursor_getBriefCommentText
++clang_Cursor_getBinaryOpcode
++clang_Cursor_getBinaryOpcodeStr
+ clang_Cursor_getCommentRange
+ clang_Cursor_getCXXManglings
+ clang_Cursor_getMangling
+-- 
+2.7.4
+
