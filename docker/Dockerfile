@@ -39,7 +39,7 @@ ADD 0001-Binary-operation.patch /root/llvm/llvm/tools/clang
 RUN cd /opt/lvm/llvm/tools/clang && \
     cat 0001-Binary-operation.patch | patch -p0
 
-# Compile LLVM
+# Compile LLVM -- wait, this doesn't build?
 RUN cd /opt/llvm/build && \
     cmake -G "Unix Makefiles" ../llvm
 
@@ -82,22 +82,39 @@ RUN cd /opt/KLEE && \
 	  mkdir build && \
     cd build && \
     cmake -DSTATIC_BINARIES=ON -DCMAKE_INSTALL_PREFIX=/usr/ ../ && \ 
-	make install && cd ../../ && git clone https://github.com/stp/stp.git && \
-	cd stp && git checkout tags/2.1.2 && mkdir build && cd build && \
-	cmake -DBUILD_SHARED_LIBS:BOOL=OFF -DENABLE_PYTHON_INTERFACE:BOOL=OFF .. && \
-	make && make install && ulimit -s unlimited
+	  make install &&
 
+# TODO: this breaks portability
 RUN ln -sf /usr/bin/llvm-config-3.4 /usr/bin/llvm-config
 
-RUN cd ~/KLEE && git clone https://github.com/klee/klee-uclibc.git && \
-	cd klee-uclibc && ./configure --make-llvm-lib && make -j2
+# Install stp
+#
+# TODO: wget a particular release version? (small optimisation)
+# TODO: "make install" breaks compatibility
+RUN git clone https://github.com/stp/stp.git /opt/KLEE/stp && \
+	  cd /opt/KLEE/stp && \
+    git checkout tags/2.1.2 && \
+    mkdir build && \
+    cd build && \
+	  cmake -DBUILD_SHARED_LIBS:BOOL=OFF -DENABLE_PYTHON_INTERFACE:BOOL=OFF .. && \
+	  make && \
+    make install && \
+    ulimit -s unlimited
 
-RUN cd ~/KLEE && git clone https://github.com/klee/klee.git && \ 
-	cd klee && ./configure --with-stp=/root/KLEE/stp/build --with-uclibc=/root/KLEE/klee-uclibc --enable-posix-runtime && \
-	make
+# Install uclibc as an LLVM lib
+RUN git clone https://github.com/klee/klee-uclibc.git /opt/KLEE/uclibc && \
+	  cd /opt/KLEE/uclibc && \
+    ./configure --make-llvm-lib && \
+    make -j
 
-ENV PATH="/root/KLEE/klee/Release+Asserts/bin:${PATH}"
-
+# Install KLEE
+RUN git clone https://github.com/klee/klee.git /opt/KLEE/KLEE && \ 
+    cd /opt/KLEE/KLEE && \
+	  ./configure --with-stp=/opt/KLEE/stp/build \
+                --with-uclibc=/opt/KLEE/uclibc \
+                --enable-posix-runtime && \
+	  make -j
+ENV PATH="/opt/KLEE/KLEE/Release+Asserts/bin:${PATH}"
 
 # Install Z3 from source
 # TODO: discard everything except the Z3 executable
@@ -116,19 +133,22 @@ USER postgres
 RUN  /etc/init.d/postgresql start && \
     psql --command "CREATE USER afsoon WITH SUPERUSER PASSWORD 'aa';" &&\
     createdb -O afsoon testdb
-
-# For SOSRepair
 USER root
 
-RUN pip install --upgrade pip && pip install ipython==5.3.0 && \
-	pip install postgres && ssh-keygen -t rsa -N "" -f /root/.ssh/id_rsa
+# Install SOS dependencies
+#
+# TODO: what are these SSH keys being used for?
+RUN pip install --upgrade pip && \
+    pip install ipython==5.3.0 && \
+	  pip install postgres && ssh-keygen -t rsa -N "" -f /root/.ssh/id_rsa
+ADD ssh /root/.ssh
 
-ADD ssh/* /root/.ssh/
-
-RUN cd && git clone git@bitbucket.org:afsafzal/searchrepair.git && \
-	cd searchrepair && git checkout FSE17
-
-ENV PYTHONPATH="/root/llvm/llvm/tools/clang/bindings/python:${PYTHONPATH}"
+# Install SOS
+ENV SOS_LOCATION /opt/sos
+RUN git clone git@bitbucket.org:afsafzal/searchrepair.git /opt/sos && \
+	  cd /opt/sos && \
+    git checkout FSE17
+ENV PYTHONPATH="/opt/llvm/llvm/tools/clang/bindings/python:${PYTHONPATH}"
 
 # Add an entrypoint script responsible for starting up postgres upon launch
 RUN mkdir -p /entrypoint/sos
