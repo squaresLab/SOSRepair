@@ -72,8 +72,16 @@ RUN mkdir /opt/KLEE && \
     make -j && \
     make install
 
-RUN cd ~/KLEE && git clone https://github.com/stp/minisat.git && cd minisat && \
-	mkdir build && cd build && cmake -DSTATIC_BINARIES=ON -DCMAKE_INSTALL_PREFIX=/usr/ ../ && \ 
+# Build more KLEE dependencies from source
+#
+# TODO: do we need the minisat headers? If not, we should build separately
+#       in a temporary directory and install to a portable directory
+RUN cd /opt/KLEE && \
+    git clone https://github.com/stp/minisat.git && \
+    cd minisat && \
+	  mkdir build && \
+    cd build && \
+    cmake -DSTATIC_BINARIES=ON -DCMAKE_INSTALL_PREFIX=/usr/ ../ && \ 
 	make install && cd ../../ && git clone https://github.com/stp/stp.git && \
 	cd stp && git checkout tags/2.1.2 && mkdir build && cd build && \
 	cmake -DBUILD_SHARED_LIBS:BOOL=OFF -DENABLE_PYTHON_INTERFACE:BOOL=OFF .. && \
