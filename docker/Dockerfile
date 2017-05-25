@@ -10,11 +10,14 @@ RUN apt-get update && \
                         git \
                         g++ \
                         python \
+                        perl \
                         cmake \
                         unzip \
                         wget \
                         curl \
-                        build-essential
+                        build-essential \
+                        bison \
+                        flex
 ENV CXX=g++
 
 # Install gold and Ninja to reduce build time for LLVM
@@ -45,18 +48,29 @@ RUN apt-get install -y  libcap-dev \
 	                      libncurses5-dev \
                         python-minimal \
                         python-pip \
-                        groff
+                        groff \
+                        libboost-all-dev \
+                        zlib1g-dev
 
 # Download KLEE source code
-
-
-
-RUN  mkdir ~/KLEE && cd ~/KLEE && git clone https://github.com/llvm-mirror/llvm.git && \
-	cd llvm && git checkout release_34 && mkdir build && cd tools && \
-	git clone https://github.com/llvm-mirror/clang.git && cd clang && git checkout release_34 && \
-	cd ../../build && ../configure --enable-optimized && make -j4 && make install
-
-RUN apt-get install -y bison flex libboost-all-dev perl zlib1g-dev
+#
+# TODO: why are we rebuilding LLVM inside here?
+# TODO: "make install" breaks compatibility
+ENV KLEE_LOCATION /opt/KLEE
+RUN mkdir /opt/KLEE && \
+    cd /opt/KLEE && \
+    git clone https://github.com/llvm-mirror/llvm.git && \
+	  cd llvm && \
+    git checkout release_34 && \
+    mkdir build && \
+    cd tools && \
+	  git clone https://github.com/llvm-mirror/clang.git && \
+    cd clang && \
+    git checkout release_34 && \
+	  cd ../../build && \
+    ../configure --enable-optimized && \
+    make -j && \
+    make install
 
 RUN cd ~/KLEE && git clone https://github.com/stp/minisat.git && cd minisat && \
 	mkdir build && cd build && cmake -DSTATIC_BINARIES=ON -DCMAKE_INSTALL_PREFIX=/usr/ ../ && \ 
@@ -96,7 +110,6 @@ RUN  /etc/init.d/postgresql start && \
     createdb -O afsoon testdb
 
 # For SOSRepair
-
 USER root
 
 RUN pip install --upgrade pip && pip install ipython==5.3.0 && \
