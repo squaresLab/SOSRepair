@@ -1,9 +1,18 @@
 # TODO: clean-up after apt-get commands
 #       see: https://docs.docker.com/engine/userguide/eng-image/dockerfile_best-practices/
+#
+# SOSRepair requires two different versions of LLVM/Clang:
+#
+# * SOSRepair itself uses the "latest" version of Clang (TODO: fix this to a particular version)
+# * KLEE, a dependency of SOSRepair, requires LLVM/Clang 3.4
+#
+#
 FROM ubuntu:16.04
 MAINTAINER Afsoon Afzal (afsoona@cs.cmu.edu)
 
 # Install basic dependencies
+# - we install binutils-gold to speed up compilation
+# TODO: install Ninja
 RUN apt-get update && \
     apt-get install -y  subversion \
                         vim \
@@ -17,10 +26,9 @@ RUN apt-get update && \
                         curl \
                         build-essential \
                         bison \
-                        flex
+                        flex \
+                        binutils-gold
 ENV CXX=g++
-
-# Install gold and Ninja to reduce build time for LLVM
 
 # Download LLVM source code
 ENV LLVM_LOCATION /opt/llvm
