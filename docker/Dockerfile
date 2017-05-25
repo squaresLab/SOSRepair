@@ -47,6 +47,10 @@ RUN apt-get install -y  libcap-dev \
                         python-pip \
                         groff
 
+# Download KLEE source code
+
+
+
 RUN  mkdir ~/KLEE && cd ~/KLEE && git clone https://github.com/llvm-mirror/llvm.git && \
 	cd llvm && git checkout release_34 && mkdir build && cd tools && \
 	git clone https://github.com/llvm-mirror/clang.git && cd clang && git checkout release_34 && \
@@ -72,16 +76,21 @@ RUN cd ~/KLEE && git clone https://github.com/klee/klee.git && \
 
 ENV PATH="/root/KLEE/klee/Release+Asserts/bin:${PATH}"
 
-# Z3 and Postgres
 
-RUN cd && git clone https://github.com/Z3Prover/z3.git && cd z3 && \
-	python scripts/mk_make.py && cd build && \
-	make
+# Install Z3 from source
+# TODO: discard everything except the Z3 executable
+#       alternatively, "make install" to /opt/z3
+ENV Z3_LOCATION /opt/z3
+    git clone https://github.com/Z3Prover/z3.git /opt/z3 &&
+    cd /opt/z3 && \
+	  python scripts/mk_make.py && \
+    cd build && \
+	  make -j
 
+# Install postgres
+# TODO: this breaks portability
 RUN apt-get install -y postgresql
-
 USER postgres
-
 RUN  /etc/init.d/postgresql start && \
     psql --command "CREATE USER afsoon WITH SUPERUSER PASSWORD 'aa';" &&\
     createdb -O afsoon testdb
@@ -100,4 +109,7 @@ RUN cd && git clone git@bitbucket.org:afsafzal/searchrepair.git && \
 
 ENV PYTHONPATH="/root/llvm/llvm/tools/clang/bindings/python:${PYTHONPATH}"
 
-CMD /etc/init.d/postgresql start
+# Add an entrypoint script responsible for starting up postgres upon launch
+RUN mkdir -p /entrypoint/sos
+ADD entrypoint.sh /entrypoint/sos/entrypoint.sh
+ENTRYPOINT /entrypoint/sos/entrypoint.sh
