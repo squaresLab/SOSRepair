@@ -1,30 +1,51 @@
+# TODO: clean-up after apt-get commands
+#       see: https://docs.docker.com/engine/userguide/eng-image/dockerfile_best-practices/
 FROM ubuntu:16.04
 MAINTAINER Afsoon Afzal (afsoona@cs.cmu.edu)
 
+# Install basic dependencies
 RUN apt-get update && \
-	apt-get install -y subversion vim git
-
-# For llvm
-
-RUN cd && mkdir llvm && cd llvm && \
-	svn co http://llvm.org/svn/llvm-project/llvm/trunk llvm && \
-	mkdir build
-
-RUN cd ~/llvm/llvm/tools && \
-	svn co http://llvm.org/svn/llvm-project/cfe/trunk clang
-ADD 0001-Binary-operation.patch /root/llvm/llvm/tools/clang
-RUN cd ~/llvm/llvm/tools/clang && cat 0001-Binary-operation.patch | patch -p0
-
-RUN apt-get install -y g++ python cmake
-#RUN add-apt-repository ppa:george-edison55/cmake-3.x && apt-get update && \
-#	apt-get install -y cmake
+    apt-get install -y  subversion \
+                        vim \
+                        git \
+                        g++ \
+                        python \
+                        cmake \
+                        unzip \
+                        wget \
+                        curl \
+                        build-essential
 ENV CXX=g++
-RUN cd ~/llvm/build && cmake -G Unix\ Makefiles ../llvm
 
-#For KLEE
-RUN apt-get install -y build-essential curl libcap-dev \
-	 libncurses5-dev python-minimal python-pip unzip wget \
-	groff
+# Install gold and Ninja to reduce build time for LLVM
+
+# Download LLVM source code
+ENV LLVM_LOCATION /opt/llvm
+RUN mkdir -p /opt/llvm && cd /opt/llvm && \
+	  svn co http://llvm.org/svn/llvm-project/llvm/trunk llvm && \
+	  mkdir build
+
+# Download Clang source code
+ENV CLANG_LOCATION /opt/llvm/tools/clang
+RUN mkdir /opt/llvm/llvm/tools && \
+    cd /opt/llvm/llvm/tools && \
+    svn co http://llvm.org/svn/llvm-project/cfe/trunk clang
+
+# Apply a patch to the Clang source code
+ADD 0001-Binary-operation.patch /root/llvm/llvm/tools/clang
+RUN cd /opt/lvm/llvm/tools/clang && \
+    cat 0001-Binary-operation.patch | patch -p0
+
+# Compile LLVM
+RUN cd /opt/llvm/build && \
+    cmake -G "Unix Makefiles" ../llvm
+
+# Install KLEE dependencies
+RUN apt-get install -y  libcap-dev \
+	                      libncurses5-dev \
+                        python-minimal \
+                        python-pip \
+                        groff
 
 RUN  mkdir ~/KLEE && cd ~/KLEE && git clone https://github.com/llvm-mirror/llvm.git && \
 	cd llvm && git checkout release_34 && mkdir build && cd tools && \
