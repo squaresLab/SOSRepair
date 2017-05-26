@@ -91,9 +91,6 @@ RUN git clone https://github.com/stp/minisat.git /tmp/minisat && \
     cd / && \
     rm -rf /tmp/*
 
-# TODO: this breaks portability
-#RUN ln -sf /usr/bin/llvm-config-3.4 /usr/bin/llvm-config
-
 # Install stp
 RUN cd /tmp && \
     wget --quiet https://github.com/stp/stp/archive/2.1.2.tar.gz && \
@@ -111,13 +108,22 @@ RUN cd /tmp && \
 
 # Install uclibc
 # WARNING: this isn't fixed to a particular version!
-RUN git clone https://github.com/klee/klee-uclibc.git /tmp/uclibc && \
-	  cd /tmp/uclibc && \
+# TODO: this is hanging on to more than it ought to
+RUN git clone https://github.com/klee/klee-uclibc.git /opt/klee/uclibc && \
+	  cd /opt/klee/uclibc && \
     ./configure --with-llvm-config /opt/klee/bin/llvm-config \
                 --make-llvm-lib && \
-    make -j
+    make -j && \
+    rm -rf .git
 
-## Install KLEE
+#RUN cd /tmp/uclibc && \
+#    make install PREFIX="${KLEE_LOCATION}" && \
+#    cd "${KLEE_LOCATION}" && \
+#    mv usr/x86_64-linux-uclibc/usr/include/* include/ && \
+#    mv usr/x86_64-linux-uclibc/usr/lib/* lib/ && \
+#    rm -rf usr /tmp/*
+
+# Install KLEE
 #RUN git clone https://github.com/klee/klee.git /opt/KLEE/KLEE && \ 
 #    cd /opt/KLEE/KLEE && \
 #	  ./configure --with-stp=/opt/KLEE/stp/build \
