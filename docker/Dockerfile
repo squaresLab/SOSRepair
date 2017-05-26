@@ -64,9 +64,8 @@ RUN apt-get install -y  libcap-dev \
 # Download a different version of LLVM/Clang for use with KLEE
 ENV KLEE_LOCATION /opt/klee
 RUN mkdir -p "${KLEE_LOCATION}" && \
-    cd /tmp && \
-    git clone https://github.com/llvm-mirror/llvm.git && \
-	  cd llvm && \
+    git clone https://github.com/llvm-mirror/llvm.git "${KLEE_LOCATION}/llvm" && \
+	  cd "${KLEE_LOCATION}/llvm" && \
     git checkout release_34 && \
     mkdir build && \
     cd tools && \
@@ -92,50 +91,48 @@ RUN git clone https://github.com/stp/minisat.git /tmp/minisat && \
     rm -rf /tmp/*
 
 # Install stp
-RUN cd /tmp && \
+RUN cd "${KLEE_LOCATION}" && \
     wget --quiet https://github.com/stp/stp/archive/2.1.2.tar.gz && \
     tar -xf 2.1.2.tar.gz && \
-    cd stp-2.1.2 && \ 
+    rm 2.1.2.tar.gz && \
+    mv stp-2.1.2 stp && \
+    cd stp && \ 
     mkdir build && \
     cd build && \
 	  cmake -DSTATIC_BINARIES=ON \
           -DBUILD_SHARED_LIBS:BOOL=OFF \
           -DENABLE_PYTHON_INTERFACE:BOOL=OFF \
           -DCMAKE_INSTALL_PREFIX="${KLEE_LOCATION}" .. && \
-    make -j install && \
+    make -j && \
+    make install && \
     ulimit -s unlimited && \
     rm -rf /tmp/*
 
 # Install uclibc
 # WARNING: this isn't fixed to a particular version!
 # TODO: this is hanging on to more than it ought to
-RUN git clone https://github.com/klee/klee-uclibc.git /opt/klee/uclibc && \
-	  cd /opt/klee/uclibc && \
+RUN git clone https://github.com/klee/klee-uclibc.git "${KLEE_LOCATION}/uclibc" && \
+	  cd "${KLEE_LOCATION}/uclibc" && \
     ./configure --with-llvm-config "${KLEE_LOCATION}/bin/llvm-config" \
                 --make-llvm-lib && \
     make -j && \
     rm -rf .git
-
-#RUN cd /tmp/uclibc && \
-#    make install PREFIX="${KLEE_LOCATION}" && \
-#    cd "${KLEE_LOCATION}" && \
-#    mv usr/x86_64-linux-uclibc/usr/include/* include/ && \
-#    mv usr/x86_64-linux-uclibc/usr/lib/* lib/ && \
-#    rm -rf usr /tmp/*
 
 # Install KLEE
 #
 # TODO: this is a problem! We're going to end up adding two versions of LLVM to
 #       the PATH
 ENV PATH="${KLEE_LOCATION}/bin:${PATH}"
-RUN git clone https://github.com/klee/klee.git /tmp/klee && \ 
+RUN git clone https://github.com/klee/klee.git /tmp/klee && \
     cd /tmp/klee && \
-	  ./configure --prefix="${KLEE_LOCATION}" \
-                --with-stp=/opt/klee/bin/stp \
-                --with-uclibc=/opt/klee/uclibc \
-                --enable-posix-runtime && \
-	  make -j && \
-    make install
+	  ./configure prefix="${KLEE_LOCATION}" \
+                --with-stp="${KLEE_LOCATION}/stp" \
+                --with-uclibc="${KLEE_LOCATION}/uclibc" \
+                --enable-posix-runtime \
+                LDFLAGS="-L${KLEE_LOCATION}/lib" \
+                CPPFLAGS="-I${KLEE_LOCATION}/include" && \
+	  make -j
+#    make install
 #ENV PATH="/opt/KLEE/KLEE/Release+Asserts/bin:${PATH}"
 #
 ## Install Z3 from source
