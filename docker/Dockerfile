@@ -93,21 +93,21 @@ RUN git clone https://github.com/stp/minisat.git /tmp/minisat && \
 # TODO: this breaks portability
 #RUN ln -sf /usr/bin/llvm-config-3.4 /usr/bin/llvm-config
 
-#
-## Install stp
-##
-## TODO: wget a particular release version? (small optimisation)
-## TODO: "make install" breaks compatibility
-#RUN git clone https://github.com/stp/stp.git /opt/KLEE/stp && \
-#	  cd /opt/KLEE/stp && \
-#    git checkout tags/2.1.2 && \
-#    mkdir build && \
-#    cd build && \
-#	  cmake -DBUILD_SHARED_LIBS:BOOL=OFF -DENABLE_PYTHON_INTERFACE:BOOL=OFF .. && \
-#	  make && \
-#    make install && \
-#    ulimit -s unlimited
-#
+# Install stp
+RUN cd /tmp && \
+    wget --quiet https://github.com/stp/stp/archive/2.1.2.tar.gz && \
+    tar -xf 2.1.2.tar.gz && \
+    cd stp-2.1.2 && \ 
+    mkdir build && \
+    cd build && \
+	  cmake -DSTATIC_BINARIES=ON \
+          -DBUILD_SHARED_LIBS:BOOL=OFF \
+          -DENABLE_PYTHON_INTERFACE:BOOL=OFF \
+          -DCMAKE_INSTALL_PREFIX="${KLEE_LOCATION}" .. && \
+    make -j install && \
+    ulimit -s unlimited && \
+    rm -rf /tmp/*
+
 ## Install uclibc as an LLVM lib
 #RUN git clone https://github.com/klee/klee-uclibc.git /opt/KLEE/uclibc && \
 #	  cd /opt/KLEE/uclibc && \
