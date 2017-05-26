@@ -111,7 +111,7 @@ RUN cd /tmp && \
 # TODO: this is hanging on to more than it ought to
 RUN git clone https://github.com/klee/klee-uclibc.git /opt/klee/uclibc && \
 	  cd /opt/klee/uclibc && \
-    ./configure --with-llvm-config /opt/klee/bin/llvm-config \
+    ./configure --with-llvm-config "${KLEE_LOCATION}/bin/llvm-config" \
                 --make-llvm-lib && \
     make -j && \
     rm -rf .git
@@ -124,12 +124,18 @@ RUN git clone https://github.com/klee/klee-uclibc.git /opt/klee/uclibc && \
 #    rm -rf usr /tmp/*
 
 # Install KLEE
-#RUN git clone https://github.com/klee/klee.git /opt/KLEE/KLEE && \ 
-#    cd /opt/KLEE/KLEE && \
-#	  ./configure --with-stp=/opt/KLEE/stp/build \
-#                --with-uclibc=/opt/KLEE/uclibc \
-#                --enable-posix-runtime && \
-#	  make -j
+#
+# TODO: this is a problem! We're going to end up adding two versions of LLVM to
+#       the PATH
+ENV PATH="${KLEE_LOCATION}/bin:${PATH}"
+RUN git clone https://github.com/klee/klee.git /tmp/klee && \ 
+    cd /tmp/klee && \
+	  ./configure --prefix="${KLEE_LOCATION}" \
+                --with-stp=/opt/klee/bin/stp \
+                --with-uclibc=/opt/klee/uclibc \
+                --enable-posix-runtime && \
+	  make -j && \
+    make install
 #ENV PATH="/opt/KLEE/KLEE/Release+Asserts/bin:${PATH}"
 #
 ## Install Z3 from source
