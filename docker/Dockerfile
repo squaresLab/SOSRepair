@@ -81,6 +81,7 @@ RUN mkdir -p "${KLEE_LOCATION}" && \
     rm -rf /tmp/*
 
 # Install minisat
+# WARNING: this isn't fixed to a particular version!
 RUN git clone https://github.com/stp/minisat.git /tmp/minisat && \
     cd /tmp/minisat && \
 	  mkdir build && \
@@ -108,12 +109,14 @@ RUN cd /tmp && \
     ulimit -s unlimited && \
     rm -rf /tmp/*
 
-## Install uclibc as an LLVM lib
-#RUN git clone https://github.com/klee/klee-uclibc.git /opt/KLEE/uclibc && \
-#	  cd /opt/KLEE/uclibc && \
-#    ./configure --make-llvm-lib && \
-#    make -j
-#
+# Install uclibc
+# WARNING: this isn't fixed to a particular version!
+RUN git clone https://github.com/klee/klee-uclibc.git /tmp/uclibc && \
+	  cd /tmp/uclibc && \
+    ./configure --with-llvm-config /opt/klee/bin/llvm-config \
+                --make-llvm-lib && \
+    make -j
+
 ## Install KLEE
 #RUN git clone https://github.com/klee/klee.git /opt/KLEE/KLEE && \ 
 #    cd /opt/KLEE/KLEE && \
