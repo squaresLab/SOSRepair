@@ -131,19 +131,25 @@ RUN git clone https://github.com/klee/klee.git /tmp/klee && \
                 --enable-posix-runtime \
                 LDFLAGS="-L${KLEE_LOCATION}/lib" \
                 CPPFLAGS="-I${KLEE_LOCATION}/include" && \
-	  make -j
-#    make install
+	  make install -j && \
+    cd / && \
+    rm -rf /tmp/*
+VOLUME "${KLEE_LOCATION}"
 #ENV PATH="/opt/KLEE/KLEE/Release+Asserts/bin:${PATH}"
+
+# Install Z3 from source
 #
-## Install Z3 from source
-## TODO: discard everything except the Z3 executable
-##       alternatively, "make install" to /opt/z3
-#ENV Z3_LOCATION /opt/z3
-#    git clone https://github.com/Z3Prover/z3.git /opt/z3 &&
-#    cd /opt/z3 && \
-#	  python scripts/mk_make.py && \
-#    cd build && \
-#	  make -j
+# WARNING: this isn't tied to a particular version!
+ENV Z3_LOCATION /opt/z3
+RUN git clone https://github.com/Z3Prover/z3.git /tmp/z3 && \
+    cd /tmp/z3 && \
+	  python scripts/mk_make.py && \
+    cd build && \
+	  make -j4 && \
+    make install PREFIX="${Z3_LOCATION}" && \
+    cd / && \
+    rm -rf /tmp/*
+
 #
 ## Install postgres
 ## TODO: this breaks portability
