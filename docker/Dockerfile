@@ -52,6 +52,7 @@ RUN cd /opt/llvm/build && \
     cmake -G "Unix Makefiles" ../llvm
 
 # Install KLEE dependencies
+# TODO: if these are run-time dependencies, this could be a problem
 RUN apt-get install -y  libcap-dev \
 	                      libncurses5-dev \
                         python-minimal \
@@ -77,23 +78,21 @@ RUN mkdir -p "${KLEE_LOCATION}" && \
     make -j4 && \
     make install && \
     cd / && \
-    rm -rf /tmp
+    rm -rf /tmp/*
 
-## Install minisat
-##
-## TODO: do we need the minisat headers? If not, we should build separately
-##       in a temporary directory and install to a portable directory
-#RUN cd /opt/KLEE && \
-#    git clone https://github.com/stp/minisat.git && \
-#    cd minisat && \
-#	  mkdir build && \
-#    cd build && \
-#    cmake -DSTATIC_BINARIES=ON -DCMAKE_INSTALL_PREFIX=/usr/ ../ && \ 
-#    make -j && \
-#	  make install &&
-#
-## TODO: this breaks portability
+# Install minisat
+RUN git clone https://github.com/stp/minisat.git /tmp/minisat && \
+    cd /tmp/minisat && \
+	  mkdir build && \
+    cd build && \
+    cmake -DSTATIC_BINARIES=ON -DCMAKE_INSTALL_PREFIX="${KLEE_LOCATION}" ../ && \ 
+	  make -j install && \
+    cd / && \
+    rm -rf /tmp/*
+
+# TODO: this breaks portability
 #RUN ln -sf /usr/bin/llvm-config-3.4 /usr/bin/llvm-config
+
 #
 ## Install stp
 ##
