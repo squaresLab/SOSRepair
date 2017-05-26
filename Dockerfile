@@ -32,24 +32,24 @@ ENV CXX=g++
 
 # Download LLVM source code
 ENV LLVM_LOCATION /opt/llvm
-RUN mkdir -p /opt/llvm && cd /opt/llvm && \
-	  svn co http://llvm.org/svn/llvm-project/llvm/trunk llvm && \
-	  mkdir build
+RUN svn co http://llvm.org/svn/llvm-project/llvm/trunk "${LLVM_LOCATION}" && \
+	  mkdir "${LLVM_LOCATION}/build"
 
 # Download Clang source code
-ENV CLANG_LOCATION /opt/llvm/tools/clang
-RUN cd /opt/llvm/llvm/tools && \
-    svn co http://llvm.org/svn/llvm-project/cfe/trunk clang
+ENV CLANG_LOCATION "${LLVM_LOCATION}/tools/clang"
+RUN svn co http://llvm.org/svn/llvm-project/cfe/trunk "${CLANG_LOCATION}"
 
 # Apply a patch to the Clang source code
-ADD 0001-Binary-operation.patch /opt/llvm/llvm/tools/clang
-RUN cd /opt/llvm/llvm/tools/clang && \
-    cat 0001-Binary-operation.patch | patch -p0 && \
-    rm 0001-Binary-operation.patch
+#
+# TODO: why does this have such a weird name?
+ADD docker/0001-Binary-operation.patch "${CLANG_LOCATION}/binary-op.patch"
+RUN cd "${CLANG_LOCATION}" && \
+    cat binary-op.patch | patch -p0 && \
+    rm binary-op.patch
 
 # Compile LLVM ... wait, this doesn't build?
-RUN cd /opt/llvm/build && \
-    cmake -G "Unix Makefiles" ../llvm
+RUN cd "${LLVM_LOCATION}/build" && \
+    cmake -G "Unix Makefiles" ..
 
 # Install KLEE dependencies
 # TODO: if these are run-time dependencies, this could be a problem
@@ -149,6 +149,7 @@ RUN git clone https://github.com/Z3Prover/z3.git /tmp/z3 && \
     make install PREFIX="${Z3_LOCATION}" && \
     cd / && \
     rm -rf /tmp/*
+VOLUME "${Z3_LOCATION}"
 
 #
 ## Install postgres
@@ -166,15 +167,15 @@ RUN git clone https://github.com/Z3Prover/z3.git /tmp/z3 && \
 #RUN pip install --upgrade pip && \
 #    pip install ipython==5.3.0 && \
 #	  pip install postgres && ssh-keygen -t rsa -N "" -f /root/.ssh/id_rsa
-#ADD ssh /root/.ssh
+
+# Install SOS
 #
-## Install SOS
-#ENV SOS_LOCATION /opt/sos
-#RUN git clone git@bitbucket.org:afsafzal/searchrepair.git /opt/sos && \
-#	  cd /opt/sos && \
-#    git checkout FSE17
-#ENV PYTHONPATH="/opt/llvm/llvm/tools/clang/bindings/python:${PYTHONPATH}"
-#
+# TODO: we don't need ALL of LLVM (use make install)
+ENV SOS_LOCATION /opt/sos
+ADD . /opt/sos
+ENV PYTHONPATH="/opt/llvm/llvm/tools/clang/bindings/python:${PYTHONPATH}"
+VOLUME "${SOS_LOCATION}"
+
 ## Add an entrypoint script responsible for starting up postgres upon launch
 #RUN mkdir -p /entrypoint/sos
 #ADD entrypoint.sh /entrypoint/sos/entrypoint.sh
