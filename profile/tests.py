@@ -1,4 +1,4 @@
-__author__ = 'afsoona'
+__author__ = 'Afsoon Afzal'
 
 import os
 import logging
@@ -10,7 +10,9 @@ from utils.c_run import compile_c, run_c_with_input, run_command_with_timeout, r
 logger = logging.getLogger(__name__)
 
 class Tests():
-
+    """
+    Tests contains information related to tests on original program.
+    """
     def __init__(self):
         self.tests_list = []
         with open(TESTS_LIST, 'r') as f:
@@ -41,6 +43,10 @@ class Tests():
         return True
 
     def rerun_tests(self):
+        """
+        Reruns the tests.
+        :return: False the moment a test fails, True if all tests pass
+        """
         res = run_command_with_timeout(COMPILE_SCRIPT, timeout=70)
         print "RES %s" % str(res)
         if not res:

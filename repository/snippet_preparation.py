@@ -15,6 +15,9 @@ logger = logging.getLogger(__name__)
 
 
 class CodeSnippetManager:
+    """
+    Finds and prepares code snippets to be inserted into the DB
+    """
     def __init__(self, filename):
         self.filename = filename
         self.root = None
@@ -28,7 +31,6 @@ class CodeSnippetManager:
         index = Index.create()
         self.extra_args = find_extra_compile_args(MAKE_OUTPUT, self.filename[:-8])  # Removing _trans.c
         logger.debug("Extra args: %s" % str(self.extra_args))
-        #self.includes = find_includes(self.filename)
         self.root = index.parse(self.filename, self.extra_args)
         for i in self.root.get_includes():
             if i.depth == 1:
@@ -36,6 +38,10 @@ class CodeSnippetManager:
         return self.traverse_tree(self.root.cursor, self.number_of_lines)
 
     def traverse_tree(self, ast, end_of_file):
+        """
+        Finds all the snippets in the accepted range of lines. Runs symbolic execution on it and stores the results
+        into the DB
+        """
         assert (isinstance(ast, Cursor))
         from_line = -1
         blocks = []
@@ -97,6 +103,9 @@ class CodeSnippetManager:
 
     @staticmethod
     def find_outputs(snippet_blocks):
+        """
+        Finds all the output variables. We consider a variable as output if it was written to but not read later.
+        """
         outputs = {}
         for block in snippet_blocks:
             for node in block.walk_preorder():
@@ -151,6 +160,9 @@ class CodeSnippetManager:
 
     @staticmethod
     def find_function_calls(snippet_blocks, variables):
+        """
+        Finds all function calls in the snippet
+        """
         variables = [i[0] for i in variables]
         function_calls = []
         for block in snippet_blocks:
@@ -172,6 +184,9 @@ class CodeSnippetManager:
 
     @staticmethod
     def find_vars(blocks):
+        """
+        Finds all variables in the snippet
+        """
         variables = set({})
         labels = set({})
         for block in blocks:
@@ -207,6 +222,9 @@ class CodeSnippetManager:
 
     @staticmethod
     def find_type_and_add(variables, i):
+        """
+        Finds the type of a variable
+        """
         temp = i.type.spelling
         if '[' in temp:
             temp = i.type.element_type.spelling + ' *'
@@ -239,25 +257,39 @@ class CodeSnippetManager:
         return True
 
     def write_file(self, blocks, variables, outputs, function_calls, labels=None):
+        """
+        Prepares a file to be used with KLEE
+        """
         s = '''#include <klee/klee.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
+#include <stdarg.h>
+
+char console[20];
+
+int printf ( const char * format, ... ){
+    va_list args;
+    va_start (args, format);
+    vsnprintf (console, 20, format, args);
+    va_end (args);
+    return 0;
+}
+
+int fprintf ( FILE * stream, const char * format, ... ){
+    va_list args;
+    va_start (args, format);
+    if (stream == stdout)
+        vsnprintf (console, 20, format, args);
+    else
+        vfprintf (stream, format, args);
+    va_end (args);
+    return 0;
+}
+
 #define break
 '''
         s += self.includes
-        # includes = ['/home/afsoon/ManyBugs/AutomatedRepairBenchmarks.c/many-bugs/php/php-bug-2011-01-30-5bb0a44e06-1e91069eb4/src/Zend/zend.h']
-        # for temp, func, args in function_calls:
-        #     if func in includes:
-        #         continue
-        #     s += '#include "' + func + '"\n'
-        #     includes.append(func)
-        # for var in variables:
-        #     if len(var) == 3:
-        #         if var[2] in includes:
-        #             continue
-        #         s += '#include "' + var[2] + '"\n'
-        #         includes.append(var[2])
         if isinstance(outputs, str):
             s += outputs + ' foo('
         elif len(outputs) == 1:
@@ -418,6 +450,8 @@ struct s foo('''
                 s += typ + " " + name + " = malloc( sizeof(" + typ.replace('*', '', 1) + " ));\n"
                 s += 'klee_make_symbolic(' + name + ', sizeof(' + typ.replace('*', '', 1) + '), "' + name + '");\n'
 
+        s += 'char console_out[20];\n'
+        s += 'klee_make_symbolic(&console_out, sizeof(console_out), "console");\n'
         foo = 'foo('
         i = 0
         for var in variables:
@@ -437,6 +471,7 @@ struct s foo('''
                 s += 'klee_assume(' + name + '_ret == ret.' + name + ');\n'
 
         s += '''
+        klee_assume(strcmp(console_out, console) == 0);
         return 0;
         }
         '''
@@ -446,6 +481,9 @@ struct s foo('''
         return code_snippet
 
     def symbolic_execution(self, code_snippet, filename='snippet.c'):
+        """
+        Runs KLEE on the generated file and adds constraints to the CodeSnippet
+        """
         if not path.exists(filename):
             raise IOError
         if not compile_clang(filename, self.extra_args):
@@ -461,6 +499,9 @@ struct s foo('''
 
 
 class CodeSnippet():
+    """
+    Holds information related to a code snippet that should later be added to the DB
+    """
 
     def __init__(self, source, variables, outputs, filepath, function_calls=[]):
         self.source = source
@@ -474,7 +515,10 @@ class CodeSnippet():
         logger.debug("Constraint %s" % str(constraint))
         self.constraints.append(constraint)
 
-    def seperate_declarations(self, constraint):
+    def separate_declarations(self, constraint):
+        """
+        Separates declarations from the rest of the constraints
+        """
         declarations = ''
         SMT = ''
         for l in constraint.splitlines():
@@ -487,8 +531,3 @@ class CodeSnippet():
                 SMT += l[8:-1] #removing (assert ) from the SMT
         return declarations, SMT
 
-
-
-if __name__ == "__main__":
-    fl = CodeSnippetManager('../median.c')
-    fl.detach_snippets()

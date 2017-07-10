@@ -1,4 +1,6 @@
-.idea
+*.swo
+*.swp
+*.idea
 *.pyc
 *.DS_Store
 settings.py
