@@ -1,0 +1,2 @@
+1251d1250
+< 	opline->opcode = ZEND_JMP;

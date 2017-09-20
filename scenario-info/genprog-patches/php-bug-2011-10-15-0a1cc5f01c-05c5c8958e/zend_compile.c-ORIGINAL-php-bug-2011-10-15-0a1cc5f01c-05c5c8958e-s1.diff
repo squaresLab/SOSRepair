@@ -1,0 +1,2 @@
+2052d2051
+< 			opline->op2.constant = zend_add_func_name_literal(CG(active_op_array), &function_name->u.constant TSRMLS_CC);
