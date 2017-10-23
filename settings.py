@@ -57,3 +57,5 @@ COMPILE_EXTRA_ARGS = [
 MAKE_OUTPUT = "/home/afsoon/ManyBugs/AutomatedRepairBenchmarks.c/many-bugs/php/php-bug-2011-12-10-74343ca506-52c36e60c4/src/makeout"
 
 METHOD_RANGE = (975, 1045)
+
+SOSREPAIR = False

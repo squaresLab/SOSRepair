@@ -23,10 +23,11 @@ logger = logging.getLogger(__name__)
 def re_build_database(db_manager):
     db_manager.drop_tables()
     db_manager.initialize_tables()
-    deletion_snippet = CodeSnippet('', [], {}, '', [])
-    deletion_snippet.add_constraint('(assert true)')
-    db_manager.insert_snippet(deletion_snippet)
-    del deletion_snippet
+    if SOSREPAIR:
+        deletion_snippet = CodeSnippet('', [], {}, '', [])
+        deletion_snippet.add_constraint('(assert true)')
+        db_manager.insert_snippet(deletion_snippet)
+        del deletion_snippet
     with open("processed.txt", "w") as f:
         for root, dirs, files in os.walk(GENERATE_DB_PATH):
             for items in fnmatch.filter(files, "*.c"):
@@ -41,7 +42,6 @@ def re_build_database(db_manager):
 
 def main(build_db=False):
     logger.info('***************************** %s' % FAULTY_CODE)
-    # faulty_code = transform_file(FAULTY_CODE)
     original_copy = FAULTY_CODE + '_orig.c'
     run_command('cp ' + FAULTY_CODE + ' ' + original_copy)
 
@@ -72,7 +72,10 @@ def main(build_db=False):
     filename, module_name = get_file_name_and_module_re(FAULTY_CODE)
     stored_data = {}
     unsuccessful_lines = []
-    for phase in ['deletion', 'in_file', 'in_module', 'all']:
+    phases = ['in_file', 'in_module', 'all']
+    if not SOSREPAIR:
+        phases = ['any']
+    for phase in phases:
         logger.debug("Beginning of phase %s" % phase)
         investigated_blocks = set([])
         suspicious_lines_investigated = 0
@@ -97,14 +100,8 @@ def main(build_db=False):
                 investigated_blocks.add(sb.line_range)
                 logger.info("Suspicious block range %s" % str(sb.line_range))
                 profile = Profile(sb)
-                # profile.generate_file()
-                # success = profile.generate_profile(tests.positives)
-                # success = profile.generate_gdb_script(tests.positives)
                 success = profile.generate_printing_profile(tests, original_copy)
                 logger.debug('Profile: ' + str(profile.input_list))
-                #if not success:
-                    #success = profile.generate_gdb_script(tests.negatives, profile.negative_input_list)
-                    #logger.debug('Profile with gdb: ' + str(profile.input_list))
                 if not success or (not profile.input_list and not profile.negative_input_list):
                     unsuccessful_lines.append(line)
                     continue
@@ -117,7 +114,10 @@ def main(build_db=False):
             z3 = Z3(sb, profile, db_manager)
             unsat = 0
             for snippet_id in candidate_snippets_ids:
-                res = z3.prepare_smt_query_new_version(snippet_id)
+                if SOSREPAIR:
+                    res = z3.prepare_smt_query_new_version(snippet_id)
+                else:
+                    res = z3.prepare_smt_query(snippet_id)  # TODO: needs to be tested
                 if not res:
                     unsat += 1
                     continue
@@ -142,16 +142,18 @@ def main(build_db=False):
                         if not ALL_PATCHES:
                             return 0
                         break
-                    elif len(profile.input_list) == 0:
+                    elif len(profile.input_list) == 0 and SOSREPAIR:
                         profile.update_profile(tests, original_copy)
                         logger.debug('Updated profile: ' + str(profile.negative_input_list))
                     run_command('cp ' + original_copy + ' ' + FAULTY_CODE)
             logger.debug("total %d were unsatisfiable from %d" % (unsat, len(candidate_snippets_ids)))
+    if not SOSREPAIR:
+        return 3
     logger.info("Entering insertion")
     stored_data = {}
     unsuccessful_lines = []
     run_command('cp ' + original_copy + ' ' + original_copy+'_copy')
-    for phase in ['in_file', 'in_module', 'all']:
+    for phase in phases:
         investigated_blocks = set([])
         suspicious_lines_investigated = 0
         for line, score in suspicious_lines.suspiciousness:  # Try insertion
