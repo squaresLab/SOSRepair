@@ -41,7 +41,7 @@ def re_build_database(db_manager):
                 ff = os.path.join(root, items)
                 f.write("Start: %s\n" % str(ff))
                 ff = transform_file(ff)
-                fl = CodeSnippetManager(ff)
+                fl = CodeSnippetManager(ff, db_manager)
                 fl.detach_snippets()
                 os.system('rm ' + ff)
                 f.write("Finished\n")
