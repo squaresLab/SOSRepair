@@ -5,6 +5,9 @@ and semantics-based techniques.
 
 ### Requirements ###
 
+You can use `docker` to build a container that already has all the
+requirements installed and ready to go.
+
 * KLEE - You need to have KLEE up and running in your system. Find the
 instruction of how to install KLEE on your system [here](http://klee.github.io/build-llvm34/).
 SR has been confirmed to work on KLEE version 1.2 on using llvm 3.
