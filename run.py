@@ -114,10 +114,7 @@ def main(build_db=False):
             z3 = Z3(sb, profile, db_manager)
             unsat = 0
             for snippet_id in candidate_snippets_ids:
-                if SOSREPAIR:
-                    res = z3.prepare_smt_query_new_version(snippet_id)
-                else:
-                    res = z3.prepare_smt_query(snippet_id)  # TODO: needs to be tested
+                res = z3.prepare_smt_query_new_version(snippet_id)
                 if not res:
                     unsat += 1
                     continue

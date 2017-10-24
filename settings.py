@@ -58,4 +58,4 @@ MAKE_OUTPUT = "/home/afsoon/ManyBugs/AutomatedRepairBenchmarks.c/many-bugs/php/p
 
 METHOD_RANGE = (975, 1045)
 
-SOSREPAIR = False
+SOSREPAIR = True
