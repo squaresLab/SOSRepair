@@ -98,7 +98,7 @@ def main(build_db=False):
             else:
                 sb = fl.line_to_block(line)
                 if not sb or sb.line_range[0] > line or sb.line_range[1] < line:
-                    logger.warning("No block found for line: %d" %line)
+                    logger.warning("No block found for line: %d" % line)
                     unsuccessful_lines.append(line)
                     continue
                 if sb.line_range in investigated_blocks:
@@ -114,7 +114,8 @@ def main(build_db=False):
                     continue
                 stored_data[line] = {'sb': sb, 'profile': profile}
             suspicious_lines_investigated += 1
-            candidate_snippets_ids = db_manager.fetch_all_valid_snippets(phase, filename, module_name, sb.vars, sb.outputs)
+            candidate_snippets_ids = db_manager.fetch_all_valid_snippets(phase, filename, module_name, sb.vars,
+                                                                         sb.outputs)
             logger.debug("Candidate snippets len %d" % len(candidate_snippets_ids))
             random.shuffle(candidate_snippets_ids)
             tried_snippets = []
@@ -135,7 +136,8 @@ def main(build_db=False):
                     patch_generation.prepare_snippet_to_parse()
                     ast = patch_generation.parse_snippet()
                     patch_snippet = patch_generation.replace_vars(ast)
-                    patch_file = os.path.join(os.path.dirname(os.path.abspath(__file__)), 'patches/patch'+str(len(passing_patches))+'.c')
+                    patch_file = os.path.join(os.path.dirname(os.path.abspath(__file__)),
+                                              'patches/patch' + str(len(passing_patches)) + '.c')
                     patch_file = patch_generation.create_patch(sb, patch_snippet, patch_file=patch_file)
                     run_command('cp ' + patch_file + ' ' + FAULTY_CODE)
                     success = tests.rerun_tests()
@@ -156,7 +158,7 @@ def main(build_db=False):
     logger.info("Entering insertion")
     stored_data = {}
     unsuccessful_lines = []
-    run_command('cp ' + original_copy + ' ' + original_copy+'_copy')
+    run_command('cp ' + original_copy + ' ' + original_copy + '_copy')
     for phase in phases:
         investigated_blocks = set([])
         suspicious_lines_investigated = 0
@@ -165,7 +167,7 @@ def main(build_db=False):
                 continue
             if suspicious_lines_investigated >= MAX_SUSPICIOUS_LINES:
                 break
-            with open(original_copy+'_copy', 'r') as AA:
+            with open(original_copy + '_copy', 'r') as AA:
                 i = 1
                 with open(original_copy, 'w') as BB:
                     for LL in AA:
@@ -181,7 +183,7 @@ def main(build_db=False):
             else:
                 sb = fl.line_to_insert(line)
                 if not sb or sb.line_range[0] > line or sb.line_range[1] < line:
-                    logger.warning("No block found for line: %d" %line)
+                    logger.warning("No block found for line: %d" % line)
                     unsuccessful_lines.append(line)
                     continue
                 if sb.line_range in investigated_blocks:
@@ -197,7 +199,8 @@ def main(build_db=False):
                     continue
                 stored_data[line] = {'sb': sb, 'profile': profile}
             suspicious_lines_investigated += 1
-            candidate_snippets_ids = db_manager.fetch_all_valid_snippets(phase, filename, module_name, sb.vars, sb.outputs)
+            candidate_snippets_ids = db_manager.fetch_all_valid_snippets(phase, filename, module_name, sb.vars,
+                                                                         sb.outputs)
             random.shuffle(candidate_snippets_ids)
             tried_snippets = []
             z3 = Z3(sb, profile, db_manager)
@@ -215,7 +218,8 @@ def main(build_db=False):
                     patch_generation.prepare_snippet_to_parse()
                     ast = patch_generation.parse_snippet()
                     patch_snippet = patch_generation.replace_vars(ast)
-                    patch_file = os.path.join(os.path.dirname(os.path.abspath(__file__)), 'patches/patch'+str(len(passing_patches))+'.c')
+                    patch_file = os.path.join(os.path.dirname(os.path.abspath(__file__)),
+                                              'patches/patch' + str(len(passing_patches)) + '.c')
                     patch_file = patch_generation.create_patch(sb, patch_snippet, patch_file=patch_file)
                     run_command('cp ' + patch_file + ' ' + FAULTY_CODE)
                     success = tests.rerun_tests()
@@ -274,10 +278,11 @@ def bulk_running_main():
     failed_file.close()
     exception.close()
 
+
 if __name__ == "__main__":
     start_time = time.time()
     logger.info("Start time %s" % str(start_time))
     main()
     logger.info("Total time %s" % str((time.time() - start_time)))
-    #db_manager = DatabaseManager()
-    #re_build_database(db_manager)
+    # db_manager = DatabaseManager()
+    # re_build_database(db_manager)
