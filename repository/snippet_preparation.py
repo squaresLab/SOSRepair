@@ -18,11 +18,13 @@ class CodeSnippetManager:
     """
     Finds and prepares code snippets to be inserted into the DB
     """
-    def __init__(self, filename):
+    def __init__(self, filename, db_manager=None):
         self.filename = filename
         self.root = None
         self.number_of_lines = number_of_lines(filename)
-        self.db_manager = DatabaseManager()
+        self.db_manager = db_manager
+        if not db_manager:
+            self.db_manager = DatabaseManager()
         self.extra_args = []
         self.includes = ''
 
