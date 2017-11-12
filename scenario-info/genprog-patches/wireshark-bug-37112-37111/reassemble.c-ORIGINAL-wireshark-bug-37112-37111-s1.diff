@@ -1,0 +1,4 @@
+250c250
+< 	for (fd_head = value; fd_head != NULL; fd_head = tmp_fd) {
+---
+> 	for ( fd_head ; fd_head != NULL; fd_head = tmp_fd) {
