@@ -30,8 +30,7 @@ class Profile:
         self.generate_file()
         run_command('cp ' + self.marked_file + ' ' + self.filename)
         res = self.generate_profile(tests.positives, self.input_list)
-        print self.input_list
-        if not res or len(self.input_list) == 0:
+        if (not res or len(self.input_list) == 0) and SOSREPAIR:
             logger.debug("no positive profile")
             res = self.generate_profile(tests.negatives, self.negative_input_list)
             logger.debug("Negative profile: %s" % str(self.negative_input_list))

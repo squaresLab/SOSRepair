@@ -228,8 +228,10 @@ class DatabaseManager():
             rows = self.get_snippets_in_file(filename)
         elif phase == 'in_module':
             rows = self.get_snippets_in_module(filename, module_name)
-        else:
+        elif phase == 'all':
             rows = self.get_snippets_all(filename, module_name)
+        else:
+            rows = self.get_snippets_any(filename, module_name)
         candidate_rows = []
         if len(rows) == 0:
             return []
@@ -313,6 +315,20 @@ class DatabaseManager():
             cursor.execute(sql)
             rows = cursor.fetchall()
             logger.debug("Length 3: %d" %len(rows))
+            return rows
+        except psycopg2.DatabaseError, e:
+            logger.error('%s' % str(e))
+            if self.connect():
+                self.connect().rollback()
+            self.close()
+
+    def get_snippets_any(self, filename, module):
+        sql = "SELECT ID,VARIABLES,OUTPUTS FROM snippets" % (filename, module)
+        logger.debug("Run this 3: %s" %sql)
+        try:
+            cursor = self.connect().cursor()
+            cursor.execute(sql)
+            rows = cursor.fetchall()
             return rows
         except psycopg2.DatabaseError, e:
             logger.error('%s' % str(e))
