@@ -323,7 +323,7 @@ class DatabaseManager():
             self.close()
 
     def get_snippets_any(self, filename, module):
-        sql = "SELECT ID,VARIABLES,OUTPUTS FROM snippets" % (filename, module)
+        sql = "SELECT ID,VARIABLES,OUTPUTS FROM snippets"
         logger.debug("Run this 3: %s" %sql)
         try:
             cursor = self.connect().cursor()
