@@ -99,16 +99,17 @@ class Z3:
                     else:
                         query += self.get_struct_mapping(profile[v][0], v + '_in_' + str(num)) + ' '
                 if isinstance(self.suspicious_block.outputs, dict):
+                    query += '(not (or '
                     for v in self.suspicious_block.outputs.keys():
                         t = self.suspicious_block.outputs[v]['type']
                         if t != 'char*' and t in VALID_TYPES:
-                            query += '(not (let ' + self.get_let_statement(v + '_out_' + str(num)) + '(= ?A1 (_ bv' \
-                                     + self.proper_value(profile[v][1], t) + ' 32) ) ) ) '
+                            query += '(let ' + self.get_let_statement(v + '_out_' + str(num)) + '(= ?A1 (_ bv' \
+                                     + self.proper_value(profile[v][1], t) + ' 32) ) ) '
                         elif t == 'char*':
-                            query += '(not ' + self.get_string_mapping(profile[v][1], v + '_out_' + str(num)) + ' ) '
+                            query += self.get_string_mapping(profile[v][1], v + '_out_' + str(num)) + ' '
                         else:
-                            query += '(not ' + self.get_struct_mapping(profile[v][1], v + '_out_' + str(num)) + ' ) '
-                query += ') )\n'
+                            query += self.get_struct_mapping(profile[v][1], v + '_out_' + str(num)) + ' '
+                query += '%s ) ) ) )\n' % self.get_string_mapping(profile['console'][1][1:-1], 'console_' + str(num))
                 num += 1
         query += '(check-sat)\n'
         for s in get_value:
@@ -247,6 +248,7 @@ class Z3:
                     declarations += '(declare-fun %s_out_%d () (Array (_ BitVec 32) (_ BitVec 8) ) )\n' % (v, i)
             for v in snippet_outputs:
                 declarations += '(declare-fun %s_ret_%d () (Array (_ BitVec 32) (_ BitVec 8) ) )\n' % (v, i)
+            declarations += '(declare-fun console_%d () (Array (_ BitVec 32) (_ BitVec 8) ) )\n' % i
 
         get_value = []
         mapping = {}
@@ -396,7 +398,7 @@ class Z3:
         Translate a string into smt language
         """
         if len(string) == 0:
-            return ''
+            return '(=  (_ bv0 8) (select  %s (_ bv0 32) ) )' % variable
         query = ''
         for i in range(len(string)):
             query += '(and (= (select %s (_ bv%d 32) ) (_ bv%d 8) ) ' % (variable, i, ord(string[i]))

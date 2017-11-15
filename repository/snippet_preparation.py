@@ -171,6 +171,8 @@ class CodeSnippetManager:
             for node in block.walk_preorder():
                 if node.kind == CursorKind.CALL_EXPR:
                     if node.referenced:
+                        if str(node.displayname) in ['printf', 'fprintf']:
+                            continue
                         args = set({})
                         for c in node.walk_preorder():
                             logger.debug("Function just for debug: %s, %s, %s" % (str(c.displayname), str(c.kind), str(c.type.kind)))
