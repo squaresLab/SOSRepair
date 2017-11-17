@@ -1,6 +1,6 @@
-# SearchRepair #
+# SOSRepair #
 
-SearchRepair is an automatic program repair tool which tries to fix programs with the help of both generate-and-validate
+SOSRepair is an automatic program repair tool which tries to fix programs with the help of both generate-and-validate
 and semantics-based techniques.
 
 ### Requirements ###
@@ -14,10 +14,10 @@ SR has been confirmed to work on KLEE version 1.2 on using llvm 3.
 * llvm and clang - You need to install llvm and clang by source to be
 able to modify and extend it later. [Instruction](http://llvm.org/docs/GettingStarted.html).
 SR has been confirmed to work on llvm commit \(db55668\) and clang commit \(2a0e7716\).
-Updating llvm and clang to their latest version should not have an effect on SearchRepair.
+Updating llvm and clang to their latest version should not have an effect on SOSRepair.
 Before building llvm and clang from source, apply the patch in `docker/0001-Binary-operation.patch`
 to clang. This patch will add a functionality to python bindings that
-are needed for SR. After building llvm and clang, set your `PYTHONPATH`
+are needed for SOSRepai. After building llvm and clang, set your `PYTHONPATH`
 to include clang python bindings.
 * Postgres
 We will use Postgres as our database. Make sure you also install it's python binding (psycopg). You can
