@@ -37,7 +37,22 @@ class CodeSnippetManager:
         for i in self.root.get_includes():
             if i.depth == 1:
                 self.includes += '#include "' + str(i.include) + '"\n'
+        self.find_typedefs(self.root.cursor)
         return self.traverse_tree(self.root.cursor, self.number_of_lines)
+
+    def find_typedefs(self, ast):
+        lines = []
+        for child in ast.get_children():
+            if child.kind == CursorKind.STRUCT_DECL and str(child.location.file) == self.filename:
+                lines.extend(range(child.extent.start.line, child.extent.end.line+1))
+        with open(self.filename, "r") as f:
+            i = 1
+            for l in f:
+                if i in lines:
+                    self.includes += l
+                i += 1
+        logger.debug("Includes: %s" % self.includes)
+
 
     def traverse_tree(self, ast, end_of_file):
         """
@@ -84,6 +99,8 @@ class CodeSnippetManager:
                         func_calls = self.find_function_calls(blocks, vars)
                         logger.debug("Functions: %s" % str(func_calls))
                         source = self.write_file(blocks, vars, outputs, func_calls, labels)
+                        if "SIGKILL" in source:
+                            raise Exception
                         logger.debug("Source, line, from_line: %s, %d, %d" % (str(source), line, from_line)) 
                         code_snippet = CodeSnippet(source, vars, outputs, self.filename, func_calls)
                         res = self.symbolic_execution(code_snippet)
