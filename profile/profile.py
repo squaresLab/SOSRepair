@@ -38,23 +38,24 @@ class Profile:
         run_command('rm ' + self.marked_file)
         return res
 
-    def update_profile(self, tests,  original=FAULTY_CODE+'_orig.c'):
+    def update_profile(self, tests, number_of_lines, original=FAULTY_CODE+'_orig.c'):
         """
         Update negative profile with new information as incremental profile
         """
         # copy original file to somewhere safe
-        if not os.path.isfile(self.marked_file):
-            self.generate_file()
+        self.generate_file(number_of_lines)
         run_command('cp ' + self.marked_file + ' ' + self.filename)
         original_len = len(self.negative_input_list)
         res = self.generate_profile(tests.negatives, self.negative_input_list)
         if not res or len(self.negative_input_list) == original_len:
             # res = self.generate_gdb_script(tests.negatives, self.negative_input_list)
             logger.debug("Update negative profile: %s" % str(self.negative_input_list))
+        else:
+            logger.debug("Added profile: %s" % str(self.negative_input_list[-1]))
         run_command('cp ' + original + ' ' + self.filename)
         return res
 
-    def generate_file(self):
+    def generate_file(self, number_of_lines=None):
         """
         This function generates a file that has printf statements before and after the snippet to record their values
         """
@@ -105,10 +106,13 @@ class Profile:
                     out.write(state)
                     out.write('fprintf(fp, "--------------------------------\\n");\n')
                     out.write("fflush(fp);\n")
-                if i == self.suspicious_block.line_range[1]:
+                if (not number_of_lines and i == self.suspicious_block.line_range[1]) or (number_of_lines and i == number_of_lines+self.suspicious_block.line_range[0]):
                     #out.write('fprintf(fp, "output\\n");\n')
                     out.write(state)
-                    out.write("fclose(fp);\n")
+                    out.write("fclose(fp);\nif(0);\n")
+                if (not number_of_lines and self.suspicious_block.line_range[0] <= i < self.suspicious_block.line_range[1]) or (number_of_lines and self.suspicious_block.line_range[0] <= i < self.suspicious_block.line_range[0]+number_of_lines):
+                    line = line.replace('printf(', 'fprintf(fp,')
+                    line = line.replace('printf (', 'fprintf(fp,')
                 out.write(line)
             out.flush()
             out.close()
@@ -154,7 +158,7 @@ class Profile:
                             console = True
                         else:
                             ll += l
-                    if ll:
+                    if ll and not console:
                         lines.append(ll.split('_afs_'))
             except IOError:
                 logger.warning("This test probabely does not pass the faulty code %s" % pt)
@@ -162,7 +166,6 @@ class Profile:
             if len(lines) != 2 or len(lines[0]) != len(lines[1]):
                 logger.error("Error in generating profile " + str(len(lines)))
                 # This happens when the block contains return
-                # raise Exception
                 continue
             profile_dict = {}
             for i in range(len(lines[0])):
@@ -177,6 +180,8 @@ class Profile:
                 profile_dict[parts1[0]] = (''.join(parts1[1:-1]), ''.join(parts2[1:-1]))
                 logger.debug("Profile generated from this test: %s" % pt)
             profile_dict['console'] = ('""', '"' + console_output[:20] + '"')
+            if profile_dict in input_list:
+                continue
             input_list.append(profile_dict)
         logger.debug(self.input_list)
         return True
