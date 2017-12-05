@@ -140,7 +140,11 @@ def main(build_db=False):
                                               'patches/patch' + str(len(passing_patches)) + '.c')
                     patch_file = patch_generation.create_patch(sb, patch_snippet, patch_file=patch_file)
                     run_command('cp ' + patch_file + ' ' + FAULTY_CODE)
-                    success = tests.rerun_tests()
+                    for i in range(NUMBER_OF_TIMES_RERUNNING_TESTS):
+                        success = tests.rerun_tests()
+                        if not success:
+                            break
+                        logger.debug("Passed all tests %d times" % (i+1))
                     if success:
                         print "Found a patch!!! YAY"
                         run_command('cp ' + original_copy + ' ' + FAULTY_CODE)
@@ -222,7 +226,11 @@ def main(build_db=False):
                                               'patches/patch' + str(len(passing_patches)) + '.c')
                     patch_file = patch_generation.create_patch(sb, patch_snippet, patch_file=patch_file)
                     run_command('cp ' + patch_file + ' ' + FAULTY_CODE)
-                    success = tests.rerun_tests()
+                    for i in range(NUMBER_OF_TIMES_RERUNNING_TESTS):
+                        success = tests.rerun_tests()
+                        if not success:
+                            break
+                        logger.debug("Passed all tests %d times" % (i+1))
                     if success:
                         print "Found a patch!!! YAY"
                         run_command('cp ' + original_copy + ' ' + FAULTY_CODE)

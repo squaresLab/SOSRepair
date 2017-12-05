@@ -22,6 +22,8 @@ This file includes all the settings that could be modified for running SearchRep
 automatically)
 * METHOD_RANGE: The tuple of beginning and end of method with the fault (limits the search to the area)
 * SOSREPAIR: If set to False it will only run SearchRepair features
+* NUMBER_OF_TIMES_RERUNNING_TESTS: The number of times that the tests should be run to assure patch's correctness
+* EXCLUDE_SCANF: If removing/replacing scanf in buggy code is going to be a problem, set this to True
 """
 __author__ = 'Afsoon Afzal'
 
@@ -85,3 +87,6 @@ MAKE_OUTPUT = "/home/afsoon/ManyBugs/AutomatedRepairBenchmarks.c/many-bugs/php/p
 METHOD_RANGE = (975, 1045)
 
 SOSREPAIR = True
+
+NUMBER_OF_TIMES_RERUNNING_TESTS = 1
+EXCLUDE_SCANF = False

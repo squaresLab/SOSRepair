@@ -110,6 +110,10 @@ class FaultLocalization():
                 outputs = CodeSnippetManager.find_outputs(blocks)
                 if vars != -1 and outputs != -1:
                     func_calls = CodeSnippetManager.find_function_calls(blocks, vars)
+                    if EXCLUDE_SCANF:
+                        for f in func_calls:
+                            if str(f[0]).strip() == "scanf":
+                                return None
                     sb = SuspiciousBlock(line_number, (blocks[0].extent.start.line, blocks[-1].extent.end.line+1),
                                          blocks, vars, outputs, func_calls, self.filename)
                     return sb
