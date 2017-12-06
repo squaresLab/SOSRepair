@@ -28,13 +28,7 @@ def compare_files(file1, file2):
 
 def transform_file(filename):
     transformed_file = filename + '_trans.c'
-    with open(filename, 'r') as f:
-        with open(transformed_file, 'w') as tf:
-            for l in f:
-                if l.isspace():
-                    continue
-                tf.write(l)
-    run_command('rm tempfile')
+    success = run_command("sed '/^\s*$/d' %s > %s" % (filename, transformed_file))
     return transformed_file
 
 
