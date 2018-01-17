@@ -1,5 +1,6 @@
 __author__ = 'afsoona'
 
+import argparse
 import os
 import re
 import time
@@ -47,7 +48,7 @@ def re_build_database(db_manager):
                 f.write("Finished\n")
 
 
-def main(build_db=False):
+def main(build_db=False, all_patches=False):
     logger.info('***************************** %s' % FAULTY_CODE)
     original_copy = FAULTY_CODE + '_orig.c'
     run_command('cp ' + FAULTY_CODE + ' ' + original_copy)
@@ -150,7 +151,7 @@ def main(build_db=False):
                         logger.info("Found a patch!!! YAY")
                         run_command('cp ' + original_copy + ' ' + FAULTY_CODE)
                         passing_patches.append(patch_file)
-                        if not ALL_PATCHES:
+                        if not all_patches:
                             return MainReturn.Patch_found
                         break
                     elif len(profile.input_list) == 0 and SOSREPAIR:
@@ -237,7 +238,7 @@ def main(build_db=False):
                         logger.info("Found a patch!!! YAY")
                         run_command('cp ' + original_copy + ' ' + FAULTY_CODE)
                         passing_patches.append(patch_file)
-                        if not ALL_PATCHES:
+                        if not all_patches:
                             return MainReturn.Patch_found
                         break
                     elif len(profile.input_list) == 0:
@@ -247,7 +248,7 @@ def main(build_db=False):
     return MainReturn.Patch_not_found if len(passing_patches) == 0 else MainReturn.Patch_found
 
 
-def bulk_running_main():
+def bulk_running_main(all_patches=False):
     """
     This function could be used as a script to run SearchRepair on many programs
     in sequence
@@ -256,18 +257,22 @@ def bulk_running_main():
     success_file = open('success.txt', 'w')
     failed_file = open('failed.txt', 'w')
     exception = open('exception.txt', 'w')
-    first_time = False
+    os.system('rm -r ' + BULK_RUN_PATH + '/patches')
+    os.system('mkdir ' + BULK_RUN_PATH + '/patches')
+    index = 0
 
     for root, dirs, files in os.walk(GENERATE_DB_PATH):
         for items in fnmatch.filter(files, "*.c"):
             ff = os.path.join(root, items)
             logger.info("File: " + ff)
             try:
-                os.system('cp ' + ff + ' .')
-                res = main(items, first_time)
+                os.system('cp ' + ff + ' ' + BULK_RUN_PATH)
+                res = main(build_db=False, all_patches=all_patches)
                 if res == MainReturn.Patch_found:
                     success_file.write(ff + '\n')
                     success_file.flush()
+                    os.system('cp patches/patch0.c ' + BULK_RUN_PATH + '/patches/patch.c' + str(index))
+                    index += 1
                 elif res == MainReturn.No_positive_tests:
                     exception.write(ff + ':No positive tests\n')
                     exception.flush()
@@ -290,9 +295,33 @@ def bulk_running_main():
 
 
 if __name__ == "__main__":
+    parser = argparse.ArgumentParser(description="SOSRepair automatic program repair tool")
+    parser.add_argument("--db", choices=["none", "build_and_run", "build"],
+                        default="none", help="Specify whether the DB should be built")
+    parser.add_argument("--run_mode", choices=["normal", "bulk_run"],
+                        default="normal", help="The running mode")
+    parser.add_argument("--all_patches", action="store_true",
+                        help="Find all patches")
+    args = parser.parse_args()
     start_time = time.time()
     logger.info("Start time %s" % str(start_time))
-    main()
+
+    if args.db == "build":
+        db_manager = DatabaseManager()
+        re_build_database(db_manager)
+    elif args.run_mode == "normal":
+        if args.db == "none":
+            main(build_db=False, all_patches=args.all_patches)
+        elif args.db == "build_and_run":
+            main(build_db=True, all_patches=args.all_patches)
+    elif args.run_mode == "bulk_run":
+        if args.db == "none":
+            bulk_running_main(all_patches=args.all_patches)
+        elif args.db == "build_and_run":
+            db_manager = DatabaseManager()
+            re_build_database(db_manager)
+            bulk_running_main(all_patches=args.all_patches)
+    #main()
     logger.info("Total time %s" % str((time.time() - start_time)))
     # db_manager = DatabaseManager()
     # re_build_database(db_manager)

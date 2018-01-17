@@ -8,7 +8,6 @@ This file includes all the settings that could be modified for running SearchRep
 * LARGEST_SNIPPET: The maximum number of lines that is considered as a snippet.
 * SMALLEST_SNIPPET: The minimum number of lines that is considered as a snippet.
 * DATABASE: Information about the database.
-* ALL_PATCHES: If False, SR will return the first found patch, otherwise it will try to find more.
 * LOGGING: Settings for logging.
 * MAX_SUSPICIOUS_LINES: The number of suspicious lines tried before giving up.
 * VALID_TYPES: The variable types that are right now supported by SR.
@@ -46,8 +45,6 @@ DATABASE = {
     'user': 'afsoon',
     'password': None
 }
-
-ALL_PATCHES = False
 
 LOGGING = {
     'filename': 'logs/repair.log',
@@ -90,3 +87,5 @@ SOSREPAIR = True
 
 NUMBER_OF_TIMES_RERUNNING_TESTS = 1
 EXCLUDE_SCANF = False
+
+BULK_RUN_PATH = "test_median"
