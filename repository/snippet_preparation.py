@@ -141,6 +141,8 @@ class CodeSnippetManager:
                                 temp = i.type.element_type.spelling + ' *'
                             temp = temp.replace('const', '')
                             temp = temp.replace('unsigned', '')
+                            if str(temp).replace('*', '').strip() in ['double', 'long', 'size_t', 'short', 'float']:
+                                temp = str(temp).replace(re.sub('[\s+]', '', str(temp).replace('*', '').strip()), 'int')
                             if temp == 'char' or temp.find('int') != -1:
                                 outputs[i.displayname] = {'line': i.location.line, 'type': 'int'}
                             elif str(temp).replace('*', '').strip() in VALID_TYPES:
@@ -158,16 +160,6 @@ class CodeSnippetManager:
                                 print final_type.get_declaration().extent
                                 outputs[i.displayname] = {'line': i.location.line, 'type': temp.strip(),
                                                           'declaration': final_type.get_declaration().extent.start.file.name}
-                            # if str(temp).replace('*', '').strip() not in VALID_TYPES:
-                            #     if str(temp).replace('*', '').strip() == 'FILE' and i.displayname in ['stderr', 'stdout', 'stdin']:
-                            #         logger.debug("std outs found, skipping")
-                            #         continue
-                            #     logger.debug("Unrecognized type for output %s" % temp)
-                            #     return -1
-                            # if temp == 'char':
-                            #     outputs[i.displayname] = {'line': i.location.line, 'type': 'int'}
-                            # else:
-                            #     outputs[i.displayname] = {'line': i.location.line, 'type': temp.strip()}
                             break
                 elif node.kind == CursorKind.DECL_REF_EXPR or node.kind == CursorKind.UNEXPOSED_EXPR:
                     if node.displayname in outputs and node.location.line > outputs[node.displayname]['line']:
