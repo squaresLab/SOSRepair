@@ -38,7 +38,7 @@ class Profile:
         run_command('rm ' + self.marked_file)
         return res
 
-    def update_profile(self, tests, number_of_lines, original=FAULTY_CODE+'_orig.c'):
+    def update_profile(self, tests, original=FAULTY_CODE+'_orig.c', number_of_lines=None):
         """
         Update negative profile with new information as incremental profile
         """

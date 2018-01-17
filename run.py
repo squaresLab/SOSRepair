@@ -147,6 +147,7 @@ def main(build_db=False):
                         logger.debug("Passed all tests %d times" % (i+1))
                     if success:
                         print "Found a patch!!! YAY"
+                        logger.info("Found a patch!!! YAY")
                         run_command('cp ' + original_copy + ' ' + FAULTY_CODE)
                         passing_patches.append(patch_file)
                         if not ALL_PATCHES:
@@ -233,6 +234,7 @@ def main(build_db=False):
                         logger.debug("Passed all tests %d times" % (i+1))
                     if success:
                         print "Found a patch!!! YAY"
+                        logger.info("Found a patch!!! YAY")
                         run_command('cp ' + original_copy + ' ' + FAULTY_CODE)
                         passing_patches.append(patch_file)
                         if not ALL_PATCHES:
