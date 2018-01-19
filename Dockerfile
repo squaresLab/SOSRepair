@@ -49,10 +49,13 @@ RUN cd "${CLANG_LOCATION}" && \
 
 # Compile LLVM ... wait, this doesn't build?
 RUN cd "${LLVM_LOCATION}/build" && \
-    cmake -G "Unix Makefiles" ..
+    cmake -G "Unix Makefiles" .. && \
+    make -j8
 
 # Install KLEE dependencies
 # TODO: if these are run-time dependencies, this could be a problem
+RUN echo "deb http://security.ubuntu.com/ubuntu xenial-security main" >> /etc/apt/sources.list && \
+    apt-get update
 RUN apt-get install -y  libcap-dev \
 	                      libncurses5-dev \
                         python-minimal \
@@ -124,7 +127,7 @@ RUN git clone https://github.com/klee/klee-uclibc.git "${KLEE_LOCATION}/uclibc" 
 #       the PATH
 ENV PATH="${KLEE_LOCATION}/bin:${PATH}"
 RUN git clone https://github.com/klee/klee.git /tmp/klee && \
-    cd /tmp/klee && \
+    cd /tmp/klee && git checkout v1.4.0 && \
 	  ./configure prefix="${KLEE_LOCATION}" \
                 --with-stp="${KLEE_LOCATION}/stp" \
                 --with-uclibc="${KLEE_LOCATION}/uclibc" \
@@ -155,6 +158,16 @@ VOLUME "${Z3_LOCATION}"
 ## Install postgres
 ## TODO: this breaks portability
 #RUN apt-get install -y postgresql
+
+RUN echo "deb http://apt.postgresql.org/pub/repos/apt/ xenial-pgdg main" >> /etc/apt/sources.list.d/pgdg.list && \
+    wget --quiet -O - https://www.postgresql.org/media/keys/ACCC4CF8.asc | apt-key add - && \
+    apt-get update
+RUN apt-get install -y postgresql-9.6
+USER postgres
+RUN  /etc/init.d/postgresql start && psql --command "CREATE USER root WITH SUPERUSER;"
+USER root
+#RUN createdb testdb
+
 #USER postgres
 #RUN  /etc/init.d/postgresql start && \
 #    psql --command "CREATE USER afsoon WITH SUPERUSER PASSWORD 'aa';" &&\
@@ -164,19 +177,24 @@ VOLUME "${Z3_LOCATION}"
 ## Install SOS dependencies
 ##
 ## TODO: what are these SSH keys being used for?
-#RUN pip install --upgrade pip && \
-#    pip install ipython==5.3.0 && \
-#	  pip install postgres && ssh-keygen -t rsa -N "" -f /root/.ssh/id_rsa
+RUN pip install --upgrade pip && \
+    pip install ipython==5.3.0 && \
+	  pip install postgres
 
 # Install SOS
 #
 # TODO: we don't need ALL of LLVM (use make install)
 ENV SOS_LOCATION /opt/sos
-ADD . /opt/sos
-ENV PYTHONPATH="/opt/llvm/llvm/tools/clang/bindings/python:${PYTHONPATH}"
+ADD . "${SOS_LOCATION}"
+RUN cp "${SOS_LOCATION}/docker/settings.py" "${SOS_LOCATION}/"
+ENV PYTHONPATH="${LLVM_LOCATION}/tools/clang/bindings/python:${PYTHONPATH}"
+ENV CPATH=":${KLEE_LOCATION}/include"
 VOLUME "${SOS_LOCATION}"
 
 ## Add an entrypoint script responsible for starting up postgres upon launch
 #RUN mkdir -p /entrypoint/sos
 #ADD entrypoint.sh /entrypoint/sos/entrypoint.sh
 #ENTRYPOINT /entrypoint/sos/entrypoint.sh
+RUN mkdir /opt/project-db && cp -r "${SOS_LOCATION}/docker/project-repair" /opt/
+ENTRYPOINT /etc/init.d/postgresql start && sleep 10 && createdb testdb && /bin/bash
+

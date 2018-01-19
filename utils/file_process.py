@@ -33,6 +33,8 @@ def transform_file(filename):
 
 
 def find_extra_compile_args(output_file, compiled_file):
+    if not output_file:
+        return COMPILE_EXTRA_ARGS
     with open(output_file, "r") as f:
         for l in f:
             if compiled_file in l:
