@@ -159,14 +159,13 @@ VOLUME "${Z3_LOCATION}"
 ## TODO: this breaks portability
 #RUN apt-get install -y postgresql
 
-RUN echo "deb http://apt.postgresql.org/pub/repos/apt/ xenial-pgdg main" >> /etc/apt/sources.list.d/pgdg.list && \
-    wget --quiet -O - https://www.postgresql.org/media/keys/ACCC4CF8.asc | apt-key add - && \
-    apt-get update
-RUN apt-get install -y postgresql-9.6
-USER postgres
-RUN  /etc/init.d/postgresql start && psql --command "CREATE USER root WITH SUPERUSER;"
-USER root
-#RUN createdb testdb
+#RUN echo "deb http://apt.postgresql.org/pub/repos/apt/ xenial-pgdg main" >> /etc/apt/sources.list.d/pgdg.list && \
+#    wget --quiet -O - https://www.postgresql.org/media/keys/ACCC4CF8.asc | apt-key add - && \
+#    apt-get update
+#RUN apt-get install -y postgresql-9.6
+#USER postgres
+#RUN  /etc/init.d/postgresql start && psql --command "CREATE USER root WITH SUPERUSER;"
+#USER root
 
 #USER postgres
 #RUN  /etc/init.d/postgresql start && \
@@ -195,6 +194,7 @@ VOLUME "${SOS_LOCATION}"
 #RUN mkdir -p /entrypoint/sos
 #ADD entrypoint.sh /entrypoint/sos/entrypoint.sh
 #ENTRYPOINT /entrypoint/sos/entrypoint.sh
-RUN mkdir /opt/project-db && cp -r "${SOS_LOCATION}/docker/project-repair" /opt/
-ENTRYPOINT /etc/init.d/postgresql start && sleep 10 && createdb testdb && /bin/bash
+
+#RUN mkdir /opt/project-db && cp -r "${SOS_LOCATION}/docker/project-repair" /opt/
+#ENTRYPOINT /etc/init.d/postgresql start && sleep 20 && createdb testdb && /bin/bash
 
