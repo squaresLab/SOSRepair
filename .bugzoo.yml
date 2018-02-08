@@ -1,0 +1,11 @@
+version: '1.0'
+type: tool
+name: sosrepair
+build:
+  type: docker
+  tag: squareslab/sosrepair:latest
+  context: .
+  file: Dockerfile
+environment:
+  PATH: "/opt/klee/bin:${PATH}"
+  PYTHONPATH: "/opt/llvm/tools/clang/bindings/python:${PYTHONPATH}" 
