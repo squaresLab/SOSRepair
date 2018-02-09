@@ -28,7 +28,7 @@ RUN apt-get update && \
                         bison \
                         flex \
                         binutils-gold
-RUN apt-get install -y patchelf
+# RUN apt-get install -y patchelf
 ENV CXX=g++
 
 ###############################################################################
