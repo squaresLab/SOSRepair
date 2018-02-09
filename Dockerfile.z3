@@ -7,7 +7,7 @@
 # * KLEE, a dependency of SOSRepair, requires LLVM/Clang 3.4
 #
 #
-FROM ubuntu:16.04
+FROM ubuntu:14.04
 MAINTAINER Afsoon Afzal (afsoona@cs.cmu.edu)
 
 # Install basic dependencies
@@ -45,13 +45,12 @@ RUN git clone https://github.com/Z3Prover/z3.git /tmp/z3 && \
     rm -rf /tmp/*
 
 ###############################################################################
-# Clang 5.0.1
+# Clang 3.4.2
 ###############################################################################
-# install clang 5.0.1
 RUN cd /tmp && \
-    wget -nv http://releases.llvm.org/5.0.1/clang+llvm-5.0.1-x86_64-linux-gnu-ubuntu-16.04.tar.xz && \
-    tar -xf clang+llvm-5.0.1-x86_64-linux-gnu-ubuntu-16.04.tar.xz && \
-    cd clang+llvm-5.0.1-x86_64-linux-gnu-ubuntu-16.04
+    wget -nv http://releases.llvm.org/3.4.2/clang+llvm-3.4.2-x86_64-linux-gnu-ubuntu-14.04.xz && \
+    tar -xf clang+llvm-3.4.2-x86_64-linux-gnu-ubuntu-14.04.tar.xz && \
+    cd clang+llvm-3.4.2-x86_64-linux-gnu-ubuntu-14.04
 RUN mkdir -p /opt/sosrepair/libexec && \
     mkdir -p /opt/sosrepair/share
 RUN cd /tmp/clang* && \
