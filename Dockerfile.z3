@@ -49,15 +49,13 @@ RUN git clone https://github.com/Z3Prover/z3.git /tmp/z3 && \
 ###############################################################################
 RUN cd /tmp && \
     wget -nv http://releases.llvm.org/3.4.2/clang+llvm-3.4.2-x86_64-linux-gnu-ubuntu-14.04.xz && \
-    tar -xf clang+llvm-3.4.2-x86_64-linux-gnu-ubuntu-14.04.tar.xz && \
+    tar -xf clang+llvm-3.4.2-x86_64-linux-gnu-ubuntu-14.04.xz && \
     cd clang+llvm-3.4.2-x86_64-linux-gnu-ubuntu-14.04
-RUN mkdir -p /opt/sosrepair/libexec && \
-    mkdir -p /opt/sosrepair/share
+RUN mkdir -p /opt/sosrepair/share
 RUN cd /tmp/clang* && \
     mv bin/* /opt/sosrepair/bin && \
     mv include/* /opt/sosrepair/include && \
     mv lib/* /opt/sosrepair/lib && \
-    mv libexec/* /opt/sosrepair/libexec && \
     mv share/* /opt/sosrepair/share && \
     rm -rf /tmp/*
 
