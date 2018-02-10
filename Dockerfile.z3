@@ -47,17 +47,24 @@ RUN git clone https://github.com/Z3Prover/z3.git /tmp/z3 && \
 ###############################################################################
 # Clang 3.4.2
 ###############################################################################
-RUN cd /tmp && \
-    wget -nv http://releases.llvm.org/3.4.2/clang+llvm-3.4.2-x86_64-linux-gnu-ubuntu-14.04.xz && \
-    tar -xf clang+llvm-3.4.2-x86_64-linux-gnu-ubuntu-14.04.xz && \
-    cd clang+llvm-3.4.2-x86_64-linux-gnu-ubuntu-14.04
-RUN mkdir -p /opt/sosrepair/share
-RUN cd /tmp/clang* && \
-    mv bin/* /opt/sosrepair/bin && \
-    mv include/* /opt/sosrepair/include && \
-    mv lib/* /opt/sosrepair/lib && \
-    mv share/* /opt/sosrepair/share && \
-    rm -rf /tmp/*
+# RUN cd /tmp && \
+#     wget -nv http://releases.llvm.org/3.4.2/clang+llvm-3.4.2-x86_64-linux-gnu-ubuntu-14.04.xz && \
+#     tar -xf clang+llvm-3.4.2-x86_64-linux-gnu-ubuntu-14.04.xz && \
+#     cd clang+llvm-3.4.2-x86_64-linux-gnu-ubuntu-14.04
+# RUN mkdir -p /opt/sosrepair/share
+# RUN cd /tmp/clang* && \
+#     mv bin/* /opt/sosrepair/bin && \
+#     mv include/* /opt/sosrepair/include && \
+#     mv lib/* /opt/sosrepair/lib && \
+#     mv share/* /opt/sosrepair/share && \
+#     rm -rf /tmp/*
+
+RUN echo "deb http://llvm.org/apt/trusty/ llvm-toolchain-trusty-3.4 main" >> /etc/apt/sources.list && \
+    echo "deb-src http://llvm.org/apt/trusty/ llvm-toolchain-trusty-3.4 main" >> /etc/apt/sources.list && \
+    wget -nv -O - http://llvm.org/apt/llvm-snapshot.gpg.key | apt-key add - && \
+    apt-get update && \
+    apt-get install -y clang-3.4 llvm-3.4 llvm-3.4-dev llvm-3.4-tools
+
 
 ###############################################################################
 # uclibc
@@ -73,8 +80,9 @@ RUN apt-get install -y  libcap-dev \
                         libboost-all-dev \
                         zlib1g-dev
 RUN git clone https://github.com/klee/klee-uclibc.git /tmp/uclibc && \
+    ls /usr/bin && \
     cd /tmp/uclibc && \
-    ./configure --with-llvm-config /opt/sosrepair/bin/llvm-config \
+    ./configure --with-llvm-config /usr/bin/llvm-config-3.4 \
                 --make-llvm-lib && \
     make -j && \
     make install PREFIX=/opt/sosrepair && \
@@ -119,10 +127,11 @@ RUN cd /tmp && \
 RUN git clone https://github.com/klee/klee.git /tmp/klee && \
     cd /tmp/klee && \
     git checkout v1.4.0
+#      --with-uclibc=/opt/sosrepair \
 RUN cd /tmp/klee && \
-    PATH="/opt/sosrepair/bin:${PATH}" ./configure prefix=/opt/sosrepair \
-      --with-stp=/opt/sosrepair/bin/stp \
-      --with-uclibc=/opt/sosrepair/bin/uclibc \
+    ln -s /usr/bin/llvm-config-3.4 /usr/bin/llvm-config && \
+    ./configure prefix=/opt/sosrepair \
+      --with-stp=/opt/sosrepair \
       --enable-posix-runtime \
       LDFLAGS=-L$/opt/sosrepair/lib \
       CPPFLAGS=-I/opt/sosrepair/include && \
