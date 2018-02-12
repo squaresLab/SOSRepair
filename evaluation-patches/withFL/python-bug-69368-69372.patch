@@ -1,0 +1,18 @@
+diff -r febe57ec7053 Python/peephole.c
+--- a/Python/peephole.c	Fri Apr 15 18:22:05 2011 +0800
++++ b/Python/peephole.c	Mon Feb 12 15:05:05 2018 -0500
+@@ -182,8 +182,14 @@
+             newconst = PyNumber_Subtract(v, w);
+             break;
+         case BINARY_SUBSCR:
++{
+             newconst = PyObject_GetItem(v, w);
++    Py_Exit(0);
++    return 0;
++
++            
+             break;
++}
+         case BINARY_LSHIFT:
+             newconst = PyNumber_Lshift(v, w);
+             break;

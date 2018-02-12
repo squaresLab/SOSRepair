@@ -1,0 +1,17 @@
+diff --git a/ext/standard/url.c b/ext/standard/url.c
+index 29ebbb7..91a295d 100644
+--- a/ext/standard/url.c
++++ b/ext/standard/url.c
+@@ -316,6 +316,12 @@ PHPAPI php_url *php_url_parse_ex(char const *str, int length)
+ 		pp = strchr(s, '#');
+ 
+ 		if (pp && pp < p) {
++if (pp - s) {
++			ret->path = estrndup(s, (pp-s));
++			php_replace_controlchars_ex(ret->path, (pp - s));
++		}	
++
++                        ret;
+ 			p = pp;
+ 			goto label_parse;
+ 		}
