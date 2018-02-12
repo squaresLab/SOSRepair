@@ -3,9 +3,24 @@ import os
 from subprocess import check_output, check_call
 
 
+def find_library(name):
+    cmd = "find . -name '{}'".format(name)
+    out = check_output(cmd, shell=True).decode('utf-8').strip()
+    try:
+        location = out.split('\n')[0]
+        # strip leading './'
+        if location.startswith('./'):
+            location = location[2:]
+        print("Found library '{}' at '{}'".format(name, location))
+        return location
+    except IndexError:
+        raise Exception("failed to find library: {}".format(name))
+
+
 def needed_interpreter(binary_path):
     cmd = "patchelf --print-interpreter '{}'".format(binary_path)
     interp = check_output(cmd, shell=True).decode('utf-8').strip()
+    interp = os.path.basename(interp)
     return interp
 
 
@@ -23,7 +38,7 @@ def fix_binaries(install_path, binary_paths):
     install_lib_path = os.path.join(install_path, 'lib')
     install_bin_path = os.path.join(install_path, 'bin')
 
-    # find dependencies and fix binaries
+    # find dependencies
     dependencies = set()
     for p in binary_paths:
         dependencies.update(needed_libraries(p))
@@ -43,7 +58,8 @@ def fix_binaries(install_path, binary_paths):
     print("found symbolic links: {}".format(symlinks))
 
     # copy libraries
-    for cp_from in libraries:
+    for lib in libraries:
+        cp_from = find_library(lib)
         cp_to = os.path.join(install_lib_path,
                              os.path.basename(cp_from))
 
