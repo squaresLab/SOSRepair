@@ -1,17 +1,20 @@
 #!/usr/bin/env python3
 import os
 from subprocess import check_output, check_call
+from shutil import copyfile
 
 
-def find_library(name):
+def find_library(name, resolve_links=True):
+    """
+    Finds the location of a given library.
+    """
     cmd = "find . -name '{}'".format(name)
     out = check_output(cmd, shell=True).decode('utf-8').strip()
     try:
-        location = out.split('\n')[0]
-        # strip leading './'
-        if location.startswith('./'):
-            location = location[2:]
+        location = out.split('\n')[0][1:]
         print("Found library '{}' at '{}'".format(name, location))
+        if resolve_links:
+            location = os.path.realpath(location)
         return location
     except IndexError:
         raise Exception("failed to find library: {}".format(name))
@@ -38,44 +41,34 @@ def fix_binaries(install_path, binary_paths):
     install_lib_path = os.path.join(install_path, 'lib')
     install_bin_path = os.path.join(install_path, 'bin')
 
+    # copy binaries
+    for cp_from in binary_paths:
+        cp_to = os.path.join(install_bin_path, os.path.basename(cp_from))
+        print("Copied binary: {}".format(cp_from))
+
     # find dependencies
-    dependencies = set()
-    for p in binary_paths:
-        dependencies.update(needed_libraries(p))
-        dependencies.add(needed_interpreter(p))
-
-    # split dependencies into sym. links and real files
     libraries = set()
-    symlinks = set()
-    for dep in dependencies:
-        if os.path.islink(dep):
-            symlinks.add(dep)
-            libraries.add(os.path.realpath(dep))
-        else:
-            libraries.add(dep)
-
-    print("found libraries: {}".format(libraries))
-    print("found symbolic links: {}".format(symlinks))
+    for p in binary_paths:
+        libraries.update(needed_libraries(p))
+        libraries.add(needed_interpreter(p))
 
     # copy libraries
     for lib in libraries:
         cp_from = find_library(lib)
-        cp_to = os.path.join(install_lib_path,
-                             os.path.basename(cp_from))
+        cp_to = os.path.join(install_lib_path, lib)
+        if os.path.realpath(cp_from) != os.path.realpath(cp_to):
+            copyfile(cp_from, cp_to)
 
-    # copy binaries
-    for cp_from in binary_paths:
-        cp_to = os.path.join(install_bin_path,
-                             os.path.basename(cp_from))
+    # resolve symbolic links
+    for alias in libraries:
+        actual = os.path.basename(find_library(alias))
 
-    # reconstruct symbolic links
-    for old_from in symlinks:
-        old_to = os.path.realpath(dep)
-        new_from = os.path.join(install_lib_path,
-                                os.path.basename(old_from))
-        new_to = os.path.join(install_lib_path,
-                              os.path.basename(old_to))
-        os.symlink(new_from, new_to)
+        if alias != actual:
+            link_from = os.path.join(install_lib_path, alias)
+            link_to = os.path.join(install_lib_path, actual)
+            if not os.path.exists(link_to):
+                os.symlink(link_from, link_to)
+                print("Built sym. link: '{}' -> '{}'".format(link_from, link_to))
 
     # fix binaries
     for old_binary_path in binary_paths:
