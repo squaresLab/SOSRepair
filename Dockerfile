@@ -155,8 +155,8 @@ RUN git clone https://git.llvm.org/git/llvm.git "${LLVM_LOCATION}" && \
     cd tools && git clone https://git.llvm.org/git/clang.git && \
     cd clang && git checkout release_50 && \
     cat "/tmp/binary-op.patch" | patch -p0
-RUN    cd "${LLVM_LOCATION}/build" && \
-    .${CMAKE_LOCATION}/bin/cmake -G "Unix Makefiles" .. && \
+RUN cd "${LLVM_LOCATION}/build" && \
+    ${CMAKE_LOCATION}/bin/cmake -G "Unix Makefiles" .. && \
     make -j8
 
 ENV PYTHONPATH="${LLVM_LOCATION}/tools/clang/bindings/python:${PYTHONPATH}"
