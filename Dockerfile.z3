@@ -11,8 +11,6 @@ FROM ubuntu:14.04
 MAINTAINER Afsoon Afzal (afsoona@cs.cmu.edu)
 
 # Install basic dependencies
-# - we install binutils-gold to speed up compilation
-# TODO: install Ninja
 RUN apt-get update && \
     apt-get install -y  subversion \
                         vim \
@@ -26,9 +24,7 @@ RUN apt-get update && \
                         curl \
                         build-essential \
                         bison \
-                        flex \
-                        binutils-gold
-# RUN apt-get install -y patchelf
+                        flex
 ENV CXX=g++
 
 ###############################################################################
@@ -47,30 +43,16 @@ RUN git clone https://github.com/Z3Prover/z3.git /tmp/z3 && \
 ###############################################################################
 # Clang 3.4.2
 ###############################################################################
-# RUN cd /tmp && \
-#     wget -nv http://releases.llvm.org/3.4.2/clang+llvm-3.4.2-x86_64-linux-gnu-ubuntu-14.04.xz && \
-#     tar -xf clang+llvm-3.4.2-x86_64-linux-gnu-ubuntu-14.04.xz && \
-#     cd clang+llvm-3.4.2-x86_64-linux-gnu-ubuntu-14.04
-# RUN mkdir -p /opt/sosrepair/share
-# RUN cd /tmp/clang* && \
-#     mv bin/* /opt/sosrepair/bin && \
-#     mv include/* /opt/sosrepair/include && \
-#     mv lib/* /opt/sosrepair/lib && \
-#     mv share/* /opt/sosrepair/share && \
-#     rm -rf /tmp/*
-
 RUN echo "deb http://llvm.org/apt/trusty/ llvm-toolchain-trusty-3.4 main" >> /etc/apt/sources.list && \
     echo "deb-src http://llvm.org/apt/trusty/ llvm-toolchain-trusty-3.4 main" >> /etc/apt/sources.list && \
     wget -nv -O - http://llvm.org/apt/llvm-snapshot.gpg.key | apt-key add - && \
     apt-get update && \
     apt-get install -y clang-3.4 llvm-3.4 llvm-3.4-dev llvm-3.4-tools
 
-
 ###############################################################################
 # uclibc
 ###############################################################################
 # WARNING: this isn't fixed to a particular version!
-# TODO: this is hanging on to more than it ought to
 RUN mkdir -p /opt/sosrepair
 RUN apt-get install -y  libcap-dev \
 	                libncurses5-dev \
@@ -127,11 +109,11 @@ RUN cd /tmp && \
 RUN git clone https://github.com/klee/klee.git /tmp/klee && \
     cd /tmp/klee && \
     git checkout v1.4.0
-#      --with-uclibc=/opt/sosrepair \
 RUN cd /tmp/klee && \
     ln -s /usr/bin/llvm-config-3.4 /usr/bin/llvm-config && \
     ./configure prefix=/opt/sosrepair \
       --with-stp=/opt/sosrepair \
+      --with-uclibc=/opt/sosrepair/usr/x86_64-linux-uclibc/usr/ \
       --enable-posix-runtime \
       LDFLAGS=-L$/opt/sosrepair/lib \
       CPPFLAGS=-I/opt/sosrepair/include && \
@@ -139,11 +121,38 @@ RUN cd /tmp/klee && \
     cd / && \
     rm -rf /tmp/*
 
-# # TODO: mechanize this!
-# # RUN mkdir "${Z3_LOCATION}/lib64" && \
-# #     cp -r /lib/x86_64-linux-gnu/* "${Z3_LOCATION}/lib" && \
-# #     cp -r /usr/lib/x86_64-linux-gnu/* "${Z3_LOCATION}/lib" && \
-# #     cp -r /lib64/* "${Z3_LOCATION}/lib64" && \
-# #     patchelf --set-rpath "${Z3_LOCATION}/lib" "${Z3_LOCATION}/bin/z3" && \
-# #     patchelf --set-interpreter "${Z3_LOCATION}/lib/ld-2.23.so" "${Z3_LOCATION}/bin/z3"
-# # VOLUME "${Z3_LOCATION}"
+###############################################################################
+# patchelf
+###############################################################################
+RUN apt-get install -y autoconf && \
+    cd /tmp && \
+    wget -nv https://github.com/NixOS/patchelf/archive/0.9.tar.gz && \
+    tar -xf 0.9.tar.gz && \
+    cd patchelf-0.9 && \
+    ./bootstrap.sh && \
+    ./configure && \
+    make install && \
+    rm -rf /tmp/* && \
+    apt-get remove -y autoconf
+
+###############################################################################
+# Uninstall build-time dependencies
+###############################################################################
+
+
+
+
+###############################################################################
+# Create portable volume
+###############################################################################
+ADD docker/port.py /port.py
+RUN ./port.py /opt/sosrepair /opt/sosrepair/bin/z3 && \
+    ./port.py /opt/sosrepair /opt/sosrepair/bin/minisat && \
+    ./port.py /opt/sosrepair /opt/sosrepair/bin/minisat_core && \
+    ./port.py /opt/sosrepair /opt/sosrepair/bin/stp-2.1.2 && \
+    ./port.py /opt/sosrepair /opt/sosrepair/bin/stp_simple && \
+    ./port.py /opt/sosrepair /opt/sosrepair/bin/kleaver \
+        libffi.so.6 libtinfo.so.5 libdl.so.2 && \
+    ./port.py /opt/sosrepair /opt/sosrepair/bin/klee \
+        libffi.so.6 libtinfo.so.5 libdl.so.2
+VOLUME /opt/sosrepair
