@@ -46,7 +46,7 @@ def needed_libraries(binary_path):
     return libs
 
 
-def fix_binaries(install_path, binary_paths):
+def fix_binaries(install_path, binary_paths, extra_libraries = None):
     install_lib_path = os.path.join(install_path, 'lib')
     install_bin_path = os.path.join(install_path, 'bin')
 
@@ -56,7 +56,12 @@ def fix_binaries(install_path, binary_paths):
         print("Copied binary: {}".format(cp_from))
 
     # find dependencies
-    libraries = set()
+    if extra_libraries is not None:
+        libraries = set(extra_libraries)
+        print("Installing manually specified libraries: {}".format('\n'.join(extra_libraries)))
+    else:
+        libraries = set()
+
     for p in binary_paths:
         libraries.update(needed_libraries(p))
         libraries.add(needed_interpreter(p))
@@ -101,4 +106,5 @@ def fix_binaries(install_path, binary_paths):
 if __name__ == '__main__':
     install_path = sys.argv[1]
     binary_path = sys.argv[2]
-    fix_binaries(install_path, [binary_path])
+    extra_libs = sys.argv[3:]
+    fix_binaries(install_path, [binary_path], extra_libs)
