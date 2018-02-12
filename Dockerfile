@@ -138,7 +138,28 @@ RUN apt-get install -y autoconf && \
 ###############################################################################
 # Customised Clang/LLVM installation
 ###############################################################################
+#RUN apt-get install -y software-properties-common && \
+#    add-apt-repository ppa:george-edison55/cmake-3.x
+#RUN apt-get -y update
+#RUN apt-get -y upgrade
+ENV CMAKE_LOCATION /opt/cmake
+RUN cd /tmp && wget "https://cmake.org/files/v3.10/cmake-3.10.2-Linux-x86_64.tar.gz" && \
+    tar -xzvf "cmake-3.10.2-Linux-x86_64.tar.gz" && mv "cmake-3.10.2-Linux-x86_64" "${CMAKE_LOCATION}" 
+RUN .$CMAKE_LOCATION/bin/cmake --version
 
+ENV LLVM_LOCATION /opt/llvm
+ADD docker/0001-Binary-operation.patch "/tmp/binary-op.patch"
+RUN git clone https://git.llvm.org/git/llvm.git "${LLVM_LOCATION}" && \
+    cd "${LLVM_LOCATION}" && mkdir build && \
+    git checkout release_50 && \
+    cd tools && git clone https://git.llvm.org/git/clang.git && \
+    cd clang && git checkout release_50 && \
+    cat "/tmp/binary-op.patch" | patch -p0
+RUN    cd "${LLVM_LOCATION}/build" && \
+    .${CMAKE_LOCATION}/bin/cmake -G "Unix Makefiles" .. && \
+    make -j8
+
+ENV PYTHONPATH="${LLVM_LOCATION}/tools/clang/bindings/python:${PYTHONPATH}"
 
 ###############################################################################
 # Uninstall build-time dependencies
