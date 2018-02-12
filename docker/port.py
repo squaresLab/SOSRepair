@@ -79,8 +79,9 @@ def fix_binaries(install_path, binary_paths):
         new_interp = os.path.join(install_lib_path,
                                   os.path.basename(old_interp))
 
-        cmd = "patchelf --set-rpath '{}' --set-interpreter '{}' '{}'"
-        cmd = cmd.format(install_lib_path, new_interp, p)
+        # cmd = "patchelf --set-rpath '{}' --set-interpreter '{}' '{}'"
+        cmd = "patchelf --set-rpath '{}' '{}'".format(install_lib_path, p)
+        # cmd = cmd.format(install_lib_path, new_interp, p)
         check_call(cmd, shell=True)
         print("patched {}".format(p))
 
