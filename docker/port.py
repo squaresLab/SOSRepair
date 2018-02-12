@@ -1,5 +1,12 @@
 #!/usr/bin/env python3
+#
+# TODO: handle recursive links!
+#   - find all dependencies recursively
+#   - copy all libraries to install location
+#   - patch all libraries and binaries
+#
 import os
+import sys
 from subprocess import check_output, check_call
 from shutil import copyfile
 
@@ -14,7 +21,10 @@ def find_library(name, resolve_links=True):
         location = out.split('\n')[0][1:]
         print("Found library '{}' at '{}'".format(name, location))
         if resolve_links:
-            location = os.path.realpath(location)
+            points_to = os.path.realpath(location)
+            if points_to != location:
+                print("- '{}' resolves to '{}'".format(location, points_to))
+                location = points_to
         return location
     except IndexError:
         raise Exception("failed to find library: {}".format(name))
@@ -24,6 +34,7 @@ def needed_interpreter(binary_path):
     cmd = "patchelf --print-interpreter '{}'".format(binary_path)
     interp = check_output(cmd, shell=True).decode('utf-8').strip()
     interp = os.path.basename(interp)
+    print("Binary '{}' uses interpreter: '{}'".format(binary_path, interp))
     return interp
 
 
@@ -55,19 +66,19 @@ def fix_binaries(install_path, binary_paths):
     # copy libraries
     for lib in libraries:
         cp_from = find_library(lib)
-        cp_to = os.path.join(install_lib_path, lib)
+        cp_to = os.path.join(install_lib_path, os.path.basename(cp_from))
         if os.path.realpath(cp_from) != os.path.realpath(cp_to):
             copyfile(cp_from, cp_to)
 
-    # resolve symbolic links
+    # rebuild symbolic links
     for alias in libraries:
         actual = os.path.basename(find_library(alias))
 
         if alias != actual:
             link_from = os.path.join(install_lib_path, alias)
             link_to = os.path.join(install_lib_path, actual)
-            if not os.path.exists(link_to):
-                os.symlink(link_from, link_to)
+            if not os.path.exists(link_from):
+                os.symlink(link_to, link_from)
                 print("Built sym. link: '{}' -> '{}'".format(link_from, link_to))
 
     # fix binaries
@@ -75,15 +86,20 @@ def fix_binaries(install_path, binary_paths):
         new_binary_path = os.path.join(install_bin_path,
                                        os.path.basename(old_binary_path))
 
-        old_interp = needed_interpreter(old_binary_path)
-        new_interp = os.path.join(install_lib_path,
-                                  os.path.basename(old_interp))
+        interpreter_name = needed_interpreter(old_binary_path)
+        new_interpreter = os.path.join(install_lib_path, interpreter_name)
 
-        # cmd = "patchelf --set-rpath '{}' --set-interpreter '{}' '{}'"
+        # fix RPATH
         cmd = "patchelf --set-rpath '{}' '{}'".format(install_lib_path, p)
-        # cmd = cmd.format(install_lib_path, new_interp, p)
+        check_call(cmd, shell=True)
+
+        # fix interpreter
+        cmd = "patchelf --set-interpreter '{}' '{}'".format(new_interpreter, p)
         check_call(cmd, shell=True)
         print("patched {}".format(p))
 
 
-fix_binaries('/opt/sosrepair', ['/opt/sosrepair/bin/klee'])
+if __name__ == '__main__':
+    install_path = sys.argv[1]
+    binary_path = sys.argv[2]
+    fix_binaries(install_path, [binary_path])
