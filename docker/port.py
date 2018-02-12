@@ -2,8 +2,6 @@
 #
 # TODO: handle recursive links!
 #   - find all dependencies recursively
-#   - copy all libraries to install location
-#   - patch all libraries and binaries
 #
 import os
 import sys
@@ -93,9 +91,10 @@ def fix_binaries(install_path, binary_paths):
         cmd = "patchelf --set-rpath '{}' '{}'".format(install_lib_path, p)
         check_call(cmd, shell=True)
 
-        # fix interpreter
+        # fix interpreter and ensure it's executable
         cmd = "patchelf --set-interpreter '{}' '{}'".format(new_interpreter, p)
         check_call(cmd, shell=True)
+        check_call("chmod +x '{}'".format(new_interpreter), shell=True)
         print("patched {}".format(p))
 
 
