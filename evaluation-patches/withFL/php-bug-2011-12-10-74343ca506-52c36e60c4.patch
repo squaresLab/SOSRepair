@@ -1,0 +1,19 @@
+diff --git a/main/streams/streams.c b/main/streams/streams.c
+index 4679a97..300da13 100755
+--- a/main/streams/streams.c
++++ b/main/streams/streams.c
+@@ -991,9 +991,11 @@ PHPAPI char *php_stream_get_record(php_stream *stream, size_t maxlen, size_t *re
+ 
+ 		/* read operation have less data than request; assume the stream is
+ 		 * temporarily or permanently out of data */
+-		if (just_read < toread) {
+-			break;
+-		}
++		if (just_read > 0) {
++        } else {
++          break;
++        }
++
+ 	}
+ 
+ 	if (delim_len == 0 || !delim) {
