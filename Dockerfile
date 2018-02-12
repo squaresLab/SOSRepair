@@ -7,12 +7,10 @@
 # * KLEE, a dependency of SOSRepair, requires LLVM/Clang 3.4
 #
 #
-FROM ubuntu:16.04
+FROM ubuntu:14.04
 MAINTAINER Afsoon Afzal (afsoona@cs.cmu.edu)
 
 # Install basic dependencies
-# - we install binutils-gold to speed up compilation
-# TODO: install Ninja
 RUN apt-get update && \
     apt-get install -y  subversion \
                         vim \
@@ -26,175 +24,140 @@ RUN apt-get update && \
                         curl \
                         build-essential \
                         bison \
-                        flex \
-                        binutils-gold
+                        flex
 ENV CXX=g++
 
-# Download LLVM source code
-ENV LLVM_LOCATION /opt/llvm
-RUN svn co http://llvm.org/svn/llvm-project/llvm/trunk "${LLVM_LOCATION}" && \
-	  mkdir "${LLVM_LOCATION}/build"
+###############################################################################
+# Z3
+###############################################################################
+ENV Z3_REV ce123d9dbcc1b5902bf831c4730e5628387c79dc
+RUN git clone https://github.com/Z3Prover/z3.git /tmp/z3 && \
+    cd /tmp/z3 && \
+    git checkout "${Z3_REV}" && \
+    python scripts/mk_make.py && \
+    cd build && \
+    make -j$(nproc) && \
+    make install PREFIX=/opt/sosrepair && \
+    rm -rf /tmp/*
 
-# Download Clang source code
-ENV CLANG_LOCATION "${LLVM_LOCATION}/tools/clang"
-RUN svn co http://llvm.org/svn/llvm-project/cfe/trunk "${CLANG_LOCATION}"
+###############################################################################
+# Clang 3.4.2
+###############################################################################
+RUN echo "deb http://llvm.org/apt/trusty/ llvm-toolchain-trusty-3.4 main" >> /etc/apt/sources.list && \
+    echo "deb-src http://llvm.org/apt/trusty/ llvm-toolchain-trusty-3.4 main" >> /etc/apt/sources.list && \
+    wget -nv -O - http://llvm.org/apt/llvm-snapshot.gpg.key | apt-key add - && \
+    apt-get update && \
+    apt-get install -y clang-3.4 llvm-3.4 llvm-3.4-dev llvm-3.4-tools
 
-# Apply a patch to the Clang source code
-#
-# TODO: why does this have such a weird name?
-ADD docker/0001-Binary-operation.patch "${CLANG_LOCATION}/binary-op.patch"
-RUN cd "${CLANG_LOCATION}" && \
-    cat binary-op.patch | patch -p0 && \
-    rm binary-op.patch
-
-# Compile LLVM ... wait, this doesn't build?
-RUN cd "${LLVM_LOCATION}/build" && \
-    cmake -G "Unix Makefiles" .. && \
-    make -j8
-
-# Install KLEE dependencies
-# TODO: if these are run-time dependencies, this could be a problem
-RUN echo "deb http://security.ubuntu.com/ubuntu xenial-security main" >> /etc/apt/sources.list && \
-    apt-get update
+###############################################################################
+# uclibc
+###############################################################################
+# WARNING: this isn't fixed to a particular version!
+RUN mkdir -p /opt/sosrepair
 RUN apt-get install -y  libcap-dev \
-	                      libncurses5-dev \
+	                libncurses5-dev \
                         python-minimal \
                         python-pip \
                         groff \
                         libboost-all-dev \
                         zlib1g-dev
-
-# Download a different version of LLVM/Clang for use with KLEE
-ENV KLEE_LOCATION /opt/klee
-RUN mkdir -p "${KLEE_LOCATION}" && \
-    git clone https://github.com/llvm-mirror/llvm.git "${KLEE_LOCATION}/llvm" && \
-	  cd "${KLEE_LOCATION}/llvm" && \
-    git checkout release_34 && \
-    mkdir build && \
-    cd tools && \
-	  git clone https://github.com/llvm-mirror/clang.git && \
-    cd clang && \
-    git checkout release_34 && \
-	  cd ../../build && \
-    ../configure --enable-optimized --prefix="${KLEE_LOCATION}" && \
-    make -j4 && \
-    make install && \
-    cd / && \
+RUN git clone https://github.com/klee/klee-uclibc.git /tmp/uclibc && \
+    ls /usr/bin && \
+    cd /tmp/uclibc && \
+    ./configure --with-llvm-config /usr/bin/llvm-config-3.4 \
+                --make-llvm-lib && \
+    make -j && \
+    make install PREFIX=/opt/sosrepair && \
     rm -rf /tmp/*
 
-# Install minisat
+###############################################################################
+# minisat
+###############################################################################
 # WARNING: this isn't fixed to a particular version!
+ENV MINISAT_REV 37dc6c67e2af26379d88ce349eb9c4c6160e8543
 RUN git clone https://github.com/stp/minisat.git /tmp/minisat && \
     cd /tmp/minisat && \
-	  mkdir build && \
+    git checkout "${MINISAT_REV}" && \
+    mkdir build && \
     cd build && \
-    cmake -DSTATIC_BINARIES=ON -DCMAKE_INSTALL_PREFIX="${KLEE_LOCATION}" ../ && \ 
-	  make -j install && \
+    cmake -DSTATIC_BINARIES=ON -DCMAKE_INSTALL_PREFIX=/opt/sosrepair ../ && \
+    make -j install && \
     cd / && \
     rm -rf /tmp/*
 
-# Install stp
-RUN cd "${KLEE_LOCATION}" && \
+###############################################################################
+# stp
+###############################################################################
+RUN cd /tmp && \
     wget --quiet https://github.com/stp/stp/archive/2.1.2.tar.gz && \
     tar -xf 2.1.2.tar.gz && \
-    rm 2.1.2.tar.gz && \
-    mv stp-2.1.2 stp && \
-    cd stp && \ 
+    cd stp* && \
     mkdir build && \
     cd build && \
-	  cmake -DSTATIC_BINARIES=ON \
+    cmake -DSTATIC_BINARIES=ON \
           -DBUILD_SHARED_LIBS:BOOL=OFF \
           -DENABLE_PYTHON_INTERFACE:BOOL=OFF \
-          -DCMAKE_INSTALL_PREFIX="${KLEE_LOCATION}" .. && \
+          -DCMAKE_INSTALL_PREFIX=/opt/sosrepair .. && \
     make -j && \
     make install && \
     ulimit -s unlimited && \
     rm -rf /tmp/*
 
-# Install uclibc
-# WARNING: this isn't fixed to a particular version!
-# TODO: this is hanging on to more than it ought to
-RUN git clone https://github.com/klee/klee-uclibc.git "${KLEE_LOCATION}/uclibc" && \
-	  cd "${KLEE_LOCATION}/uclibc" && \
-    ./configure --with-llvm-config "${KLEE_LOCATION}/bin/llvm-config" \
-                --make-llvm-lib && \
-    make -j && \
-    rm -rf .git
-
-# Install KLEE
-#
-# TODO: this is a problem! We're going to end up adding two versions of LLVM to
-#       the PATH
-ENV PATH="${KLEE_LOCATION}/bin:${PATH}"
+###############################################################################
+# KLEE
+###############################################################################
 RUN git clone https://github.com/klee/klee.git /tmp/klee && \
-    cd /tmp/klee && git checkout v1.4.0 && \
-	  ./configure prefix="${KLEE_LOCATION}" \
-                --with-stp="${KLEE_LOCATION}/stp" \
-                --with-uclibc="${KLEE_LOCATION}/uclibc" \
-                --enable-posix-runtime \
-                LDFLAGS="-L${KLEE_LOCATION}/lib" \
-                CPPFLAGS="-I${KLEE_LOCATION}/include" && \
-	  make install -j && \
+    cd /tmp/klee && \
+    git checkout v1.4.0
+RUN cd /tmp/klee && \
+    ln -s /usr/bin/llvm-config-3.4 /usr/bin/llvm-config && \
+    ./configure prefix=/opt/sosrepair \
+      --with-stp=/opt/sosrepair \
+      --with-uclibc=/opt/sosrepair/usr/x86_64-linux-uclibc/usr/ \
+      --enable-posix-runtime \
+      LDFLAGS=-L$/opt/sosrepair/lib \
+      CPPFLAGS=-I/opt/sosrepair/include && \
+    make install -j$(nproc) && \
     cd / && \
     rm -rf /tmp/*
-VOLUME "${KLEE_LOCATION}"
-#ENV PATH="/opt/KLEE/KLEE/Release+Asserts/bin:${PATH}"
 
-# Install Z3 from source
-#
-# WARNING: this isn't tied to a particular version!
-ENV Z3_LOCATION /opt/z3
-RUN git clone https://github.com/Z3Prover/z3.git /tmp/z3 && \
-    cd /tmp/z3 && \
-	  python scripts/mk_make.py && \
-    cd build && \
-	  make -j4 && \
-    make install PREFIX="${Z3_LOCATION}" && \
-    cd / && \
-    rm -rf /tmp/*
-VOLUME "${Z3_LOCATION}"
+###############################################################################
+# patchelf
+###############################################################################
+RUN apt-get install -y autoconf && \
+    cd /tmp && \
+    wget -nv https://github.com/NixOS/patchelf/archive/0.9.tar.gz && \
+    tar -xf 0.9.tar.gz && \
+    cd patchelf-0.9 && \
+    ./bootstrap.sh && \
+    ./configure && \
+    make install && \
+    rm -rf /tmp/* && \
+    apt-get remove -y autoconf
 
-#
-## Install postgres
-## TODO: this breaks portability
-#RUN apt-get install -y postgresql
+###############################################################################
+# Customised Clang/LLVM installation
+###############################################################################
 
-#RUN echo "deb http://apt.postgresql.org/pub/repos/apt/ xenial-pgdg main" >> /etc/apt/sources.list.d/pgdg.list && \
-#    wget --quiet -O - https://www.postgresql.org/media/keys/ACCC4CF8.asc | apt-key add - && \
-#    apt-get update
-#RUN apt-get install -y postgresql-9.6
-#USER postgres
-#RUN  /etc/init.d/postgresql start && psql --command "CREATE USER root WITH SUPERUSER;"
-#USER root
 
-#USER postgres
-#RUN  /etc/init.d/postgresql start && \
-#    psql --command "CREATE USER afsoon WITH SUPERUSER PASSWORD 'aa';" &&\
-#    createdb -O afsoon testdb
-#USER root
-#
-## Install SOS dependencies
-##
-## TODO: what are these SSH keys being used for?
-RUN pip install --upgrade pip && \
-    pip install ipython==5.3.0 && \
-	  pip install postgres
+###############################################################################
+# Uninstall build-time dependencies
+###############################################################################
 
-# Install SOS
-#
-# TODO: we don't need ALL of LLVM (use make install)
-ENV SOS_LOCATION /opt/sos
-ADD . "${SOS_LOCATION}"
-RUN cp "${SOS_LOCATION}/docker/settings.py" "${SOS_LOCATION}/"
-ENV PYTHONPATH="${LLVM_LOCATION}/tools/clang/bindings/python:${PYTHONPATH}"
-ENV CPATH=":${KLEE_LOCATION}/include"
-VOLUME "${SOS_LOCATION}"
 
-## Add an entrypoint script responsible for starting up postgres upon launch
-#RUN mkdir -p /entrypoint/sos
-#ADD entrypoint.sh /entrypoint/sos/entrypoint.sh
-#ENTRYPOINT /entrypoint/sos/entrypoint.sh
 
-#RUN mkdir /opt/project-db && cp -r "${SOS_LOCATION}/docker/project-repair" /opt/
-#ENTRYPOINT /etc/init.d/postgresql start && sleep 20 && createdb testdb && /bin/bash
 
+###############################################################################
+# Create portable volume
+###############################################################################
+# ADD docker/port.py /port.py
+# RUN ./port.py /opt/sosrepair /opt/sosrepair/bin/z3 && \
+#     ./port.py /opt/sosrepair /opt/sosrepair/bin/minisat && \
+#     ./port.py /opt/sosrepair /opt/sosrepair/bin/minisat_core && \
+#     ./port.py /opt/sosrepair /opt/sosrepair/bin/stp-2.1.2 && \
+#     ./port.py /opt/sosrepair /opt/sosrepair/bin/stp_simple && \
+#     ./port.py /opt/sosrepair /opt/sosrepair/bin/kleaver \
+#         libffi.so.6 libtinfo.so.5 libdl.so.2 && \
+#     ./port.py /opt/sosrepair /opt/sosrepair/bin/klee \
+#         libffi.so.6 libtinfo.so.5 libdl.so.2
+# VOLUME /opt/sosrepair
