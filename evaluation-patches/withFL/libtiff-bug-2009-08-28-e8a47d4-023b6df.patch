@@ -1,0 +1,17 @@
+diff --git a/tools/tiffinfo.c b/tools/tiffinfo.c
+index 01f5fbe..930aed5 100644
+--- a/tools/tiffinfo.c
++++ b/tools/tiffinfo.c
+@@ -126,10 +126,8 @@ main(int argc, char* argv[])
+ 			usage();
+ 			/*NOTREACHED*/
+ 		}
+-	if (optind >= argc)
+-		usage();
+-
+-	old_error_handler = _TIFFerrorHandler;
++	argc--;
++;
+ 	(void) TIFFSetErrorHandler(PrivateErrorHandler);
+ 
+ 	multiplefiles = (argc - optind > 1);
