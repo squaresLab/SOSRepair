@@ -140,15 +140,14 @@ RUN apt-get install -y autoconf && \
 ###############################################################################
 ENV CMAKE_LOCATION /opt/cmake
 RUN cd /tmp && \
-    wget https://cmake.org/files/v3.10/cmake-3.10.2-Linux-x86_64.tar.gz && \
+    wget -nv https://cmake.org/files/v3.10/cmake-3.10.2-Linux-x86_64.tar.gz && \
     tar -xzvf cmake-3.10.2-Linux-x86_64.tar.gz && \
     rm -f cmake-3.10.2-Linux-x86_64.tar.gz && \
     mv cmake-3.10.2-Linux-x86_64 "${CMAKE_LOCATION}"
 
-ENV LLVM_LOCATION /opt/llvm
-ADD docker/binary-op.patch "/tmp/binary-op.patch"
-RUN git clone https://git.llvm.org/git/llvm.git "${LLVM_LOCATION}" && \
-    cd "${LLVM_LOCATION}" && \
+ADD docker/binary-op.patch /tmp/binary-op.patch
+RUN git clone https://git.llvm.org/git/llvm.git /tmp/llvm && \
+    cd /tmp/llvm && \
     mkdir build && \
     git checkout release_50 && \
     cd tools && \
@@ -156,11 +155,13 @@ RUN git clone https://git.llvm.org/git/llvm.git "${LLVM_LOCATION}" && \
     cd clang && \
     git checkout release_50 && \
     git apply /tmp/binary-op.patch
-RUN cd "${LLVM_LOCATION}/build" && \
-    ${CMAKE_LOCATION}/bin/cmake -G "Unix Makefiles" .. && \
-    make -j8
+RUN cd /tmp/llvm/build && \
+    /opt/cmake/bin/cmake -G "Unix Makefiles" .. && \
+    make -j$(nproc) && \
+    make install PREFIX="/opt/sosrepair"
+RUN rm -rf /tmp/llvm/build
 
-ENV PYTHONPATH="${LLVM_LOCATION}/tools/clang/bindings/python:${PYTHONPATH}"
+# ENV PYTHONPATH="${LLVM_LOCATION}/tools/clang/bindings/python:${PYTHONPATH}"
 
 ###############################################################################
 # Uninstall build-time dependencies
