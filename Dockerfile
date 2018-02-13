@@ -162,6 +162,17 @@ RUN cd "${LLVM_LOCATION}/build" && \
 ENV PYTHONPATH="${LLVM_LOCATION}/tools/clang/bindings/python:${PYTHONPATH}"
 
 ###############################################################################
+# SOSRepairs
+###############################################################################
+
+ENV SOS_LOCATION /opt/sos
+ADD . "${SOS_LOCATION}"
+RUN cp "${SOS_LOCATION}/docker/settings.py" "${SOS_LOCATION}/"
+VOLUME "${SOS_LOCATION}"
+
+
+
+###############################################################################
 # Uninstall build-time dependencies
 ###############################################################################
 
