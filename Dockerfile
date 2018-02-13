@@ -138,23 +138,24 @@ RUN apt-get install -y autoconf && \
 ###############################################################################
 # Customised Clang/LLVM installation
 ###############################################################################
-#RUN apt-get install -y software-properties-common && \
-#    add-apt-repository ppa:george-edison55/cmake-3.x
-#RUN apt-get -y update
-#RUN apt-get -y upgrade
 ENV CMAKE_LOCATION /opt/cmake
-RUN cd /tmp && wget "https://cmake.org/files/v3.10/cmake-3.10.2-Linux-x86_64.tar.gz" && \
-    tar -xzvf "cmake-3.10.2-Linux-x86_64.tar.gz" && mv "cmake-3.10.2-Linux-x86_64" "${CMAKE_LOCATION}" 
-RUN .$CMAKE_LOCATION/bin/cmake --version
+RUN cd /tmp && \
+    wget https://cmake.org/files/v3.10/cmake-3.10.2-Linux-x86_64.tar.gz && \
+    tar -xzvf cmake-3.10.2-Linux-x86_64.tar.gz && \
+    rm -f cmake-3.10.2-Linux-x86_64.tar.gz && \
+    mv cmake-3.10.2-Linux-x86_64 "${CMAKE_LOCATION}"
 
 ENV LLVM_LOCATION /opt/llvm
 ADD docker/binary-op.patch "/tmp/binary-op.patch"
 RUN git clone https://git.llvm.org/git/llvm.git "${LLVM_LOCATION}" && \
-    cd "${LLVM_LOCATION}" && mkdir build && \
+    cd "${LLVM_LOCATION}" && \
+    mkdir build && \
     git checkout release_50 && \
-    cd tools && git clone https://git.llvm.org/git/clang.git && \
-    cd clang && git checkout release_50 && \
-    git apply "/tmp/binary-op.patch"
+    cd tools && \
+    git clone https://git.llvm.org/git/clang.git && \
+    cd clang && \
+    git checkout release_50 && \
+    git apply /tmp/binary-op.patch
 RUN cd "${LLVM_LOCATION}/build" && \
     ${CMAKE_LOCATION}/bin/cmake -G "Unix Makefiles" .. && \
     make -j8
@@ -167,11 +168,11 @@ ENV PYTHONPATH="${LLVM_LOCATION}/tools/clang/bindings/python:${PYTHONPATH}"
 
 
 
-
 ###############################################################################
 # Create portable volume
 ###############################################################################
-# ADD docker/port.py /port.py
+ADD docker/port.py /port.py
+RUN ./port.py
 # RUN ./port.py /opt/sosrepair /opt/sosrepair/bin/z3 && \
 #     ./port.py /opt/sosrepair /opt/sosrepair/bin/minisat && \
 #     ./port.py /opt/sosrepair /opt/sosrepair/bin/minisat_core && \
