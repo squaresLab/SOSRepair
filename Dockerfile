@@ -157,34 +157,42 @@ RUN git clone https://git.llvm.org/git/llvm.git /tmp/llvm && \
     git apply /tmp/binary-op.patch
 RUN cd /tmp/llvm/build && \
     /opt/cmake/bin/cmake -G "Unix Makefiles" .. && \
-    make -j$(nproc) && \
-    make install PREFIX="/opt/sosrepair"
-RUN rm -rf /tmp/llvm/build
-
-# ENV PYTHONPATH="${LLVM_LOCATION}/tools/clang/bindings/python:${PYTHONPATH}"
+    make -j8
+RUN cd /tmp/llvm/build && \
+    cmake -DCMAKE_INSTALL_PREFIX=/opt/sosrepair/llvm -P cmake_install.cmake
 
 ###############################################################################
-# SOSRepairs
+# install a simple bug
 ###############################################################################
+# RUN mkdir -p /experiment && \
+#     cd /tmp && \
+#     wget -nv BLAH && \
+#     tar -xf BLAH && \
+#     mv BLAH /experiment && \
+#     rm -rf /tmp/*
 
-ENV SOS_LOCATION /opt/sos
-ADD . "${SOS_LOCATION}"
-RUN cp "${SOS_LOCATION}/docker/settings.py" "${SOS_LOCATION}/"
-VOLUME "${SOS_LOCATION}"
-
-
+###############################################################################
+# SOSRepair
+###############################################################################
+ENV PYTHONPATH="/opt/sosrepair/bindings/clang:${PYTHONPATH}"
+RUN mkdir -p /opt/sosrepair/sosrepair
+WORKDIR /opt/sosrepair/sosrepair
+ADD run.py run.py
+ADD settings.py
+ADD utils utils
+ADD repository repository
+ADD fault_localization fault_localization
+ADD profile profile
 
 ###############################################################################
 # Uninstall build-time dependencies
 ###############################################################################
 
 
-
 ###############################################################################
 # Create portable volume
 ###############################################################################
-ADD docker/port.py /port.py
-RUN ./port.py
+# ADD docker/port.py /port.py
 # RUN ./port.py /opt/sosrepair /opt/sosrepair/bin/z3 && \
 #     ./port.py /opt/sosrepair /opt/sosrepair/bin/minisat && \
 #     ./port.py /opt/sosrepair /opt/sosrepair/bin/minisat_core && \
