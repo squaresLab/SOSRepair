@@ -148,13 +148,13 @@ RUN cd /tmp && wget "https://cmake.org/files/v3.10/cmake-3.10.2-Linux-x86_64.tar
 RUN .$CMAKE_LOCATION/bin/cmake --version
 
 ENV LLVM_LOCATION /opt/llvm
-ADD docker/0001-Binary-operation.patch "/tmp/binary-op.patch"
+ADD docker/binary-op.patch "/tmp/binary-op.patch"
 RUN git clone https://git.llvm.org/git/llvm.git "${LLVM_LOCATION}" && \
     cd "${LLVM_LOCATION}" && mkdir build && \
     git checkout release_50 && \
     cd tools && git clone https://git.llvm.org/git/clang.git && \
     cd clang && git checkout release_50 && \
-    cat "/tmp/binary-op.patch" | patch -p0
+    git apply "/tmp/binary-op.patch"
 RUN cd "${LLVM_LOCATION}/build" && \
     ${CMAKE_LOCATION}/bin/cmake -G "Unix Makefiles" .. && \
     make -j8
