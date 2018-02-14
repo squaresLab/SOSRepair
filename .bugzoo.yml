@@ -7,5 +7,6 @@ build:
   context: .
   file: Dockerfile
 environment:
-  PATH: "/opt/klee/bin:${PATH}"
-  PYTHONPATH: "/opt/llvm/tools/clang/bindings/python:${PYTHONPATH}" 
+  PATH: "/opt/sosrepair/bin:${PATH}"
+  CPATH: "/opt/sosrepair/include:${CPATH}"
+  PYTHONPATH: "/opt/sosrepair/bindings:${PYTHONPATH}"
