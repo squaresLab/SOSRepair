@@ -200,7 +200,6 @@ ADD repository repository
 ADD fault_localization fault_localization
 ADD profile profile
 
-
 ###############################################################################
 # Uninstall build-time dependencies
 ###############################################################################
@@ -209,14 +208,17 @@ ADD profile profile
 ###############################################################################
 # Create portable volume
 ###############################################################################
-# ADD docker/port.py /port.py
-# RUN ./port.py /opt/sosrepair /opt/sosrepair/bin/z3 && \
-#     ./port.py /opt/sosrepair /opt/sosrepair/bin/minisat && \
-#     ./port.py /opt/sosrepair /opt/sosrepair/bin/minisat_core && \
-#     ./port.py /opt/sosrepair /opt/sosrepair/bin/stp-2.1.2 && \
-#     ./port.py /opt/sosrepair /opt/sosrepair/bin/stp_simple && \
-#     ./port.py /opt/sosrepair /opt/sosrepair/bin/kleaver \
-#         libffi.so.6 libtinfo.so.5 libdl.so.2 && \
-#     ./port.py /opt/sosrepair /opt/sosrepair/bin/klee \
-#         libffi.so.6 libtinfo.so.5 libdl.so.2
-# VOLUME /opt/sosrepair
+ADD docker/port.py /bin/port
+WORKDIR /
+RUN port /opt/sosrepair /opt/sosrepair/bin/z3 && \
+    port /opt/sosrepair /opt/sosrepair/bin/minisat && \
+    port /opt/sosrepair /opt/sosrepair/bin/minisat_core && \
+    port /opt/sosrepair /opt/sosrepair/bin/stp-2.1.2 && \
+    port /opt/sosrepair /opt/sosrepair/bin/stp_simple && \
+    port /opt/sosrepair /opt/sosrepair/bin/kleaver \
+        libffi.so.6 libtinfo.so.5 libdl.so.2 && \
+    port /opt/sosrepair /opt/sosrepair/bin/klee \
+        libffi.so.6 libtinfo.so.5 libdl.so.2
+RUN cp /usr/bin/clang-3.4 /opt/sosrepair/bin/clang-3.4 && \
+    port /opt/sosrepair /opt/sosrepair/bin/clang-3.4
+VOLUME /opt/sosrepair
