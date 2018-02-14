@@ -1,0 +1,27 @@
+FROM ubuntu
+
+RUN apt-get update && \
+    apt-get install -y postgresql libpq-dev python python-pip && \
+    pip install postgres
+RUN apt-get install -y wget
+RUN mkdir /experiment && \
+    cd /tmp && \
+    wget -nv http://repairbenchmarks.cs.umass.edu/IntroClass.tar.gz && \
+    tar -xf IntroClass.tar.gz && \
+    mv IntroClass /experiment && \
+    rm -f /tmp/*
+ADD docker/project-repair /experiment/project-repair
+
+ENV PYTHONPATH "/opt/sosrepair/bindings:${PYTHONPATH}"
+ENV CPATH /opt/sosrepair/include
+ENV PATH "/opt/sosrepair/bin:${PATH}"
+
+USER postgres
+RUN /etc/init.d/postgresql start && \
+    psql --command "CREATE USER root WITH SUPERUSER;"
+USER root
+RUN /etc/init.d/postgresql start && \
+    sleep 10 && \
+    createdb testdb
+
+# TODO: add an entrypoint script to start-up pgsql
