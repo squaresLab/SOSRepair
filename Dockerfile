@@ -160,29 +160,46 @@ RUN cd /tmp/llvm/build && \
     make -j8
 RUN cd /tmp/llvm/build && \
     cmake -DCMAKE_INSTALL_PREFIX=/opt/sosrepair/llvm -P cmake_install.cmake
+RUN cp -r /tmp/llvm/tools/clang/bindings/python /opt/sosrepair/bindings
+
+
+###############################################################################
+# install postgres
+###############################################################################
+
+RUN apt-get install -y postgresql libpq-dev && \
+    pip install postgres
+USER postgres
+RUN  /etc/init.d/postgresql start && psql --command "CREATE USER root WITH SUPERUSER;"
+USER root
+RUN /etc/init.d/postgresql start && sleep 10 && createdb testdb
 
 ###############################################################################
 # install a simple bug
 ###############################################################################
-# RUN mkdir -p /experiment && \
-#     cd /tmp && \
-#     wget -nv BLAH && \
-#     tar -xf BLAH && \
-#     mv BLAH /experiment && \
-#     rm -rf /tmp/*
+RUN mkdir -p /experiment && \
+     cd /tmp && \
+     wget -nv "http://repairbenchmarks.cs.umass.edu/IntroClass.tar.gz" && \
+     tar -xf "IntroClass.tar.gz" && \
+     mv IntroClass /experiment && \
+     rm -rf /tmp/*
+ADD docker/project-repair /experiment/project-repair
 
 ###############################################################################
 # SOSRepair
 ###############################################################################
-ENV PYTHONPATH="/opt/sosrepair/bindings/clang:${PYTHONPATH}"
-RUN mkdir -p /opt/sosrepair/sosrepair
+ENV PYTHONPATH="/opt/sosrepair/bindings:${PYTHONPATH}"
+ENV CPATH=":/opt/sosrepair/include"
+ENV PATH="/opt/sosrepair/bin:$PATH"
+RUN mkdir -p /opt/sosrepair/sosrepair && mkdir /opt/sosrepair/sosrepair/logs
 WORKDIR /opt/sosrepair/sosrepair
 ADD run.py run.py
-ADD settings.py
+ADD docker/settings.py settings.py
 ADD utils utils
 ADD repository repository
 ADD fault_localization fault_localization
 ADD profile profile
+
 
 ###############################################################################
 # Uninstall build-time dependencies

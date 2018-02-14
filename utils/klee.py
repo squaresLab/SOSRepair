@@ -6,7 +6,7 @@ from utils.c_run import run_command
 
 
 def compile_clang(filename, extra_args):
-    command = "clang " + " ".join(extra_args) + " -emit-llvm -c -g " + filename
+    command = "clang-3.4 " + " ".join(extra_args) + " -emit-llvm -c -g " + filename
     res = run_command(command)
     if not res:
         return False

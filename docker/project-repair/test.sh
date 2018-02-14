@@ -1,6 +1,6 @@
 #!/bin/sh
 MAINDIR=`dirname $0`
-TESTDIR=/opt/project-db/IntroClass/median/tests/blackbox
+TESTDIR=/experiment/IntroClass/median/tests/blackbox
 ulimit -t 2
 cd $MAINDIR
 rm -rf $1.out
