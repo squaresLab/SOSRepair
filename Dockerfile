@@ -156,10 +156,10 @@ RUN git clone https://git.llvm.org/git/llvm.git /tmp/llvm && \
     git checkout release_50 && \
     git apply /tmp/binary-op.patch
 RUN cd /tmp/llvm/build && \
-    /opt/cmake/bin/cmake -G "Unix Makefiles" .. && \
+    /opt/cmake/bin/cmake -G "Unix Makefiles" .. -DCMAKE_BUILD_TYPE=MinSizeRel && \
     make -j8
 RUN cd /tmp/llvm/build && \
-    cmake -DCMAKE_INSTALL_PREFIX=/opt/sosrepair/llvm -P cmake_install.cmake
+    /opt/cmake/bin/cmake -DCMAKE_INSTALL_PREFIX=/opt/sosrepair/llvm -P cmake_install.cmake
 RUN cp -r /tmp/llvm/tools/clang/bindings/python /opt/sosrepair/bindings
 
 
