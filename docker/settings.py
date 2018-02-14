@@ -39,9 +39,9 @@ LARGEST_SNIPPET = 7
 SMALLEST_SNIPPET = 3
 
 DATABASE = {
-    'db_name': 'testdb',
-    'user': 'root',
-    'password': None
+    'db_name': 'testdocker',
+    'user': 'docker',
+    'password': '1234'
 }
 
 LOGGING = {

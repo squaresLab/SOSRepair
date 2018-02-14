@@ -23,7 +23,7 @@ class DatabaseManager():
         if self.connection:
             return self.connection
         try:
-            self.connection = psycopg2.connect(database=DATABASE['db_name'], user=DATABASE['user'], password=DATABASE['password'])
+            self.connection = psycopg2.connect(database=DATABASE['db_name'], user=DATABASE['user'], password=DATABASE['password'], host='127.0.0.1')
         except psycopg2.DatabaseError, e:
             if self.connection:
                 self.connection.rollback()
