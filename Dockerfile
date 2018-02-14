@@ -191,7 +191,7 @@ ADD docker/project-repair /experiment/project-repair
 ENV PYTHONPATH="/opt/sosrepair/bindings:${PYTHONPATH}"
 ENV CPATH=":/opt/sosrepair/include"
 ENV PATH="/opt/sosrepair/bin:$PATH"
-RUN mkdir -p /opt/sosrepair/sosrepair && mkdir /opt/sosrepair/sosrepair/logs
+RUN mkdir -p /opt/sosrepair/sosrepair && mkdir /opt/sosrepair/sosrepair/logs && mkdir /opt/sosrepair/prepare
 WORKDIR /opt/sosrepair/sosrepair
 ADD run.py run.py
 ADD docker/settings.py settings.py
@@ -199,6 +199,8 @@ ADD utils utils
 ADD repository repository
 ADD fault_localization fault_localization
 ADD profile profile
+
+ADD docker/setup.sh /opt/sosrepair/prepare/setup.sh
 
 ###############################################################################
 # Uninstall build-time dependencies
