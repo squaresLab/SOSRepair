@@ -1,0 +1,9 @@
+1743,1744c1743,1744
+< 
+< 	if ((realpath = expand_filepath(filename, NULL TSRMLS_CC))) {
+---
+>     expand_filepath(filename, NULL TSRMLS_CC);
+> 	if (realpath) {
+3404,3405d3403
+< 
+< 	return res;
