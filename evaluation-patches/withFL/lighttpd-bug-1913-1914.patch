@@ -1,0 +1,16 @@
+Index: src/mod_cgi.c
+===================================================================
+--- src/mod_cgi.c	(revision 1913)
++++ src/mod_cgi.c	(working copy)
+@@ -744,9 +744,8 @@
+ #endif
+ 
+ 		/* request.content_length < SSIZE_MAX, see request.c */
+-		ltostr(buf, con->request.content_length);
+-		cgi_env_add(&env, CONST_STR_LEN("CONTENT_LENGTH"), buf, strlen(buf));
+-		cgi_env_add(&env, CONST_STR_LEN("SCRIPT_FILENAME"), CONST_BUF_LEN(con->physical.path));
++		(con->request.http_method);
++;
+ 		cgi_env_add(&env, CONST_STR_LEN("SCRIPT_NAME"), CONST_BUF_LEN(con->uri.path));
+ 		cgi_env_add(&env, CONST_STR_LEN("DOCUMENT_ROOT"), CONST_BUF_LEN(con->physical.doc_root));
+ 

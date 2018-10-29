@@ -1,0 +1,15 @@
+Index: src/mod_accesslog.c
+===================================================================
+--- src/mod_accesslog.c	(revision 2661)
++++ src/mod_accesslog.c	(working copy)
+@@ -166,6 +166,10 @@
+ static void accesslog_append_escaped(buffer *dest, buffer *str) {
+ 	/* replaces non-printable chars with \xHH where HH is the hex representation of the byte */
+ 	/* exceptions: " => \", \ => \\, whitespace chars => \n \t etc. */
++if (buffer_is_empty(str)) return 0;
++	if (str->used < 1) return 0;
++
++
+ 	buffer_prepare_append(dest, str->used - 1);
+ 
+ 	for (unsigned int i = 0; i < str->used - 1; i++) {

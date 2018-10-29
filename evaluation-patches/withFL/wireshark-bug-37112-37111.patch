@@ -1,0 +1,13 @@
+--- epan/reassemble.c	2017-10-26 13:59:48.313423619 -0400
++++ /home/afsoon/results/wireshark/wireshark-bug-37112-37111/epan.reassemble.c	2017-10-26 13:58:00.317536183 -0400
+@@ -306,9 +306,7 @@
+ 			fd_head->data = NULL;
+ 		}
+ #if GLIB_CHECK_VERSION(2,10,0)
+-		if(key->frame == fd_head->reassembled_in){
+-			g_slice_free(fragment_data, fd_head);
+-		}
++		
+ #endif
+ 	}
+ 

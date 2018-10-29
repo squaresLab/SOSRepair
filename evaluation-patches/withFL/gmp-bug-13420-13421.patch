@@ -1,0 +1,12 @@
+diff -r e8609f82f2b9 mpn/generic/powm.c
+--- a/mpn/generic/powm.c	Fri Feb 05 23:33:29 2010 +0100
++++ b/mpn/generic/powm.c	Mon Feb 26 13:30:45 2018 -0500
+@@ -212,6 +212,8 @@
+   b2p = tp + 2*n;
+ 
+   /* Store b^2 in b2.  */
++b2p = rp;
++
+   mpn_sqr (tp, this_pp, n);
+ #if WANT_REDC_2
+   if (BELOW_THRESHOLD (n, REDC_1_TO_REDC_2_THRESHOLD))
