@@ -22,7 +22,7 @@ class SuspiciousLines():
         self.compute_coverage(self.tests.positives, '+')
         self.compute_coverage(self.tests.negatives, '-')
         self.suspicious_formula()
-        self.suspiciousness.sort(key=lambda t: t[1], reverse=True)
+        self.suspiciousness.sort(key=lambda t: (t[1], t[0]), reverse=True)
         return
 
     def compute_coverage(self, test_list, pos_or_neg):
