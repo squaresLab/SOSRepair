@@ -1,0 +1,17 @@
+version: '1.0'
+
+type: tool
+name: sosrepair
+blueprints:
+  - type: docker
+    tag: squareslab/sosrepair:latest
+    context: .
+    file: Dockerfile
+
+tools:
+  - name: sosrepair
+    image: squareslab/sosrepair
+    environment:
+        PATH: "/opt/sosrepair/bin:${PATH}"
+        CPATH: "/opt/sosrepair/include:${CPATH}"
+        PYTHONPATH: "/opt/sosrepair/bindings:${PYTHONPATH}"
