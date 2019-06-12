@@ -29,6 +29,7 @@ class MainReturn(object):
 
 
 def re_build_database(db_manager):
+    start_time = time.time()
     db_manager.drop_tables()
     db_manager.initialize_tables()
     if SOSREPAIR:
@@ -46,6 +47,8 @@ def re_build_database(db_manager):
                 fl.detach_snippets()
                 os.system('rm ' + ff)
                 f.write("Finished\n")
+                f.write("Total time: %f\n" % (time.time() - start_time))
+    logger.info('Total time: %f' % (time.time() - start_time))
 
 
 def main(build_db=False, all_patches=False):
