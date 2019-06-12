@@ -1,7 +1,5 @@
 version: '1.0'
 
-type: tool
-name: sosrepair
 blueprints:
   - type: docker
     tag: squareslab/sosrepair:latest
