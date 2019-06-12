@@ -2,6 +2,7 @@ __author__ = 'afsoona'
 
 import os
 import logging
+import random
 from math import sqrt
 from utils.c_run import *
 from settings import *
@@ -22,7 +23,14 @@ class SuspiciousLines():
         self.compute_coverage(self.tests.positives, '+')
         self.compute_coverage(self.tests.negatives, '-')
         self.suspicious_formula()
-        self.suspiciousness.sort(key=lambda t: (t[1], t[0]), reverse=True)
+
+        def custom_cmp(item1, item2):
+            if item1[1] != item2[1]:
+                return cmp(item1[1], item2[1])
+            else:
+                return -1 if random.random() >= 0.5 else 1
+
+        self.suspiciousness.sort(cmp=custom_cmp, reverse=True)
         return
 
     def compute_coverage(self, test_list, pos_or_neg):

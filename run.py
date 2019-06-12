@@ -306,6 +306,7 @@ if __name__ == "__main__":
     parser.add_argument("--all_patches", action="store_true",
                         help="Find all patches")
     args = parser.parse_args()
+    random.seed(100)
     start_time = time.time()
     logger.info("Start time %s" % str(start_time))
 
