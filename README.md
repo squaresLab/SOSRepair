@@ -57,9 +57,8 @@ you can find the instruction on how to do that.)
 An example of `settings.py` file for a simple defect exists in `docker/settings.py`.
 
 ## Running ##
------------------
 
-### Running locally ###
+### Locally ###
 
 * Run `python2.7 run.py -h` to see all the options of running SOSRepair. Overall, there are two modes for running (specified by `--run_mode`): `normal` and `bulk_run`. By default, the run mode is set to `normal` which will attempt to repair the file specified as `FAULTY_CODE` in the `settings.py` file. On `bulk_run` mode, SOSRepair attempts to repair all `.C` files in the `GENERATE_DB_PATH` directory and report how many of those it was able to repair.
 There are three options for interacting with the database (specified by `--db`): `none`, `build_and_run`, `build`. By default this option is set to `none` which means it will not rebuild the database and will only read from it. Option `build` specifies that you only want to rebuild the database and you do not want to start the repair. Option `build_and_run` specifies that the repair will automatically start after rebuilding the database. Pay attention that `build` and `build_and_run` options automatically wipe out the data currently in the database and repopulate it with new data. 
@@ -67,7 +66,7 @@ There are three options for interacting with the database (specified by `--db`):
 * Whenever tool finds a patch it will put the patch inside folder `patches`
 that is created at runtime
 
-### Running on Docker ###
+### Using Docker ###
 
 To simplify running SOSRepair, we have created a `Dockerfile` that creates a docker image
 with all requirements already installed and a small sample program to fix. Simply run
@@ -81,4 +80,32 @@ start the postgresql engine `sudo /etc/init.d/postgresql start`, and create a da
 `createdb testdocker`. Modify `settings.py` file in `/opt/sosrepair/sosrepair` to match
 your database info, and run SOSRepair as you would run locally.
 
+### Using BugZoo ###
+
+[BugZoo](https://github.com/squaresLab/BugZoo) is a decentralized platform for distributing,
+reproducing, and interacting with historical software bugs, and allows the user to run
+different program repair tools on known benchmarks using docker containers. SOSRepair
+is set up to be consistent with BugZoo, and can be added as a source. After installing
+BugZoo, simply run `bugzoo source add sosrepair https://github.com/squaresLab/SOSRepair`.
+If this step goes well, you should be able to see sosrepair as a tool listed in BugZoo by
+running `bugzoo tool list`.
+
+Next, you need to build SOSRepair docker image: `bugzoo tool build sosrepair`. In addition,
+you need to install bugs that you wish to run SOSRepair on as described [here](https://github.com/squaresLab/BugZoo). For example, to add ManyBugs to BugZoo, run `bugzoo source add manybugs https://github.com/squaresLab/ManyBugs`. To build a bug run `bugzoo bug build <bug-name>` (e.g., `bugzoo bug build manybugs:libtiff:2005-12-14-6746b87-0d3d51d`).
+
+When both the bug and the tool are built, you can launch a container that contains both
+SOSRepair and the specified bug: `bugzoo container launch --with sosrepair --net host manybugs:libtiff:2005-12-14-6746b87-0d3d51d`. The launched container now contains SOSRepair under
+`/opt/sosrepair/sosrepair` and the bug under `/experiment`. Take similar steps as running
+SOSRepair Docker.
+
+Notes:
+* If you received errors related to permissions, make sure to set proper
+permissions to the docker user by running `sudo chmod -R 777 /opt/sosrepair/sosrepair`.
+* If the `PATH` and `PYTHONPATH` are not properly set run the followings:
+```
+    export PYTHONPATH="/opt/sosrepair/bindings:${PYTHONPATH}"
+    export CPATH=":/opt/sosrepair/include"
+    export PATH="/opt/sosrepair/bin:$PATH"
+```
+* Edit the `settings.py` file to match the bug you are running on.
 
