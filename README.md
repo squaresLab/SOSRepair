@@ -56,11 +56,29 @@ you can find the instruction on how to do that.)
 
 An example of `settings.py` file for a simple defect exists in `docker/settings.py`.
 
-### Running ###
+## Running ##
+-----------------
+
+### Running locally ###
 
 * Run `python2.7 run.py -h` to see all the options of running SOSRepair. Overall, there are two modes for running (specified by `--run_mode`): `normal` and `bulk_run`. By default, the run mode is set to `normal` which will attempt to repair the file specified as `FAULTY_CODE` in the `settings.py` file. On `bulk_run` mode, SOSRepair attempts to repair all `.C` files in the `GENERATE_DB_PATH` directory and report how many of those it was able to repair.
 There are three options for interacting with the database (specified by `--db`): `none`, `build_and_run`, `build`. By default this option is set to `none` which means it will not rebuild the database and will only read from it. Option `build` specifies that you only want to rebuild the database and you do not want to start the repair. Option `build_and_run` specifies that the repair will automatically start after rebuilding the database. Pay attention that `build` and `build_and_run` options automatically wipe out the data currently in the database and repopulate it with new data. 
 * If you wish to remove logs from previous runs delete `logs/repair.log`.
 * Whenever tool finds a patch it will put the patch inside folder `patches`
 that is created at runtime
+
+### Running on Docker ###
+
+To simplify running SOSRepair, we have created a `Dockerfile` that creates a docker image
+with all requirements already installed and a small sample program to fix. Simply run
+`docker build -t squareslab/sosrepair:latest .` to build the docker image.
+
+When finished, you can create a docker container and attach to it by running
+`docker run --rm -it squareslab/sosrepair /bin/bash`. You will then find SOSRepair under
+`/opt/sosrepair/sosrepair`, and a simple defect under `/experiment/project-repair`.
+Before running SOSRepair make sure that you execute `/opt/sosrepair/prepare/setup.sh`,
+start the postgresql engine `sudo /etc/init.d/postgresql start`, and create a database
+`createdb testdocker`. Modify `settings.py` file in `/opt/sosrepair/sosrepair` to match
+your database info, and run SOSRepair as you would run locally.
+
 
