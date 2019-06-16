@@ -23,7 +23,7 @@ class DatabaseManager():
         if self.connection:
             return self.connection
         try:
-            self.connection = psycopg2.connect(database=DATABASE['db_name'], user=DATABASE['user'], password=DATABASE['password'], host='127.0.0.1')
+            self.connection = psycopg2.connect(database=DATABASE['db_name'], user=DATABASE['user'], password=DATABASE['password'])
         except psycopg2.DatabaseError, e:
             if self.connection:
                 self.connection.rollback()
@@ -263,7 +263,7 @@ class DatabaseManager():
         return candidate_rows
 
     def get_snippets_deletion(self):
-        sql = "SELECT ID,VARIABLES,OUTPUTS FROM snippets WHERE PATH = ''"
+        sql = "SELECT ID,VARIABLES,OUTPUTS FROM snippets WHERE PATH = '' ORDER BY ID"
         logger.debug("Run this 0: %s" %sql)
         try:
             cursor = self.connect().cursor()
@@ -278,7 +278,7 @@ class DatabaseManager():
             self.close()
 
     def get_snippets_in_file(self, filename):
-        sql = "SELECT ID,VARIABLES,OUTPUTS FROM snippets WHERE PATH = '%s'" % filename
+        sql = "SELECT ID,VARIABLES,OUTPUTS FROM snippets WHERE PATH = '%s' ORDER BY ID" % filename
         logger.debug("Run this 1: %s" %sql)
         try:
             cursor = self.connect().cursor()
@@ -293,7 +293,7 @@ class DatabaseManager():
             self.close()
 
     def get_snippets_in_module(self, filename, module):
-        sql = "SELECT ID,VARIABLES,OUTPUTS FROM snippets WHERE PATH != '%s' AND PATH ~ '%s'" % (filename, module)
+        sql = "SELECT ID,VARIABLES,OUTPUTS FROM snippets WHERE PATH != '%s' AND PATH ~ '%s' ORDER BY ID" % (filename, module)
         logger.debug("Run this 2: %s" %sql)
         try:
             cursor = self.connect().cursor()
@@ -308,7 +308,7 @@ class DatabaseManager():
             self.close()
 
     def get_snippets_all(self, filename, module):
-        sql = "SELECT ID,VARIABLES,OUTPUTS FROM snippets WHERE PATH != '%s' AND NOT PATH ~ '%s' AND PATH != ''" % (filename, module)
+        sql = "SELECT ID,VARIABLES,OUTPUTS FROM snippets WHERE PATH != '%s' AND NOT PATH ~ '%s' AND PATH != '' ORDER BY ID" % (filename, module)
         logger.debug("Run this 3: %s" %sql)
         try:
             cursor = self.connect().cursor()
@@ -323,7 +323,7 @@ class DatabaseManager():
             self.close()
 
     def get_snippets_any(self, filename, module):
-        sql = "SELECT ID,VARIABLES,OUTPUTS FROM snippets"
+        sql = "SELECT ID,VARIABLES,OUTPUTS FROM snippets ORDER BY ID"
         logger.debug("Run this 3: %s" %sql)
         try:
             cursor = self.connect().cursor()
