@@ -1,0 +1,180 @@
+Making all in lib
+make[1]: Entering directory '/home/afsoon/ManyBugs/AutomatedRepairBenchmarks.c/manybugs/gzip/gzip-bug-2009-08-16-3fe0caeada-39a362ae9d/src/lib'
+rm -f fcntl.h-t fcntl.h
+{ echo '/* DO NOT EDIT! GENERATED AUTOMATICALLY! */'; \
+  sed -e 's/@''INCLUDE_NEXT''@/include_next/g' \
+      -e 's|@''NEXT_FCNTL_H''@|<fcntl.h>|g' \
+      < ./fcntl_.h; \
+} > fcntl.h-t
+mv fcntl.h-t fcntl.h
+rm -f stdio.h-t stdio.h
+{ echo '/* DO NOT EDIT! GENERATED AUTOMATICALLY! */' && \
+  sed -e 's/@''INCLUDE_NEXT''@/include_next/g' \
+      -e 's|@''NEXT_STDIO_H''@|<stdio.h>|g' \
+      -e 's|@''GNULIB_FPRINTF_POSIX''@|0|g' \
+      -e 's|@''GNULIB_PRINTF_POSIX''@|0|g' \
+      -e 's|@''GNULIB_SNPRINTF''@|0|g' \
+      -e 's|@''GNULIB_SPRINTF_POSIX''@|0|g' \
+      -e 's|@''GNULIB_VFPRINTF_POSIX''@|0|g' \
+      -e 's|@''GNULIB_VPRINTF_POSIX''@|0|g' \
+      -e 's|@''GNULIB_VSNPRINTF''@|0|g' \
+      -e 's|@''GNULIB_VSPRINTF_POSIX''@|0|g' \
+      -e 's|@''GNULIB_VASPRINTF''@|0|g' \
+      -e 's|@''GNULIB_FSEEK''@|0|g' \
+      -e 's|@''GNULIB_FSEEKO''@|1|g' \
+      -e 's|@''GNULIB_FTELL''@|0|g' \
+      -e 's|@''GNULIB_FTELLO''@|1|g' \
+      -e 's|@''GNULIB_FFLUSH''@|1|g' \
+      -e 's|@''GNULIB_GETDELIM''@|0|g' \
+      -e 's|@''GNULIB_GETLINE''@|0|g' \
+      -e 's|@''REPLACE_FPRINTF''@|0|g' \
+      -e 's|@''REPLACE_VFPRINTF''@|0|g' \
+      -e 's|@''REPLACE_PRINTF''@|0|g' \
+      -e 's|@''REPLACE_VPRINTF''@|0|g' \
+      -e 's|@''REPLACE_SNPRINTF''@|0|g' \
+      -e 's|@''HAVE_DECL_SNPRINTF''@|1|g' \
+      -e 's|@''REPLACE_VSNPRINTF''@|0|g' \
+      -e 's|@''HAVE_DECL_VSNPRINTF''@|1|g' \
+      -e 's|@''REPLACE_SPRINTF''@|0|g' \
+      -e 's|@''REPLACE_VSPRINTF''@|0|g' \
+      -e 's|@''HAVE_VASPRINTF''@|1|g' \
+      -e 's|@''REPLACE_VASPRINTF''@|0|g' \
+      -e 's|@''REPLACE_FSEEKO''@|0|g' \
+      -e 's|@''REPLACE_FSEEK''@|0|g' \
+      -e 's|@''REPLACE_FTELLO''@|0|g' \
+      -e 's|@''REPLACE_FTELL''@|0|g' \
+      -e 's|@''REPLACE_FFLUSH''@|0|g' \
+      -e 's|@''HAVE_DECL_GETDELIM''@|1|g' \
+      -e 's|@''HAVE_DECL_GETLINE''@|1|g' \
+      -e 's|@''REPLACE_GETLINE''@|0|g' \
+      -e '/definition of GL_LINK_WARNING/r ../build-aux/link-warning.h' \
+      < ./stdio_.h; \
+} > stdio.h-t
+mv stdio.h-t stdio.h
+rm -f stdlib.h-t stdlib.h
+{ echo '/* DO NOT EDIT! GENERATED AUTOMATICALLY! */' && \
+  sed -e 's/@''INCLUDE_NEXT''@/include_next/g' \
+      -e 's|@''NEXT_STDLIB_H''@|<stdlib.h>|g' \
+      -e 's|@''GNULIB_MALLOC_POSIX''@|0|g' \
+      -e 's|@''GNULIB_REALLOC_POSIX''@|0|g' \
+      -e 's|@''GNULIB_CALLOC_POSIX''@|0|g' \
+      -e 's|@''GNULIB_GETSUBOPT''@|0|g' \
+      -e 's|@''GNULIB_MKDTEMP''@|0|g' \
+      -e 's|@''GNULIB_MKSTEMP''@|0|g' \
+      -e 's|@''HAVE_CALLOC_POSIX''@|1|g' \
+      -e 's|@''HAVE_GETSUBOPT''@|1|g' \
+      -e 's|@''HAVE_MALLOC_POSIX''@|1|g' \
+      -e 's|@''HAVE_MKDTEMP''@|1|g' \
+      -e 's|@''HAVE_REALLOC_POSIX''@|1|g' \
+      -e 's|@''REPLACE_MKSTEMP''@|0|g' \
+      -e '/definition of GL_LINK_WARNING/r ../build-aux/link-warning.h' \
+      < ./stdlib_.h; \
+} > stdlib.h-t
+mv stdlib.h-t stdlib.h
+/bin/mkdir -p sys
+rm -f sys/stat.h-t sys/stat.h
+{ echo '/* DO NOT EDIT! GENERATED AUTOMATICALLY! */'; \
+  sed -e 's/@''INCLUDE_NEXT''@/include_next/g' \
+      -e 's|@''NEXT_SYS_STAT_H''@|<sys/stat.h>|g' \
+      -e 's|@''HAVE_IO_H''@|0|g' \
+      -e 's|@''HAVE_LSTAT''@|1|g' \
+      -e 's|@''HAVE_DECL_MKDIR''@|1|g' \
+      < ./sys_stat_.h; \
+} > sys/stat.h-t
+mv sys/stat.h-t sys/stat.h
+rm -f time.h-t time.h
+{ echo '/* DO NOT EDIT! GENERATED AUTOMATICALLY! */' && \
+  sed -e 's/@''INCLUDE_NEXT''@/include_next/g' \
+      -e 's|@NEXT_TIME_H''@|<time.h>|g' \
+      -e 's|@REPLACE_LOCALTIME_R''@|GNULIB_PORTCHECK|g' \
+      -e 's|@REPLACE_NANOSLEEP''@|GNULIB_PORTCHECK|g' \
+      -e 's|@REPLACE_STRPTIME''@|GNULIB_PORTCHECK|g' \
+      -e 's|@REPLACE_TIMEGM''@|GNULIB_PORTCHECK|g' \
+      -e 's|@SYS_TIME_H_DEFINES_STRUCT_TIMESPEC''@|0|g' \
+      -e 's|@TIME_H_DEFINES_STRUCT_TIMESPEC''@|1|g' \
+      < ./time_.h; \
+} > time.h-t
+mv time.h-t time.h
+rm -f unistd.h-t unistd.h
+{ echo '/* DO NOT EDIT! GENERATED AUTOMATICALLY! */'; \
+  sed -e 's|@''HAVE_UNISTD_H''@|1|g' \
+      -e 's/@''INCLUDE_NEXT''@/include_next/g' \
+      -e 's|@''NEXT_UNISTD_H''@|<unistd.h>|g' \
+      -e 's|@''GNULIB_CHOWN''@|0|g' \
+      -e 's|@''GNULIB_DUP2''@|0|g' \
+      -e 's|@''GNULIB_FCHDIR''@|0|g' \
+      -e 's|@''GNULIB_FTRUNCATE''@|0|g' \
+      -e 's|@''GNULIB_GETCWD''@|0|g' \
+      -e 's|@''GNULIB_GETLOGIN_R''@|0|g' \
+      -e 's|@''GNULIB_LCHOWN''@|0|g' \
+      -e 's|@''GNULIB_LSEEK''@|1|g' \
+      -e 's|@''GNULIB_READLINK''@|0|g' \
+      -e 's|@''GNULIB_SLEEP''@|0|g' \
+      -e 's|@''HAVE_DUP2''@|1|g' \
+      -e 's|@''HAVE_FTRUNCATE''@|1|g' \
+      -e 's|@''HAVE_READLINK''@|1|g' \
+      -e 's|@''HAVE_SLEEP''@|1|g' \
+      -e 's|@''HAVE_DECL_GETLOGIN_R''@|1|g' \
+      -e 's|@''REPLACE_CHOWN''@|0|g' \
+      -e 's|@''REPLACE_FCHDIR''@|0|g' \
+      -e 's|@''REPLACE_GETCWD''@|0|g' \
+      -e 's|@''REPLACE_LCHOWN''@|0|g' \
+      -e 's|@''REPLACE_LSEEK''@|0|g' \
+      < ./unistd_.h; \
+} > unistd.h-t
+mv unistd.h-t unistd.h
+make  all-am
+make[2]: Entering directory '/home/afsoon/ManyBugs/AutomatedRepairBenchmarks.c/manybugs/gzip/gzip-bug-2009-08-16-3fe0caeada-39a362ae9d/src/lib'
+  CC       fpurge.o
+  CC       freadahead.o
+  CC       freading.o
+  CC       xalloc-die.o
+  CC       close-stream.o
+  CC       closein.o
+  CC       closeout.o
+  CC       creat-safer.o
+  CC       dup-safer.o
+  CC       exitfail.o
+  CC       fd-safer.o
+  CC       open-safer.o
+  CC       pipe-safer.o
+  CC       quotearg.o
+  CC       utimens.o
+  CC       xmalloc.o
+  CC       yesno.o
+  AR       libgzip.a
+ar: `u' modifier ignored since `D' is the default (see `U')
+make[2]: Leaving directory '/home/afsoon/ManyBugs/AutomatedRepairBenchmarks.c/manybugs/gzip/gzip-bug-2009-08-16-3fe0caeada-39a362ae9d/src/lib'
+make[1]: Leaving directory '/home/afsoon/ManyBugs/AutomatedRepairBenchmarks.c/manybugs/gzip/gzip-bug-2009-08-16-3fe0caeada-39a362ae9d/src/lib'
+Making all in doc
+make[1]: Entering directory '/home/afsoon/ManyBugs/AutomatedRepairBenchmarks.c/manybugs/gzip/gzip-bug-2009-08-16-3fe0caeada-39a362ae9d/src/doc'
+make[1]: Nothing to be done for 'all'.
+make[1]: Leaving directory '/home/afsoon/ManyBugs/AutomatedRepairBenchmarks.c/manybugs/gzip/gzip-bug-2009-08-16-3fe0caeada-39a362ae9d/src/doc'
+make[1]: Entering directory '/home/afsoon/ManyBugs/AutomatedRepairBenchmarks.c/manybugs/gzip/gzip-bug-2009-08-16-3fe0caeada-39a362ae9d/src'
+  CC       bits.o
+  CC       crypt.o
+  CC       deflate.o
+  CC       gzip.o
+  CC       inflate.o
+  CC       lzw.o
+  CC       trees.o
+  CC       unlzh.o
+  CC       unlzw.o
+  CC       unpack.o
+  CC       unzip.o
+  CC       util.o
+  CC       zip.o
+  CCLD     gzip
+  GEN      gunzip
+  GEN      gzexe
+  GEN      zcat
+  GEN      zcmp
+  GEN      zdiff
+  GEN      zegrep
+  GEN      zfgrep
+  GEN      zforce
+  GEN      zgrep
+  GEN      zless
+  GEN      zmore
+  GEN      znew
+make[1]: Leaving directory '/home/afsoon/ManyBugs/AutomatedRepairBenchmarks.c/manybugs/gzip/gzip-bug-2009-08-16-3fe0caeada-39a362ae9d/src'
