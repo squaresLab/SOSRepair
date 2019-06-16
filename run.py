@@ -305,8 +305,10 @@ if __name__ == "__main__":
                         default="normal", help="The running mode")
     parser.add_argument("--all_patches", action="store_true",
                         help="Find all patches")
+    parser.add_argument("--seed", type=int,
+                        default=1000, help="Random seed")
     args = parser.parse_args()
-    random.seed(100)
+    random.seed(args.seed)
     start_time = time.time()
     logger.info("Start time %s" % str(start_time))
 
