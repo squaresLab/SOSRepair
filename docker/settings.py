@@ -41,7 +41,8 @@ SMALLEST_SNIPPET = 3
 DATABASE = {
     'db_name': 'testdocker',
     'user': 'docker',
-    'password': '1234'
+    'password': '1234',
+    'host': '127.0.0.1'
 }
 
 LOGGING = {

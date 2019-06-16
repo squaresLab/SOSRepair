@@ -42,10 +42,11 @@ def find_extra_compile_args(output_file, compiled_file):
                 extra_args = []
                 for s in splits:
                     if s.startswith("-I"):
-                        if s.startswith("-I/usr/include"):
-                            extra_args.append("-I/home/afsoon/llvm/build/lib/clang/3.9.0/include")
-                        else:
-                            extra_args.append(s)
+#                        if s.startswith("-I/usr/include"):
+#                            extra_args.append("-I/opt/sosrepair/llvm/lib/clang/5.0.2/include")
+#                        else:
+#                            extra_args.append(s)
+                        extra_args.append(s)
                 return extra_args
     return COMPILE_EXTRA_ARGS
 
