@@ -38,7 +38,7 @@ def re_build_database(db_manager):
         db_manager.insert_snippet(deletion_snippet)
         del deletion_snippet
     with open("processed.txt", "w") as f:
-        for root, dirs, files in os.walk(GENERATE_DB_PATH):
+        for root, dirs, files in sorted(os.walk(GENERATE_DB_PATH)):
             for items in sorted(fnmatch.filter(files, "*.c")):
                 ff = os.path.join(root, items)
                 f.write("Start: %s\n" % str(ff))
