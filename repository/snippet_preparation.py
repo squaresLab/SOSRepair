@@ -73,11 +73,12 @@ class CodeSnippetManager:
             if cursor and (child.kind == CursorKind.DEFAULT_STMT or child.kind == CursorKind.CASE_STMT):
                 blocks = [child,]
                 continue
-            line = child.location.line if cursor else child
+#            line = child.location.line if cursor else child
             if from_line < 0:
-                from_line = line
                 blocks.append(child)
+                from_line = child.location.line if cursor else child
                 continue
+            line = blocks[-1].extent.end.line if blocks else from_line
             dist = line - from_line
             while (line - from_line) > LARGEST_SNIPPET or blocks[0].kind == CursorKind.DEFAULT_STMT or blocks[0].kind == CursorKind.CASE_STMT:
                 if len(blocks) == 1:  # means it's a large block
@@ -90,7 +91,7 @@ class CodeSnippetManager:
                         from_line = blocks[0].location.line
                     else:
                         break
-            while LARGEST_SNIPPET >= (line - from_line) >= SMALLEST_SNIPPET and len(blocks) > 0:
+            while LARGEST_SNIPPET >= (line - from_line) + 1 >= SMALLEST_SNIPPET and len(blocks) > 0:
                 try:
                     vars, labels = self.find_vars(blocks)
                     outputs = self.find_outputs(blocks)
