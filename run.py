@@ -83,7 +83,7 @@ def main(build_db=False, all_patches=False):
     filename, module_name = get_file_name_and_module_re(FAULTY_CODE)
     stored_data = {}
     unsuccessful_lines = []
-    phases = ['in_file', 'in_module', 'all']
+    phases = ['deletion', 'in_file', 'in_module', 'all']
     if not SOSREPAIR:
         phases = ['any']
     for phase in phases:
