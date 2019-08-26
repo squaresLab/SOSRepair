@@ -19,6 +19,7 @@ from repository.patch_generation import PatchGeneration
 from utils.file_process import transform_file, get_file_name_and_module_re
 
 logger = logging.getLogger(__name__)
+logger.setLevel(logging.INFO)
 
 
 class MainReturn(object):
@@ -69,7 +70,7 @@ def main(build_db=False, all_patches=False):
     suspicious_lines = SuspiciousLines(tests)
     suspicious_lines.compute_suspiciousness()
 
-    logger.debug("Suspicious lines : %s" % str(suspicious_lines.suspiciousness))
+    logger.info("Suspicious lines : %s" % str(suspicious_lines.suspiciousness))
     db_manager = DatabaseManager()
     if build_db:
         re_build_database(db_manager)
@@ -79,6 +80,8 @@ def main(build_db=False, all_patches=False):
     passing_patches = []
     os.system('rm -r patches')
     os.system('mkdir patches')
+    total_unsat = 0
+    total_sat = 0
 
     filename, module_name = get_file_name_and_module_re(FAULTY_CODE)
     stored_data = {}
@@ -95,7 +98,7 @@ def main(build_db=False, all_patches=False):
                 continue
             if suspicious_lines_investigated >= MAX_SUSPICIOUS_LINES:
                 break
-            logger.info("Suspicious line: %d ,score: %f" % (line, score))
+            logger.debug("Suspicious line: %d ,score: %f" % (line, score))
             if line in stored_data:
                 sb = stored_data[line]['sb']
                 profile = stored_data[line]['profile']
@@ -109,7 +112,7 @@ def main(build_db=False, all_patches=False):
                     unsuccessful_lines.append(line)
                     continue
                 investigated_blocks.add(sb.line_range)
-                logger.info("Suspicious block range %s" % str(sb.line_range))
+                logger.debug("Suspicious block range %s" % str(sb.line_range))
                 profile = Profile(sb)
                 success = profile.generate_printing_profile(tests, original_copy)
                 logger.debug('Profile: ' + str(profile.input_list))
@@ -125,16 +128,20 @@ def main(build_db=False, all_patches=False):
             tried_snippets = []
             z3 = Z3(sb, profile, db_manager)
             unsat = 0
+            sat = 0
             for snippet_id in candidate_snippets_ids:
                 res = z3.prepare_smt_query_new_version(snippet_id)
                 if not res:
                     unsat += 1
+                    total_unsat += 1
                     continue
                 for source, variables, mapping in res:
                     hash_object = hashlib.sha1(re.sub('[\s+]', '', source))
                     hex_dig = hash_object.hexdigest()
                     if hex_dig in tried_snippets:
                         continue
+                    sat += 1
+                    total_sat += 1
                     tried_snippets.append(hex_dig)
                     patch_generation = PatchGeneration(source, variables, mapping)
                     patch_generation.prepare_snippet_to_parse()
@@ -161,7 +168,8 @@ def main(build_db=False, all_patches=False):
                         profile.update_profile(tests, original_copy)
                         logger.debug('Updated profile: ' + str(profile.negative_input_list))
                     run_command('cp ' + original_copy + ' ' + FAULTY_CODE)
-            logger.debug("total %d were unsatisfiable from %d" % (unsat, len(candidate_snippets_ids)))
+            logger.info("%d snippets were unsatisfiable from %d" % (unsat, len(candidate_snippets_ids)))
+    logger.info("Total snippets before insertion, SAT: %d, UNSAT: %d" %(total_sat, total_unsat))
     if not SOSREPAIR:
         return MainReturn.Patch_not_found if len(passing_patches) == 0 else MainReturn.Patch_found
     logger.info("Entering insertion")
@@ -216,12 +224,14 @@ def main(build_db=False, all_patches=False):
             for snippet_id in candidate_snippets_ids:
                 res = z3.prepare_smt_query_new_version(snippet_id)
                 if not res:
+                    total_unsat += 1
                     continue
                 for source, variables, mapping in res:
                     hash_object = hashlib.sha1(re.sub('[\s+]', '', source))
                     hex_dig = hash_object.hexdigest()
                     if hex_dig in tried_snippets:
                         continue
+                    total_sat += 1
                     tried_snippets.append(hex_dig)
                     patch_generation = PatchGeneration(source, variables, mapping)
                     patch_generation.prepare_snippet_to_parse()
@@ -248,6 +258,7 @@ def main(build_db=False, all_patches=False):
                         profile.update_profile(tests, original_copy)
                         logger.debug('Updated profile: ' + str(profile.negative_input_list))
                     run_command('cp ' + original_copy + ' ' + FAULTY_CODE)
+    logger.info("Total snippets, SAT: %d, UNSAT: %d" %(total_sat, total_unsat))
     return MainReturn.Patch_not_found if len(passing_patches) == 0 else MainReturn.Patch_found
 
 
