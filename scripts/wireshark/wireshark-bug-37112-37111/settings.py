@@ -41,7 +41,8 @@ SMALLEST_SNIPPET = 3
 DATABASE = {
     'db_name': 'testdocker',
     'user': 'docker',
-    'password': '1234'
+    'password': '1234',
+    'host': '127.0.0.1'
 }
 
 LOGGING = {
@@ -63,8 +64,26 @@ FAULTY_CODE = "/experiment/src/epan/reassemble.c"
 
 
 COMPILE_EXTRA_ARGS = [
-                    "-I/experiment/src",
-                    "-I/usr/include",
+                    "-DHAVE_CONFIG_H",
+                    "-I/experiment/src/",
+                    "-I/experiment/src/wsutil/",
+                    "-I/usr/local/include",
+#                    "-I/usr/include",
+                    "-I/opt/sosrepair/llvm/lib/clang/5.0.2/include",
+                    "-I/usr/local/include",
+                    "-I/usr/include/gtk-2.0",
+                    "-I/usr/lib/x86_64-linux-gnu/gtk-2.0/include",
+                    "-I/usr/include/atk-1.0",
+                    "-I/usr/include/cairo",
+                    "-I/usr/include/gdk-pixbuf-2.0",
+                    "-I/usr/include/pango-1.0",
+                    "-I/usr/include/gio-unix-2.0/",
+                    "-I/usr/include/freetype2",
+                    "-I/usr/include/glib-2.0",
+                    "-I/usr/lib/x86_64-linux-gnu/glib-2.0/include",
+                    "-I/usr/include/pixman-1",
+                    "-I/usr/include/libpng12",
+                    "-I/usr/include/harfbuzz",
 ]
 
 MAKE_OUTPUT = "/experiment/makeout"

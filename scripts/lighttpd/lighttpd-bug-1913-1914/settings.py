@@ -41,7 +41,7 @@ SMALLEST_SNIPPET = 3
 DATABASE = {
     'db_name': 'testdocker',
     'user': 'docker',
-    'password': '1234'
+    'password': '1234',
 }
 
 LOGGING = {
@@ -64,7 +64,10 @@ FAULTY_CODE = "/experiment/src/src/mod_cgi.c"
 
 COMPILE_EXTRA_ARGS = [
                     "-I/experiment/src",
-                    "-I/usr/include",
+#                    "-I/usr/include",
+                    "-I/usr/include/glib-2.0",
+                    "-I/usr/lib/x86_64-linux-gnu/glib-2.0/include",
+                    "-I/opt/sosrepair/llvm/lib/clang/5.0.2/include"
 ]
 
 MAKE_OUTPUT = "/experiment/makeout"

@@ -64,7 +64,8 @@ FAULTY_CODE = "/experiment/src/Modules/zlibmodule.c "
 
 COMPILE_EXTRA_ARGS = [
                     "-I/experiment/src",
-                    "-I/usr/include",
+                    "-I/experiment/src/Include",
+                    "-I/opt/sosrepair/llvm/lib/clang/5.0.2/include"
 ]
 
 MAKE_OUTPUT = "/experiment/makeout"
