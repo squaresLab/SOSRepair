@@ -21,7 +21,3 @@ export PYTHONPATH="/opt/sosrepair/bindings:${PYTHONPATH}"
 export CPATH=":/opt/sosrepair/include"
 export PATH="/opt/sosrepair/bin:$PATH"
 ```
-7. Edit file `/opt/sosrepair/sosrepair/fault_localization/suspicious_lines.py`
-by replacing line `run_command_with_timeout('gcov ' + FAULTY_CODE)` with
-`run_command_with_timeout('gcov -o /experiment/src/libtiff/.libs/ ' + FAULTY_CODE)`.
-This step is specific to `libtiff` and is because of its way of storing `.gcda` files.

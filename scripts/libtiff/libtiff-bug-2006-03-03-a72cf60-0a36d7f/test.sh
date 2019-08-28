@@ -2,27 +2,17 @@
 bugrev=a72cf60
 dir=$( cd "$( dirname "${BASH_SOURCE[0]}" )" && pwd )
 
-#Check if coverage is being run. If so, don't use time limit.
-if [ `basename $1` = "coverage" ] ; then
-    cov=0
-else
-    cov=1
-fi
 
 run_test()
 {
     cd $dir/src
-    if [ $cov -eq 0 ] ; then
-        /usr/bin/perl $dir/libtiff-run-tests.pl $1
-    else
-        $dir/limit /usr/bin/perl $dir/libtiff-run-tests.pl $1
-    fi
+    /usr/bin/perl $dir/libtiff-run-tests.pl $1
     RESULT=$?
 
     cd ..
     return 0
 }
-case $2 in
+case $1 in
     p1) run_test 5 && exit 0 ;; 
     p2) run_test 6 && exit 0 ;; 
     p3) run_test 7 && exit 0 ;; 

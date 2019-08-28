@@ -70,6 +70,8 @@ COMPILE_EXTRA_ARGS = [
 MAKE_OUTPUT = "/experiment/makeout"
 
 METHOD_RANGE = (83, 403)
+# IF SOS+
+# METHOD_RANGE = (338, 339)
 
 SOSREPAIR = True
 
@@ -77,3 +79,5 @@ NUMBER_OF_TIMES_RERUNNING_TESTS = 1
 EXCLUDE_SCANF = False
 
 BULK_RUN_PATH = ""
+
+GCOV_OBJECTS = "/experiment/src/libtiff/.libs"

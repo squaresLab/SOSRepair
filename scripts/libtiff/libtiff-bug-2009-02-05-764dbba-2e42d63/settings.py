@@ -64,12 +64,15 @@ FAULTY_CODE = "/experiment/src/tools/tiffcrop.c"
 
 COMPILE_EXTRA_ARGS = [
                     "-I/experiment/src",
+                    "-I/experiment/src/libtiff",
                     "-I/usr/include",
 ]
 
 MAKE_OUTPUT = "/experiment/makeout"
 
 METHOD_RANGE = (4950, 5131)
+# IF SOS+
+# METHOD_RANGE = (4969, 4970)
 
 SOSREPAIR = True
 
@@ -77,3 +80,5 @@ NUMBER_OF_TIMES_RERUNNING_TESTS = 1
 EXCLUDE_SCANF = False
 
 BULK_RUN_PATH = ""
+
+GCOV_OBJECTS = ""

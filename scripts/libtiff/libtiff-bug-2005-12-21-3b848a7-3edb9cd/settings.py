@@ -63,12 +63,15 @@ FAULTY_CODE = "/experiment/src/libtiff/tif_dirread.c"
 
 
 COMPILE_EXTRA_ARGS = [
+                    "-I/experiment/src",
                     "-I/usr/include",
 ]
 
 MAKE_OUTPUT = "/experiment/makeout"
 
 METHOD_RANGE = (72, 683)
+# IF SOS+
+# METHOD_RANGE = (589, 590)
 
 SOSREPAIR = True
 
@@ -76,3 +79,5 @@ NUMBER_OF_TIMES_RERUNNING_TESTS = 1
 EXCLUDE_SCANF = False
 
 BULK_RUN_PATH = ""
+
+GCOV_OBJECTS = "/experiment/src/libtiff/.libs"
