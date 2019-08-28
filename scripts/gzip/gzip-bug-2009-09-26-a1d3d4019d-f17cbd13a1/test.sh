@@ -1,15 +1,18 @@
 #!/bin/bash
-EXECUTABLE=$( dirname $1 )
-TEST_ID=$2
+TEST_ID=$1
 DIR=$( cd "$( dirname "${BASH_SOURCE[0]}" )" && pwd )
 
 
 run_test()
 {
     cd $DIR/src
-        $DIR/limit /usr/bin/perl $DIR/gzip-run-tests.pl $1
+        timeout 5 /usr/bin/perl $DIR/gzip-run-tests.pl $1
     RESULT=$?
-
+    if [ $RESULT = 0 ] ; then
+	echo "PASS"
+    else
+	echo "FAIL"
+    fi
     cd ..
     return 0
 }
