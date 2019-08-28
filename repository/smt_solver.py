@@ -2,6 +2,7 @@ __author__ = 'Afsoon Afzal'
 
 import logging
 import re
+from settings import SMALLEST_SNIPPET
 from itertools import permutations, product
 from utils.z3 import run_z3, twos_comp
 from settings import VALID_TYPES
@@ -35,7 +36,7 @@ class Z3:
         :return: The snippet and mapping if satisfiable, None if not
         """
         snippet = self.db_manager.fetch_snippet(index)
-        if len(snippet[1].split('\n')) < 3 and snippet[5] != '':
+        if len(snippet[1].split('\n')) < SMALLEST_SNIPPET and snippet[5] != '':
             # smaller than 3 lines
             return []
         constraints = self.db_manager.fetch_constraints(index)
