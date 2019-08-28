@@ -219,15 +219,15 @@ class CodeSnippetManager:
                             break
                 if (i.kind == CursorKind.UNEXPOSED_EXPR or i.kind == CursorKind.DECL_REF_EXPR) and \
                         i.displayname != '':
-                    #logger.debug("Just for debug: %s, %s" % (str(i.displayname), str(i.type.kind))) 
+                    #logger.debug("Just for debug: %s, %s" % (str(i.displayname), str(i.type.kind)))
+                    for var in list(variables):
+                        v, t = var[0], var[1]
+                        if v == i.displayname:
+                            variables.remove(var)
+                            break
                     if i.type.kind == TypeKind.FUNCTIONPROTO or i.type.kind == TypeKind.FUNCTIONNOPROTO or\
                             (i.type.kind == TypeKind.POINTER and (i.type.get_pointee().kind == TypeKind.FUNCTIONPROTO or i.type.get_pointee().kind == TypeKind.FUNCTIONNOPROTO or\
                              i.type.get_pointee().kind == TypeKind.UNEXPOSED)) or i.type.kind == TypeKind.UNEXPOSED:
-                        for var in list(variables):
-                            v, t = var[0], var[1]
-                            if v == i.displayname:
-                                variables.remove(var)
-                                break
                         continue
                     res = CodeSnippetManager.find_type_and_add(variables, i)
                     if not res:
@@ -245,7 +245,7 @@ class CodeSnippetManager:
         logger.debug('Type: %s' % str(i.type.spelling))
         temp = temp.replace('const', '')
         temp = temp.replace('unsigned', '')
-        if str(temp).replace('*', '').strip() in ['double', 'long', 'size_t', 'short', 'float']:
+        if str(temp).replace('*', '').strip() in ['double', 'long', 'size_t', 'short', 'float', 'Py_ssize_t']:
             temp = str(temp).replace(re.sub('[\s+]', '', str(temp).replace('*', '').strip()), 'int')
         if temp == 'char' or temp.find('int') != -1:
             variables.add((i.displayname, 'int'))
@@ -267,7 +267,7 @@ class CodeSnippetManager:
                 break
             print str(i.type.get_declaration().extent) + " " + str(final_type.spelling)
             print final_type.get_declaration().extent
-            variables.add((i.displayname, re.sub('[\s+]', '', temp.strip()), final_type.get_declaration().extent.start.file.name))
+            variables.add((i.displayname, re.sub('[\s+]', '', temp.strip()).replace('struct', 'struct ') , final_type.get_declaration().extent.start.file.name))
         return True
 
     def write_file(self, blocks, variables, outputs, function_calls, labels=None):

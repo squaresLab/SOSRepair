@@ -131,9 +131,11 @@ def main(build_db=False, all_patches=False):
             sat = 0
             for snippet_id in candidate_snippets_ids:
                 res = z3.prepare_smt_query_new_version(snippet_id)
-                if not res:
+                if res is None:
                     unsat += 1
                     total_unsat += 1
+                    continue
+                if not res:
                     continue
                 for source, variables, mapping in res:
                     hash_object = hashlib.sha1(re.sub('[\s+]', '', source))
@@ -168,7 +170,7 @@ def main(build_db=False, all_patches=False):
                         profile.update_profile(tests, original_copy)
                         logger.debug('Updated profile: ' + str(profile.negative_input_list))
                     run_command('cp ' + original_copy + ' ' + FAULTY_CODE)
-            logger.info("%d snippets were unsatisfiable from %d" % (unsat, len(candidate_snippets_ids)))
+            logger.info("%d snippets were unsatisfiable, %d satisfiable" % (unsat, sat))
     logger.info("Total snippets before insertion, SAT: %d, UNSAT: %d" %(total_sat, total_unsat))
     if not SOSREPAIR:
         return MainReturn.Patch_not_found if len(passing_patches) == 0 else MainReturn.Patch_found
@@ -223,8 +225,10 @@ def main(build_db=False, all_patches=False):
             z3 = Z3(sb, profile, db_manager)
             for snippet_id in candidate_snippets_ids:
                 res = z3.prepare_smt_query_new_version(snippet_id)
-                if not res:
+                if res is None:
                     total_unsat += 1
+                    continue
+                if not res:
                     continue
                 for source, variables, mapping in res:
                     hash_object = hashlib.sha1(re.sub('[\s+]', '', source))
