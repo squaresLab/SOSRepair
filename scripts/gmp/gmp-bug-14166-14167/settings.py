@@ -70,6 +70,8 @@ COMPILE_EXTRA_ARGS = [
 MAKE_OUTPUT = "/experiment/makeout"
 
 METHOD_RANGE = (29, 119)
+# IF SOS+
+# METHOD_RANGE = (56, 57)
 
 SOSREPAIR = True
 
@@ -77,3 +79,5 @@ NUMBER_OF_TIMES_RERUNNING_TESTS = 1
 EXCLUDE_SCANF = False
 
 BULK_RUN_PATH = ""
+
+GCOV_OBJECTS = "/experiment/src/mpz/.libs"

@@ -1,16 +1,21 @@
 #!/bin/bash
 run_abbrev=False
-bugrev=14166
+bugrev=13420
 time_limit=25
 dir=$( cd "$( dirname "${BASH_SOURCE[0]}" )" && pwd )
 run_test()
 {
     cd $dir/src
     ../gmp-run-tests.pl $1 $run_abbrev
-    RESULT=$?
-    killall -r lt-.*
-    cd ..
-    return $RESULT
+    if [ $? = 0 ] ; then
+        echo ""
+        echo "PASS"
+    else
+        echo ""
+        echo "FAIL"
+    fi
+    popd > /dev/null
+    return 0
 }
 case $1 in
     p1) run_test 1 && exit 0 ;; 
