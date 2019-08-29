@@ -18,8 +18,8 @@ from repository.smt_solver import Z3
 from repository.patch_generation import PatchGeneration
 from utils.file_process import transform_file, get_file_name_and_module_re
 
+
 logger = logging.getLogger(__name__)
-logger.setLevel(logging.INFO)
 
 
 class MainReturn(object):
@@ -178,6 +178,9 @@ def main(build_db=False, all_patches=False):
     stored_data = {}
     unsuccessful_lines = []
     run_command('cp ' + original_copy + ' ' + original_copy + '_copy')
+    phases = ['in_file', 'in_module', 'all']
+    if not SOSREPAIR:
+        phases = ['any']
     for phase in phases:
         investigated_blocks = set([])
         suspicious_lines_investigated = 0
@@ -224,7 +227,7 @@ def main(build_db=False, all_patches=False):
             tried_snippets = []
             z3 = Z3(sb, profile, db_manager)
             for snippet_id in candidate_snippets_ids:
-                res = z3.prepare_smt_query_new_version(snippet_id)
+                res = z3.prepare_smt_query_new_version(snippet_id, insertion=True)
                 if res is None:
                     total_unsat += 1
                     continue

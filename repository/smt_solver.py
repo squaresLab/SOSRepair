@@ -29,7 +29,7 @@ class Z3:
         self.last_checked = index
         return index
 
-    def prepare_smt_query_new_version(self, index):
+    def prepare_smt_query_new_version(self, index, insertion=False):
         """
         This functions prepares the SMT query and runs Z3. It is using location variables to run only one query.
         :param index: snippet id in the DB
@@ -52,6 +52,11 @@ class Z3:
             snippet_outputs = [i for i in snippet_outputs.keys()]
         else:
             snippet_outputs = ['return_value']
+        if insertion:
+            # For insertion all variables should be considered as output
+            for v in snippet_variables:
+                if v[0] not in snippet_outputs:
+                    snippet_outputs.append(v[0])
         positive = True if len(self.profile.input_list) > 0 else False
         consts = '(assert ' + self.prepare_constraints(constraints) + ')\n'
         try:
