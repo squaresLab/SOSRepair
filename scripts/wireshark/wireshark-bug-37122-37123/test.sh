@@ -6,8 +6,11 @@ run_test()
     cd $dir/src
     ../wireshark-run-tests.sh $1
     RESULT=$?
-    killall lt-tshark
-    killall lt-dumpcap
+    if [ $RESULT = 0 ] ; then
+	echo "PASS"
+    else
+	echo "FAIL"
+    fi 
     cd ..
     return 0
 }
