@@ -3,6 +3,7 @@ __author__ = 'Afsoon Afzal'
 import logging
 from clang.cindex import *
 import os
+from settings import COMPILE_EXTRA_ARGS
 
 logger = logging.getLogger(__name__)
 
@@ -44,7 +45,7 @@ class PatchGeneration():
 
     def parse_snippet(self):
         index = Index.create()
-        root = index.parse(self.temporary_file, ["-I/home/afsoon/llvm/build/lib/clang/3.9.0/include"])
+        root = index.parse(self.temporary_file, COMPILE_EXTRA_ARGS)
         return root.cursor
 
     def replace_vars(self, ast):
