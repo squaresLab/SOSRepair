@@ -62,14 +62,19 @@ COMPILE_SCRIPT = "/experiment/compile.sh"
 FAULTY_CODE = "/experiment/src/src/mod_secure_download.c"
 
 
-COMPILE_EXTRA_ARGS = [
+COMPILE_EXTRA_ARGS = [ 
                     "-I/experiment/src",
-                    "-I/usr/include",
+#                    "-I/usr/include",
+                    "-I/usr/include/glib-2.0",
+                    "-I/usr/lib/x86_64-linux-gnu/glib-2.0/include",
+                    "-I/opt/sosrepair/llvm/lib/clang/5.0.2/include"
 ]
 
 MAKE_OUTPUT = "/experiment/makeout"
 
 METHOD_RANGE = (198, 328)
+# IF SOS+
+# METHOD_RANGE = (278, 280)
 
 SOSREPAIR = True
 
@@ -77,3 +82,5 @@ NUMBER_OF_TIMES_RERUNNING_TESTS = 1
 EXCLUDE_SCANF = False
 
 BULK_RUN_PATH = ""
+
+GCOV_OBJECTS = "/experiment/src/src/.libs"

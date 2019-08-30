@@ -73,6 +73,8 @@ COMPILE_EXTRA_ARGS = [
 MAKE_OUTPUT = "/experiment/makeout"
 
 METHOD_RANGE = (584, 918)
+# IF SOS+
+# METHOD_RANGE = (747, 749)
 
 SOSREPAIR = True
 
@@ -80,3 +82,5 @@ NUMBER_OF_TIMES_RERUNNING_TESTS = 1
 EXCLUDE_SCANF = False
 
 BULK_RUN_PATH = ""
+
+GCOV_OBJECTS = "/experiment/src/src/.libs"
