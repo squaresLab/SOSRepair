@@ -1,19 +1,19 @@
 #!/bin/bash
-exe=$( dirname $1 )
-test_id=$2
+test_id=$1
 here_dir=$( cd "$( dirname "${BASH_SOURCE[0]}" )" && pwd )
-
-#Check if coverage is being run. If so, don't use time limit.
-if [ `basename $exe` = "coverage" ] ; then
-  timeout=180
-else
-  timeout=90
-fi
 
 run_test()
 {
-    timeout $timeout $here_dir/test.pl $1
-    return $?
+    cd $here_dir/src
+    timeout 10 $here_dir/python-run-tests.pl $1
+    if [ $? = 0 ] ; then
+        echo ""
+        echo "PASS"
+    else
+        echo ""
+        echo "FAIL"
+    fi
+    return 0
 }
 
 case $test_id in

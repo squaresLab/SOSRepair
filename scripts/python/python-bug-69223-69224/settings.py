@@ -53,7 +53,7 @@ logging.basicConfig(**LOGGING)
 
 MAX_SUSPICIOUS_LINES = 10
 
-VALID_TYPES = ['int', 'short', 'long', 'char', 'float', 'double', 'long long', 'size_t']
+VALID_TYPES = ['int', 'short', 'long', 'char', 'float', 'double', 'long long', 'size_t', 'Py_ssize_t']
 
 TESTS_LIST = "/experiment/tests-list.txt"
 TEST_SCRIPT = "/experiment/test.sh"
@@ -70,7 +70,9 @@ COMPILE_EXTRA_ARGS = [
 
 MAKE_OUTPUT = "/experiment/makeout"
 
-METHOD_RANGE = (5127, 5275)
+METHOD_RANGE = (193, 314)
+# IF SOS+
+# METHOD_RANGE = (237, 238)
 
 SOSREPAIR = True
 
@@ -78,3 +80,5 @@ NUMBER_OF_TIMES_RERUNNING_TESTS = 1
 EXCLUDE_SCANF = False
 
 BULK_RUN_PATH = ""
+
+GCOV_OBJECTS = "/experiment/src/build/temp.linux-x86_64-3.3/experiment/src/Modules"
