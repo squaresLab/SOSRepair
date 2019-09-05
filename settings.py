@@ -55,7 +55,7 @@ logging.basicConfig(**LOGGING)
 
 MAX_SUSPICIOUS_LINES = 10
 
-VALID_TYPES = ['int', 'short', 'long', 'char', 'float', 'double', 'long long', 'size_t']
+VALID_TYPES = ['int', 'short', 'long', 'char', 'float', 'double', 'long long', 'size_t', 'tmsize_t', 'Py_ssize_t']
 
 TESTS_LIST = "/home/afsoon/ManyBugs/AutomatedRepairBenchmarks.c/many-bugs/php/php-bug-2011-12-10-74343ca506-52c36e60c4/tests-list.txt"
 TEST_SCRIPT = "/home/afsoon/ManyBugs/AutomatedRepairBenchmarks.c/many-bugs/php/php-bug-2011-12-10-74343ca506-52c36e60c4/test.sh a"

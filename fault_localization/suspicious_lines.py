@@ -55,8 +55,6 @@ class SuspiciousLines():
                 else:
                     run_command_with_timeout('gcov ' + FAULTY_CODE)
             except NameError:
-                pass
-            else:
                 run_command_with_timeout('gcov ' + FAULTY_CODE)
 
             try:

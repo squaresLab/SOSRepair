@@ -108,7 +108,7 @@ class Z3:
                     else:
                         query += self.get_struct_mapping(profile[v][0], v + '_in_' + str(num)) + ' '
                 if isinstance(self.suspicious_block.outputs, dict):
-                    query += '(not (or '
+                    query += '(not (and '
                     for v in self.suspicious_block.outputs.keys():
                         t = self.suspicious_block.outputs[v]['type']
                         if t != 'char*' and t in VALID_TYPES:

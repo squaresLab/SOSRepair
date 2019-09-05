@@ -142,7 +142,7 @@ class CodeSnippetManager:
                                 temp = i.type.element_type.spelling + ' *'
                             temp = temp.replace('const', '')
                             temp = temp.replace('unsigned', '')
-                            if str(temp).replace('*', '').strip() in ['double', 'long', 'size_t', 'short', 'float']:
+                            if str(temp).replace('*', '').strip() in ['double', 'long', 'size_t', 'short', 'float', 'tmsize_t', 'Py_ssize_t']:
                                 temp = str(temp).replace(re.sub('[\s+]', '', str(temp).replace('*', '').strip()), 'int')
                             if temp == 'char' or temp.find('int') != -1:
                                 outputs[i.displayname] = {'line': i.location.line, 'type': 'int'}
@@ -245,7 +245,7 @@ class CodeSnippetManager:
         logger.debug('Type: %s' % str(i.type.spelling))
         temp = temp.replace('const', '')
         temp = temp.replace('unsigned', '')
-        if str(temp).replace('*', '').strip() in ['double', 'long', 'size_t', 'short', 'float', 'Py_ssize_t']:
+        if str(temp).replace('*', '').strip() in ['double', 'long', 'size_t', 'short', 'float', 'tmsize_t', 'Py_ssize_t']:
             temp = str(temp).replace(re.sub('[\s+]', '', str(temp).replace('*', '').strip()), 'int')
         if temp == 'char' or temp.find('int') != -1:
             variables.add((i.displayname, 'int'))
