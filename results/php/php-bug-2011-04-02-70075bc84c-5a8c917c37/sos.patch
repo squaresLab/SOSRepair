@@ -1,0 +1,13 @@
+--- ext/standard/string.c_orig.c	2019-09-03 21:03:03.058128144 +0000
++++ ext/standard/string.c	2019-09-03 21:03:56.362090227 +0000
+@@ -5252,9 +5252,7 @@
+ 		RETURN_FALSE;
+ 	}
+ 
+-	if (len > s1_len - offset) {
+-		len = s1_len - offset;
+-	}
++	
+ 
+ 
+ 	cmp_len = (uint) (len ? len : MAX(s2_len, (s1_len - offset)));

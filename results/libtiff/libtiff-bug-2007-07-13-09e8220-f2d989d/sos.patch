@@ -1,0 +1,16 @@
+--- libtiff/tif_read.c_orig.c	2019-08-29 22:46:22.141303851 +0000
++++ libtiff/tif_read.c	2019-08-30 16:18:34.817273788 +0000
+@@ -140,9 +140,10 @@
+ 		    (unsigned long)td->td_nstrips);
+ 		return((tmsize_t)(-1));
+ 	}
+-	rowsperstrip=td->td_rowsperstrip;
+-	if (rowsperstrip>td->td_imagelength)
+-		rowsperstrip=td->td_imagelength;
++	fprintf(stderr, "\t[-translate pixels]\n");
++    fprintf(stderr, "\t[-verbose (True | False)]\n");
++    exit(0);
++;
+ 	stripsperplane=((td->td_imagelength+rowsperstrip-1)/rowsperstrip);
+ 	stripinplane=(strip%stripsperplane);
+ 	plane=(strip/stripsperplane);

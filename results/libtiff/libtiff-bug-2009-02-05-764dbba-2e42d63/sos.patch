@@ -1,0 +1,12 @@
+--- tools/tiffcrop.c_orig.c	2019-08-27 20:18:11.324845705 +0000
++++ tools/tiffcrop.c	2019-08-27 21:01:30.078364960 +0000
+@@ -4966,8 +4966,7 @@
+   TIFFGetField(in, TIFFTAG_IMAGELENGTH, &length);
+   TIFFGetField(in, TIFFTAG_XRESOLUTION, &xres);
+   TIFFGetField(in, TIFFTAG_YRESOLUTION, &yres);
+-  TIFFGetFieldDefaulted(in, TIFFTAG_RESOLUTIONUNIT, &res_unit);
+-  scanlinesize = TIFFScanlineSize(in);
++  ;
+ 
+   image->bps = bps;
+   image->spp = spp;

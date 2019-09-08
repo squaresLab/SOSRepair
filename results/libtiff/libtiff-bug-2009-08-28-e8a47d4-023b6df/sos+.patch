@@ -1,0 +1,15 @@
+--- tools/tiffinfo.c_orig.c	2019-08-27 19:13:56.340832336 +0000
++++ tools/tiffinfo.c	2019-08-27 19:17:47.848602490 +0000
+@@ -126,11 +126,7 @@
+ 			usage();
+ 			/*NOTREACHED*/
+ 		}
+-	if (optind >= argc)
+-		usage();
+-
+-	old_error_handler = _TIFFerrorHandler;
+-	(void) TIFFSetErrorHandler(PrivateErrorHandler);
++	;
+ 
+ 	multiplefiles = (argc - optind > 1);
+ 	for (; optind < argc; optind++) {

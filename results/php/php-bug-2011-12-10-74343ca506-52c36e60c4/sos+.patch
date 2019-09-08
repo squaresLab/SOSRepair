@@ -1,0 +1,11 @@
+--- main/streams/streams.c_orig.c	2019-09-08 17:57:43.581498191 +0000
++++ main/streams/streams.c	2019-09-08 17:59:18.237896191 +0000
+@@ -991,7 +991,7 @@
+ 
+ 		/* read operation have less data than request; assume the stream is
+ 		 * temporarily or permanently out of data */
+-		if (just_read < toread) {
++		if ((int)just_read <= 0) {
+ 			break;
+ 		}
+ 	}

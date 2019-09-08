@@ -1,0 +1,14 @@
+--- Modules/selectmodule.c_orig.c_copy	2019-08-29 22:07:42.159150498 +0000
++++ Modules/selectmodule.c	2019-08-30 00:40:37.899801991 +0000
+@@ -229,6 +229,11 @@
+         timeout = PyFloat_AsDouble(tout);
+         if (timeout == -1 && PyErr_Occurred())
+             return NULL;
++if (timeout < 0) {
++        PyErr_SetString(PyExc_ValueError, "invalid key number");
++        return NULL;
++    }
++
+         if (timeout > (double)LONG_MAX) {
+             PyErr_SetString(PyExc_OverflowError,
+                             "timeout period too long");

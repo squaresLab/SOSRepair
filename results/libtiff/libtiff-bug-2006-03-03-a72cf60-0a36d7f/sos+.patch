@@ -1,0 +1,12 @@
+--- libtiff/tif_dirread.c_orig.c	2019-08-27 17:45:13.282245181 +0000
++++ libtiff/tif_dirread.c	2019-08-27 17:46:12.202206552 +0000
+@@ -973,8 +973,7 @@
+ 	tsize_t cc = dir->tdir_count * w;
+ 
+ 	/* Check for overflow. */
+-	if (!dir->tdir_count || !w || (tsize_t)dir->tdir_count / w != cc)
+-		goto bad;
++	;
+ 
+ 	if (!isMapped(tif)) {
+ 		if (!SeekOK(tif, dir->tdir_offset))

@@ -1,0 +1,13 @@
+--- mpn/generic/powm.c_orig.c_copy	2019-08-29 17:50:42.568334051 +0000
++++ mpn/generic/powm.c	2019-08-29 21:03:39.930411313 +0000
+@@ -211,6 +211,10 @@
+   redcify (this_pp, bp, bn, mp, n);
+   b2p = tp + 2*n;
+ 
++      TMP_SMARK;
++      b2p = TMP_SALLOC_LIMBS (mpn_toom44_mul_itch (n, n));
++
++
+   /* Store b^1 in b2.  */
+   mp_size_t lll = m;
+   mpn_sqr (tp, this_pp, n);

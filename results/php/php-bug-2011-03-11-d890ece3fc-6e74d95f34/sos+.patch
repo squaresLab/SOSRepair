@@ -1,0 +1,13 @@
+--- ext/standard/url.c_orig.c	2019-09-04 19:42:38.674458353 +0000
++++ ext/standard/url.c	2019-09-04 19:41:44.270482792 +0000
+@@ -316,6 +316,10 @@
+ 		pp = strchr(s, '#');
+ 
+ 		if (pp && pp < p) {
++if (pp - s) {
++			ret->path = estrndup(s, (pp-s));
++			php_replace_controlchars_ex(ret->path, (pp - s));
++		}
+ 			p = pp;
+ 			goto label_parse;
+ 		}

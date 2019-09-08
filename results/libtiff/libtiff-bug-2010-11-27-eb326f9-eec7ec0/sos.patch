@@ -1,0 +1,13 @@
+--- tools/tiff2pdf.c_orig.c	2019-08-27 19:28:42.803954463 +0000
++++ tools/tiff2pdf.c	2019-08-27 19:31:10.615808446 +0000
+@@ -571,6 +571,10 @@
+ 		goto fail;
+ 	}
+ 
++{
++        printf("Memory allocation failed");
++        return 0;
++      }
+ 
+ 	while (argv &&
+ 	       (c = getopt(argc, argv,

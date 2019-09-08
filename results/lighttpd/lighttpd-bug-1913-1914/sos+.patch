@@ -1,0 +1,13 @@
+--- src/mod_cgi.c_orig.c	2019-08-30 17:40:00.341547089 +0000
++++ src/mod_cgi.c	2019-08-30 17:43:26.125385685 +0000
+@@ -744,9 +744,7 @@
+ #endif
+ 
+ 		/* request.content_length < SSIZE_MAX, see request.c */
+-		ltostr(buf, con->request.content_length);
+-		cgi_env_add(&env, CONST_STR_LEN("CONTENT_LENGTH"), buf, strlen(buf));
+-		cgi_env_add(&env, CONST_STR_LEN("SCRIPT_FILENAME"), CONST_BUF_LEN(con->physical.path));
++		;
+ 		cgi_env_add(&env, CONST_STR_LEN("SCRIPT_NAME"), CONST_BUF_LEN(con->uri.path));
+ 		cgi_env_add(&env, CONST_STR_LEN("DOCUMENT_ROOT"), CONST_BUF_LEN(con->physical.doc_root));
+ 
