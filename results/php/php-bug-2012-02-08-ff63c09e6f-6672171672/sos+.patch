@@ -1,12 +1,12 @@
---- main/php_variables.c_orig.c	2019-09-04 15:28:17.893303344 +0000
-+++ main/php_variables.c	2019-09-04 17:07:48.589232116 +0000
+--- main/php_variables.c_orig.c     2019-09-10 21:16:40.371162592 +0000
++++ main/php_variables.c        2019-09-10 21:17:31.231390811 +0000
 @@ -133,6 +133,9 @@
- 
- 				if (track_vars_array) {
- 					ht = Z_ARRVAL_P(track_vars_array);
+
+                                if (track_vars_array) {
+                                        ht = Z_ARRVAL_P(track_vars_array);
 +use_heap = 0;
-+	var_len = 1;
-+	sapi_initialize_empty_request(TSRMLS_C);
- 
- 					zend_hash_del(ht, var, var_len + 1);
- 				}
++       var_len = 1;
++       sapi_initialize_empty_request(TSRMLS_C);
+                                        zend_hash_del(ht, var, var_len + 1);
+                                }
+
