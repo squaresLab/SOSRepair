@@ -1,0 +1,17 @@
+--- main/streams/userspace.c_orig.c	2019-09-11 17:40:28.512556635 +0000
++++ main/streams/userspace.c	2019-09-11 18:05:30.639044305 +0000
+@@ -862,9 +862,11 @@
+ #define STAT_PROP_ENTRY(name) STAT_PROP_ENTRY_EX(name,name)
+ 
+ 	STAT_PROP_ENTRY(dev);
+-	STAT_PROP_ENTRY(ino);
+-	STAT_PROP_ENTRY(mode);
+-	STAT_PROP_ENTRY(nlink);
++	STAT_PROP_ENTRY(ino){
++		array_init(array);
++		return;
++	} 
++
+ 	STAT_PROP_ENTRY(uid);
+ 	STAT_PROP_ENTRY(gid);
+ #if HAVE_ST_RDEV
