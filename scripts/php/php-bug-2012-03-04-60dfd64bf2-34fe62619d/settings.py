@@ -73,6 +73,8 @@ COMPILE_EXTRA_ARGS = [
 MAKE_OUTPUT = "/experiment/makeout"
 
 METHOD_RANGE = (4913, 5025)
+# IF SOS+
+# METHOD_RANGE = (4998, 4998)
 
 SOSREPAIR = True
 
