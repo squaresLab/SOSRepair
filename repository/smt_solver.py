@@ -132,7 +132,7 @@ class Z3:
             return None
         final_map = {}
         for v, m in mappings:
-            if v == "return_value":  # For a bug, should fix it later
+            if v == "return_value" and v not in snippet_variables:  # For a bug, should fix it later
                 continue
             final_map[v] = program_mapping[m]
         print final_map
