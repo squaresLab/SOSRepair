@@ -1,4 +1,4 @@
-## Running `libtiff` bugs
+## Running `wireshark` bugs
 
 After running the container you need to follow the following
 steps to prepare `SOSRepair` for running:
