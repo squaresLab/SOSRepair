@@ -1,0 +1,14 @@
+--- src/mod_accesslog.c_orig.c_copy	2019-08-30 00:49:59.799406771 +0000
++++ src/mod_accesslog.c	2019-08-30 00:56:02.027138179 +0000
+@@ -166,6 +166,11 @@
+ static void accesslog_append_escaped(buffer *dest, buffer *str) {
+ 	/* replaces non-printable chars with \xHH where HH is the hex representation of the byte */
+ 	/* exceptions: " => \", \ => \\, whitespace chars => \n \t etc. */
++if (str->used == 0) {
++		dest->used = 0;
++		return 0;
++	}
++
+ 	buffer_prepare_append(dest, str->used - 1);
+ 
+ 	for (unsigned int i = 0; i < str->used - 1; i++) {

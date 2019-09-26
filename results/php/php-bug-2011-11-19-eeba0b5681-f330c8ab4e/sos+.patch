@@ -1,0 +1,14 @@
+--- ext/phar/phar.c_orig.c	2019-09-13 18:43:10.222227267 +0000
++++ ext/phar/phar.c	2019-09-13 18:43:07.262216064 +0000
+@@ -1570,7 +1570,10 @@
+ 	const char gz_magic[] = "\x1f\x8b\x08";
+ 	const char bz_magic[] = "BZh";
+ 	char *pos, test = '\0';
+-	const int window_size = 1024 + sizeof(token);
++	int window_size = 1024 + sizeof(token);
++{
++		window_size = 1024;
++	}
+ 	char buffer[1024 + sizeof(token)]; /* a 1024 byte window + the size of the halt_compiler token (moving window) */
+ 	const long readsize = sizeof(buffer) - sizeof(token);
+ 	const long tokenlen = sizeof(token) - 1;

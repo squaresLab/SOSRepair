@@ -1,0 +1,13 @@
+--- ext/phar/phar_object.c_orig.c	2019-09-05 16:47:26.258718468 +0000
++++ ext/phar/phar_object.c	2019-09-05 16:47:32.758713912 +0000
+@@ -576,7 +576,10 @@
+ 	}
+ 
+ 	fname = zend_get_executed_filename(TSRMLS_C);
++		phar_request_initialize(TSRMLS_C);
++	fname = zend_get_executed_filename(TSRMLS_C);
+ 	fname_len = strlen(fname);
++;
+ 
+ #ifdef PHP_WIN32
+ 	phar_unixify_path_separators(fname, fname_len);

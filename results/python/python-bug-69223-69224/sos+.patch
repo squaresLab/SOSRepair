@@ -1,0 +1,14 @@
+--- Modules/selectmodule.c_orig.c_copy	2019-08-30 00:53:16.207262464 +0000
++++ Modules/selectmodule.c	2019-08-30 16:51:30.979777175 +0000
+@@ -234,6 +234,11 @@
+                             "timeout period too long");
+             return NULL;
+         }
++if (timeout < 0) {
++        PyErr_SetString(PyExc_ValueError, "invalid key number");
++        return NULL;
++    }
++
+         seconds = (long)timeout;
+         timeout = timeout - (double)seconds;
+         tv.tv_sec = seconds;

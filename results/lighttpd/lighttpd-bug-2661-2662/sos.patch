@@ -1,0 +1,14 @@
+--- src/mod_accesslog.c_orig.c_copy	2019-08-30 00:36:24.084005222 +0000
++++ src/mod_accesslog.c	2019-08-30 00:45:32.615595409 +0000
+@@ -168,6 +168,11 @@
+ 	/* exceptions: " => \", \ => \\, whitespace chars => \n \t etc. */
+ 	buffer_prepare_append(dest, str->used - 1);
+ 
++	buffer_copy_string(str,
++		"GET / HTTP/1.0\n"
++		"\nABC"
++	);
++
+ 	for (unsigned int i = 0; i < str->used - 1; i++) {
+ 		if (str->ptr[i] >= ' ' && str->ptr[i] <= '~') {
+ 			/* printable chars */

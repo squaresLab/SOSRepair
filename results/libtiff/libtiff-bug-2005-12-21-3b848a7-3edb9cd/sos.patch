@@ -1,0 +1,16 @@
+--- libtiff/tif_dirread.c_orig.c	2019-08-27 17:46:11.018207338 +0000
++++ libtiff/tif_dirread.c	2019-08-27 17:54:08.005867629 +0000
+@@ -594,12 +594,7 @@
+ 		 * wrong values (it can be equal to StripOffset array, for
+ 		 * example). Catch this case here.
+ 		 */
+-		TIFFWarning(module,
+-	"%s: Wrong \"%s\" field, ignoring and calculating from imagelength",
+-                            tif->tif_name,
+-		            _TIFFFieldWithTag(tif,TIFFTAG_STRIPBYTECOUNTS)->field_name);
+-		if (EstimateStripByteCounts(tif, dir, dircount) < 0)
+-		    goto bad;
++		;
+ 	}
+ 	if (dir) {
+ 		_TIFFfree((char *)dir);

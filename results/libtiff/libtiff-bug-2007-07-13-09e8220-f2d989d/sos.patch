@@ -1,0 +1,16 @@
+--- libtiff/tif_read.c_orig.c  2019-09-10 19:37:19.992360290 +0000
++++ libtiff/tif_read.c  2019-09-10 19:38:12.140585295 +0000
+@@ -145,9 +145,10 @@
+         * rows in the strip (check for truncated last strip on any
+         * of the separations).
+         */
+-       rowsperstrip=td->td_rowsperstrip;
+-       if (rowsperstrip>td->td_imagelength)
+-               rowsperstrip=td->td_imagelength;
++       fprintf(stderr, "\t[-translate pixels]\n");
++    fprintf(stderr, "\t[-verbose (True | False)]\n");
++    exit(0);
++;
+        stripsperplane=((td->td_imagelength+rowsperstrip-1)/rowsperstrip);
+        stripinplane=(strip%stripsperplane);
+        plane=(strip/stripsperplane);

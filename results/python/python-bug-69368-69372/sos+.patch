@@ -1,0 +1,13 @@
+--- Python/peephole.c_orig.c  2019-09-10 23:14:42.293794350 +0000
++++ Python/peephole.c   2019-09-10 23:15:13.925931039 +0000
+@@ -183,6 +183,10 @@
+             break;
+         case BINARY_SUBSCR:
+             newconst = PyObject_GetItem(v, w);
++{
++       Py_Exit(0);
++       return 0;
++}
+             break;
+         case BINARY_LSHIFT:
+             newconst = PyNumber_Lshift(v, w);

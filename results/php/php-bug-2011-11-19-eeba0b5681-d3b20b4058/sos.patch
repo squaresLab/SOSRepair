@@ -1,0 +1,22 @@
+--- ext/phar/phar.c_orig.c      2019-09-10 21:51:16.912177868 +0000
++++ ext/phar/phar.c     2019-09-10 21:52:08.584381016 +0000
+@@ -1570,7 +1570,7 @@
+        const char gz_magic[] = "\x1f\x8b\x08";
+        const char bz_magic[] = "BZh";
+        char *pos, test = '\0';
+-       const int window_size = 1024 + sizeof(token);
++       int window_size = 1024 + sizeof(token);
+        char buffer[1024 + sizeof(token)]; /* a 1024 byte window + the size of the halt_compiler token (moving window) */
+        const long readsize = sizeof(buffer) - sizeof(token);
+        const long tokenlen = sizeof(token) - 1;
+@@ -1706,6 +1706,10 @@
+                        }
+
+                        if (got > 512) {
++window_size = strlen(pos);
++       if (phar_open_parsed_phar(fname, fname_len, alias, alias_len, 0, REPORT_ERRORS, NULL, 0 TSRMLS_CC) == SUCCESS) {
++               return SUCCESS;
++       }
+                                if (phar_is_tar(pos, fname)) {
+                                        php_stream_rewind(fp);
+                                        return phar_parse_tarfile(fp, fname, fname_len, alias, alias_len, pphar, is_data, compression, error TSRMLS_CC);

@@ -1,0 +1,16 @@
+diff --git a/gzip.c b/gzip.c
+index fc2e7dc..4c8e79a 100644
+--- a/gzip.c
++++ b/gzip.c
+@@ -651,6 +651,11 @@ local void treat_stdin()
+     to_stdout = 1;
+     part_nb = 0;
+ 
++{
++      errno = 0;
++      ifd = 0;
++    }
++
+     if (decompress) {
+ 	method = get_method(ifd);
+ 	if (method < 0) {
