@@ -3,6 +3,11 @@
 SOSRepair is an automatic program repair tool which tries to fix programs with the help of both generate-and-validate
 and semantics-based techniques.
 
+### Publications ###
+
+*SOSRepair: Expressive Semantic Search for Real-World Program Repair* by Afsoon Afzal, Manish Motwani, Kathryn T. Stolee, Yuriy Brun, and Claire Le Goues. IEEE Transactions on Software Engineering (TSE), October 2019, [DOI: 10.1109/TSE.2019.2944914](http://dx.doi.org/10.1109/TSE.2019.2944914). [Download](SOSRepair-TSE.pdf)
+
+
 ### Requirements ###
 
 You can use `docker` to build a container that already has all the
