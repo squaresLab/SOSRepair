@@ -1,6 +1,0 @@
-9763c9763,9765
-<       tmp___2 = TIFFReadScanline(in, (void *)buff, row, s);
----
->       {
-> 
->       }

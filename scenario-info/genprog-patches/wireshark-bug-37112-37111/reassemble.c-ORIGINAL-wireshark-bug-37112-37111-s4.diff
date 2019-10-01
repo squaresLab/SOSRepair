@@ -1,5 +1,0 @@
-253,254c253
-< 		if(fd_head->data && !(fd_head->flags&FD_NOT_MALLOCED))
-< 			g_free(fd_head->data);
----
-> 

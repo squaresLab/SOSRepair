@@ -1,7 +1,0 @@
-6437c6437,6440
-< 	SET_NODE(opline->op1, message);
----
->     while (1) {
->       opline->op1_type = (unsigned char )message->op_type;
->       break;
->     }

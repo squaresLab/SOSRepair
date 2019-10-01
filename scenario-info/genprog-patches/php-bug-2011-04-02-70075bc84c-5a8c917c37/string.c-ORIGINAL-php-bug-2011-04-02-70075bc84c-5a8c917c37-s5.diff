@@ -1,8 +1,0 @@
-2154c2154
-< 	
----
-> 
-2207c2207
-< 	RETURN_STRINGL(str + f, l, 1);
----
-> 	RETURN_EMPTY_STRING()

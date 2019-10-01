@@ -1,9 +1,0 @@
-20139,20143c20139,20140
-<     if (message->op_type == 1) {
-<       tmp___0 = zend_add_literal(compiler_globals.active_op_array, & message->u.constant);
-<       opline->op1.constant = (unsigned int )tmp___0;
-<     } else {
-<       opline->op1 = (union _znode_op )message->u.op;
----
->     {
-> 

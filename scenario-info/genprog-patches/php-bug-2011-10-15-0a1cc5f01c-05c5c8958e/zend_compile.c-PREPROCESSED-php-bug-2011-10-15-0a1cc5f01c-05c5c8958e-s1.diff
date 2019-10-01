@@ -1,6 +1,0 @@
-11783c11783,11785
-<       tmp___2 = zend_add_func_name_literal(compiler_globals.active_op_array, (zval const   *)(& function_name->u.constant));
----
->       {
-> 
->       }

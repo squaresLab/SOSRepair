@@ -1,5 +1,0 @@
-475,478d474
-< 	/* If we are invoked with no field information, then just return. */
-< 	if (!tif->tif_fields)
-< 		return NULL;
-< 

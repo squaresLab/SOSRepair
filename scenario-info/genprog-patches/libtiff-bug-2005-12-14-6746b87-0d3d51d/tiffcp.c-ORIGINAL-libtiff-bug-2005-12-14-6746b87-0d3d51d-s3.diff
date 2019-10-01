@@ -1,4 +1,0 @@
-261c261
-< 	out = TIFFOpen(argv[argc-1], mode);
----
->     return 0;

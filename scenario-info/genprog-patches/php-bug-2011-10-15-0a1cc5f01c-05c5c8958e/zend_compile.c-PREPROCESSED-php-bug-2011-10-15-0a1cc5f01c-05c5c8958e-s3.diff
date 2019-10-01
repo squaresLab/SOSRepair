@@ -1,6 +1,0 @@
-10123c10123,10125
-<   opline->opcode = (unsigned char)42;
----
->   {
-> 
->   }

@@ -1,4 +1,0 @@
-254c254
-< 			g_free(fd_head->data);
----
-> 
