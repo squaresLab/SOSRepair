@@ -1,8 +1,0 @@
-983,986c983,984
-< 			start = next;
-< 
-< 			if (process_named_entity_html(&next, &start, &ent_len) == FAILURE)
-< 				goto invalid_code;
----
-> 			ent_len = strlen(next);
-> ;
