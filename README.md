@@ -5,8 +5,11 @@ and semantics-based techniques.
 
 ### Publications ###
 
-*SOSRepair: Expressive Semantic Search for Real-World Program Repair* by Afsoon Afzal, Manish Motwani, Kathryn T. Stolee, Yuriy Brun, and Claire Le Goues. IEEE Transactions on Software Engineering (TSE), October 2019, [DOI: 10.1109/TSE.2019.2944914](http://dx.doi.org/10.1109/TSE.2019.2944914). [Download](SOSRepair-TSE.pdf)
+**SOSRepair: Expressive Semantic Search for Real-World Program Repair** by Afsoon Afzal, Manish Motwani, Kathryn T. Stolee, Yuriy Brun, and Claire Le Goues. IEEE Transactions on Software Engineering (TSE), October 2019, [DOI: 10.1109/TSE.2019.2944914](http://dx.doi.org/10.1109/TSE.2019.2944914). [Download](SOSRepair-TSE.pdf)
 
+### Replication Package ###
+
+To find patches, scripts, and independently-generated tests from experiments on Manybugs refer to [SOSRepair-Replication-Package](https://github.com/squaresLab/SOSRepair-Replication-Package).
 
 ### Requirements ###
 
